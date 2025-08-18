@@ -1,0 +1,554 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/enums/user_type.dart';
+import '../providers/user_provider.dart';
+
+/// Screen for creating new customer users
+/// Focused specifically on customer user creation
+class CreateUserScreen extends ConsumerStatefulWidget {
+  const CreateUserScreen({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  ConsumerState<CreateUserScreen> createState() => _CreateUserScreenState();
+}
+
+class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _postalCodeController = TextEditingController();
+  
+  final UserType _selectedUserType = UserType.customer; // Fixed to customer only
+  bool _isLoading = false;
+  bool _autoSwitchToNewUser = true;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _postalCodeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: const Text(
+        'Create Customer Account',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: const Color(0xFF4CAF50),
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF2E7D32),
+              Color(0xFF4CAF50),
+              Color(0xFF66BB6A),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header section
+          _buildHeaderSection(),
+          
+          const SizedBox(height: 24),
+          
+          
+          // Form
+          _buildForm(),
+          
+          const SizedBox(height: 24),
+          
+          // Options
+          _buildOptions(),
+          
+          const SizedBox(height: 32),
+          
+          // Create button
+          _buildCreateButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.person_add,
+                  color: Color(0xFF4CAF50),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Create Customer Account',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF212121),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Create a new customer account for browsing and ordering deals',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF757575),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildForm() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'User Information',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Name field
+            _buildTextField(
+              controller: _nameController,
+              label: 'Full Name',
+              hint: 'Enter full name',
+              icon: Icons.person_outline,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter a full name';
+                }
+                if (value.trim().length < 2) {
+                  return 'Name must be at least 2 characters';
+                }
+                return null;
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Email field
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email Address',
+              hint: 'Enter email address',
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter an email address';
+                }
+                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                  return 'Please enter a valid email address';
+                }
+                return null;
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Phone field
+            _buildTextField(
+              controller: _phoneController,
+              label: 'Phone Number',
+              hint: 'Enter phone number',
+              icon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+              validator: (value) {
+                if (value != null && value.trim().isNotEmpty) {
+                  if (value.trim().length < 10) {
+                    return 'Please enter a valid phone number';
+                  }
+                }
+                return null;
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Address Section Header
+            const Text(
+              'Address Information',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Street Address field
+            _buildTextField(
+              controller: _addressController,
+              label: 'Street Address',
+              hint: 'Enter street address',
+              icon: Icons.home_outlined,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your street address';
+                }
+                return null;
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // City field
+            _buildTextField(
+              controller: _cityController,
+              label: 'City',
+              hint: 'Enter city',
+              icon: Icons.location_city_outlined,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your city';
+                }
+                return null;
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // State and Postal Code row
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildTextField(
+                    controller: _stateController,
+                    label: 'State',
+                    hint: 'Enter state',
+                    icon: Icons.map_outlined,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your state';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 1,
+                  child: _buildTextField(
+                    controller: _postalCodeController,
+                    label: 'Postal Code',
+                    hint: 'Enter postal code',
+                    icon: Icons.mail_outline,
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter postal code';
+                      }
+                      if (value.trim().length < 5) {
+                        return 'Please enter a valid postal code';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: const Color(0xFF757575)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE53935)),
+        ),
+        filled: true,
+        fillColor: const Color(0xFFFAFAFA),
+      ),
+    );
+  }
+
+  Widget _buildOptions() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Checkbox(
+            value: _autoSwitchToNewUser,
+            onChanged: (value) {
+              setState(() {
+                _autoSwitchToNewUser = value ?? true;
+              });
+            },
+            activeColor: const Color(0xFF4CAF50),
+          ),
+          const Expanded(
+            child: Text(
+              'Automatically switch to new user after creation',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF212121),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleCreateUser,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF4CAF50),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                'Create Customer Account',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Future<void> _handleCreateUser() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Prepare user data
+      final userData = {
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'user_type': _selectedUserType.name,
+        'phone': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'city': _cityController.text.trim(),
+        'state': _stateController.text.trim(),
+        'postal_code': _postalCodeController.text.trim(),
+        'country': 'United States',
+      };
+
+      // Create user via service
+      final userService = ref.read(userServiceProvider);
+      final newUser = await userService.createUser(userData);
+
+      if (mounted) {
+        // Show success message first
+        final message = _autoSwitchToNewUser
+            ? 'Customer account created and switched to ${newUser.name}'
+            : 'Customer account for ${newUser.name} created successfully';
+            
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: const Color(0xFF4CAF50),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        // Refresh user list
+        ref.invalidate(userListProvider);
+
+        // Optionally switch to new user after a delay to avoid navigation conflicts
+        if (_autoSwitchToNewUser) {
+          // Use a post-frame callback to avoid navigation conflicts
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) {
+              try {
+                await ref.read(currentUserProvider.notifier).switchUser(newUser);
+              } catch (e) {
+                debugPrint('Error switching user: $e');
+              }
+            }
+          });
+        }
+
+        // Navigate back with a small delay to avoid conflicts
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create customer account: $e'),
+            backgroundColor: const Color(0xFFE53935),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+}

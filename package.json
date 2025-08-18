@@ -1,0 +1,31 @@
+{
+  "name": "grabeat",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run kill-ports && concurrently \"npm run build:functions\" \"npx wrangler pages dev dist --compatibility-date=2024-01-01 --compatibility-flags=nodejs_compat --port=8788 --local\" \"npm run dev:flutter\"",
+    "dev:api-only": "npm run kill-port:8788 && concurrently \"npm run build:functions\" \"npx wrangler pages dev dist --compatibility-date=2024-01-01 --compatibility-flags=nodejs_compat --port=8788 --local\"",
+    "dev:flutter": "cd mobile-client && flutter run -d chrome --web-port 8081",
+    "dev:flutter-only": "cd mobile-client && flutter run -d chrome --web-port 8081",
+    "kill-ports": "npm run kill-port:8788 && npm run kill-port:8081",
+    "kill-port:8788": "(lsof -ti:8788 | xargs kill -9) 2>/dev/null || true",
+    "kill-port:8081": "(lsof -ti:8081 | xargs kill -9) 2>/dev/null || true",
+    "build": "npm run build:functions",
+    "build:functions": "mkdir -p dist/_functions && cp -r functions/* dist/_functions/",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop", 
+    "supabase:status": "supabase status",
+    "supabase:reset": "supabase db reset",
+    "test:api": "node test-api.js"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "@types/node": "^20.8.0",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.2.2",
+    "wrangler": "^3.78.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

@@ -1,0 +1,7 @@
+name = "grabeat-admin"
+compatibility_date = "2024-08-13"
+pages_build_output_dir = "dist"
+
+[vars]
+VITE_SUPABASE_URL = "https://zobhorsszzthyljriiim.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYmhvcnNzenp0aHlsanJpaWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODIzNzYsImV4cCI6MjA2OTU1ODM3Nn0.91GlHZxmJGg5E-T2iR5rzgLrQJzNPNW-SzS2VhqlymA"
