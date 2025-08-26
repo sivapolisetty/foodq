@@ -329,7 +329,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> with SingleTickerPr
         return orders.where((order) => order.isActive).toList();
       case OrderFilter.completed:
         return orders.where((order) => 
-          order.status == OrderStatus.delivered || 
+          order.status == OrderStatus.completed || 
           order.status == OrderStatus.cancelled
         ).toList();
       case OrderFilter.all:

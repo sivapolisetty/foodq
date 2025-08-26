@@ -1,34 +1,37 @@
-import { validateAuth, getCorsHeaders } from '../../utils/auth.js';
-import { createServiceRoleClient, createSuccessResponse, createErrorResponse, Env } from '../../utils/supabase.js';
+import { getAuthFromRequest, verifyToken, handleCors, jsonResponse, errorResponse } from '../../utils/auth.js';
+import { getDBClient } from '../../utils/db-client.js';
+import { Env } from '../../utils/supabase.js';
 
 export async function onRequestOptions(context: { request: Request; env: Env }) {
-  const corsHeaders = getCorsHeaders(context.request.headers.get('Origin') || '*');
-  return new Response(null, { 
-    status: 200,
-    headers: {
-      ...corsHeaders,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
-  });
+  return handleCors(context.request, context.env);
 }
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { request, env } = context;
-  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
+  const supabase = getDBClient(env, 'Orders.GET');
+
+  // Get authentication token
+  const token = getAuthFromRequest(request);
+  if (!token) {
+    return errorResponse('No token provided', 401, request, env);
+  }
+
+  const authResult = await verifyToken(token, supabase, env);
+  if (!authResult) {
+    return errorResponse('Invalid token', 401, request, env);
+  }
+
+  const { userId } = authResult;
   
   try {
-    const auth = await validateAuth(request, env);
-    
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
-    }
-
     const url = new URL(request.url);
     const customerId = url.searchParams.get('customer_id');
     const businessId = url.searchParams.get('business_id');
-
-    const supabase = createServiceRoleClient(env);
     
     let query = supabase
       .from('orders')
@@ -61,31 +64,44 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       query = query.eq('business_id', businessId);
     } else {
       // Default: get orders for the authenticated user
-      query = query.eq('user_id', auth.user.id);
+      query = query.eq('user_id', userId);
     }
     
     const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) {
-      return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
+      return errorResponse(`Database error: ${error.message}`, 500, request, env);
     }
 
-    return createSuccessResponse(data || [], corsHeaders);
+    return jsonResponse(data || [], 200, request, env);
   } catch (error: any) {
-    return createErrorResponse(`Failed to fetch orders: ${error.message}`, 500, corsHeaders);
+    return errorResponse(`Failed to fetch orders: ${error.message}`, 500, request, env);
   }
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
-  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
+  const supabase = getDBClient(env, 'Orders.POST');
+
+  // Get authentication token
+  const token = getAuthFromRequest(request);
+  if (!token) {
+    return errorResponse('No token provided', 401, request, env);
+  }
+
+  const authResult = await verifyToken(token, supabase, env);
+  if (!authResult) {
+    return errorResponse('Invalid token', 401, request, env);
+  }
+
+  const { userId } = authResult;
   
   try {
-    const auth = await validateAuth(request, env);
-    
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
-    }
 
     const orderData = await request.json();
     
@@ -97,7 +113,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     if (orderData.items && Array.isArray(orderData.items)) {
       // Multiple items format
       if (!businessId || orderData.items.length === 0) {
-        return createErrorResponse('Missing required fields: business_id and items', 400, corsHeaders);
+        return errorResponse('Missing required fields: business_id and items', 400, request, env);
       }
       items = orderData.items;
       
@@ -111,7 +127,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     } else if (orderData.deal_id) {
       // Single deal format (flat structure from Flutter app)
       if (!businessId) {
-        return createErrorResponse('Missing required field: business_id', 400, corsHeaders);
+        return errorResponse('Missing required field: business_id', 400, request, env);
       }
       
       // Convert flat structure to items array
@@ -125,16 +141,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       // Use provided total or calculate
       totalAmount = totalAmount || (orderData.unit_price || 0) * (orderData.quantity || 1);
     } else {
-      return createErrorResponse('Invalid order format: must include either deal_id or items array', 400, corsHeaders);
+      return errorResponse('Invalid order format: must include either deal_id or items array', 400, request, env);
     }
-
-    const supabase = createServiceRoleClient(env);
     
     // Create the order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
-        user_id: auth.user.id,
+        user_id: userId,
         business_id: businessId,
         status: 'pending',
         total_amount: totalAmount,
@@ -149,7 +163,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       .single();
     
     if (orderError) {
-      return createErrorResponse(`Failed to create order: ${orderError.message}`, 500, corsHeaders);
+      return errorResponse(`Failed to create order: ${orderError.message}`, 500, request, env);
     }
 
     // Create order items
@@ -169,11 +183,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     if (itemsError) {
       // Rollback order if items creation fails
       await supabase.from('orders').delete().eq('id', order.id);
-      return createErrorResponse(`Failed to create order items: ${itemsError.message}`, 500, corsHeaders);
+      return errorResponse(`Failed to create order items: ${itemsError.message}`, 500, request, env);
     }
 
-    // Fetch complete order with items
-    const { data: completeOrder } = await supabase
+    // Fetch the complete order with relationships after creating order_items
+    const { data: completeOrder, error: fetchError } = await supabase
       .from('orders')
       .select(`
         *,
@@ -197,33 +211,47 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       .eq('id', order.id)
       .single();
 
-    return createSuccessResponse(completeOrder, corsHeaders);
+    if (fetchError || !completeOrder) {
+      return errorResponse('Failed to fetch complete order data', 500, request, env);
+    }
+
+    return jsonResponse(completeOrder, 200, request, env);
   } catch (error: any) {
-    return createErrorResponse(`Failed to create order: ${error.message}`, 500, corsHeaders);
+    return errorResponse(`Failed to create order: ${error.message}`, 500, request, env);
   }
 }
 
 export async function onRequestPut(context: { request: Request; env: Env }) {
   const { request, env } = context;
-  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
+  // Get authentication token
+  const token = getAuthFromRequest(request);
+  if (!token) {
+    return errorResponse('No token provided', 401, request, env);
+  }
+
+  const supabase = getDBClient(env, 'Orders.PUT');
+  const authResult = await verifyToken(token, supabase, env);
+  if (!authResult) {
+    return errorResponse('Invalid token', 401, request, env);
+  }
+
+  const { userId } = authResult;
   
   try {
-    const auth = await validateAuth(request, env);
-    
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
-    }
-
     const url = new URL(request.url);
     const pathSegments = url.pathname.split('/');
     const orderId = pathSegments[pathSegments.length - 1];
 
     if (!orderId || orderId === 'orders') {
-      return createErrorResponse('Order ID is required', 400, corsHeaders);
+      return errorResponse('Order ID is required', 400, request, env);
     }
 
     const updateData = await request.json();
-    const supabase = createServiceRoleClient(env);
 
     // Get the order first to verify ownership/permissions
     const { data: existingOrder, error: fetchError } = await supabase
@@ -233,14 +261,14 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       .single();
 
     if (fetchError || !existingOrder) {
-      return createErrorResponse('Order not found', 404, corsHeaders);
+      return errorResponse('Order not found', 404, request, env);
     }
 
     // Fetch user's business_id from the database
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', auth.user.id)
+      .eq('id', userId)
       .single();
 
     // Check if user has permission to update this order
@@ -248,10 +276,10 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
     // Customers can only update their own orders (limited fields)
     const userBusinessId = userData?.business_id;
     const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
-    const isCustomer = existingOrder.user_id === auth.user.id;
+    const isCustomer = existingOrder.user_id === userId;
 
     if (!isBusinessOwner && !isCustomer) {
-      return createErrorResponse('You do not have permission to update this order', 403, corsHeaders);
+      return errorResponse('You do not have permission to update this order', 403, request, env);
     }
 
     // Prepare update data based on user type
@@ -262,7 +290,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
     if (isBusinessOwner) {
       // Business can update status, pickup_time, delivery_instructions
       if (updateData.status) {
-        const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+        const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'];
         if (validStatuses.includes(updateData.status)) {
           allowedUpdates.status = updateData.status;
         }
@@ -307,11 +335,11 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       .single();
 
     if (updateError) {
-      return createErrorResponse(`Failed to update order: ${updateError.message}`, 500, corsHeaders);
+      return errorResponse(`Failed to update order: ${updateError.message}`, 500, request, env);
     }
 
-    return createSuccessResponse(updatedOrder, corsHeaders);
+    return jsonResponse(updatedOrder, 200, request, env);
   } catch (error: any) {
-    return createErrorResponse(`Failed to update order: ${error.message}`, 500, corsHeaders);
+    return errorResponse(`Failed to update order: ${error.message}`, 500, request, env);
   }
 }

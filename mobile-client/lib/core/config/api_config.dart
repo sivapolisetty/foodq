@@ -21,6 +21,7 @@ class ApiConfig {
   static const String businessesEndpoint = '/api/businesses';
   static const String usersEndpoint = '/api/users';
   static const String ordersEndpoint = '/api/orders';
+  static const String uploadEndpoint = '/api/upload';
   static const String restaurantOnboardingEndpoint = '/api/restaurant-onboarding';
 
   // Full URLs
@@ -28,6 +29,7 @@ class ApiConfig {
   static String get businessesUrl => '$baseUrl$businessesEndpoint';
   static String get usersUrl => '$baseUrl$usersEndpoint';
   static String get ordersUrl => '$baseUrl$ordersEndpoint';
+  static String get uploadUrl => '$baseUrl$uploadEndpoint';
   static String get restaurantOnboardingUrl => '$baseUrl$restaurantOnboardingEndpoint';
 
   // Deal-specific endpoints

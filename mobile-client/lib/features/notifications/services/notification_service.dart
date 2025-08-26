@@ -307,7 +307,7 @@ class NotificationService {
         message = 'Your order is ready for pickup! Please arrive at your scheduled time.';
         priority = NotificationPriority.high;
         break;
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         type = NotificationType.orderCompleted;
         title = 'Order Completed';
         message = 'Thank you for your order! We hope you enjoyed your meal.';

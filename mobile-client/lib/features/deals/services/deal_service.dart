@@ -4,6 +4,12 @@ import '../models/restaurant.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/config/api_config.dart';
 import 'dart:developer' as developer;
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as path;
 
 class DealService {
   // Remove Supabase dependency - now using Cloudflare Worker API
@@ -70,6 +76,357 @@ class DealService {
         message: 'Unexpected error creating deal: ${e.toString()}',
         code: 'UNKNOWN_ERROR',
       );
+    }
+  }
+
+  /// Create a new deal with image upload using form data (mobile)
+  Future<DealResult> createDealWithImage({
+    required String businessId,
+    required String title,
+    required String description,
+    required double originalPrice,
+    required double discountedPrice,
+    required int quantityAvailable,
+    required DateTime expiresAt,
+    String? imagePath,
+    String? allergenInfo,
+  }) async {
+    try {
+      // Comprehensive input validation
+      final validationError = _validateDealInput(
+        businessId: businessId,
+        title: title,
+        originalPrice: originalPrice,
+        discountedPrice: discountedPrice,
+        quantityAvailable: quantityAvailable,
+        expiresAt: expiresAt,
+      );
+
+      if (validationError != null) {
+        return DealResult.error(message: validationError, code: 'VALIDATION_ERROR');
+      }
+
+      // Create multipart request
+      final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.dealsUrl));
+      
+      // Add authentication header
+      final token = await ApiService.getAuthToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add text fields
+      request.fields['business_id'] = businessId;
+      request.fields['title'] = title.trim();
+      request.fields['description'] = description.trim();
+      request.fields['original_price'] = originalPrice.toString();
+      request.fields['discounted_price'] = discountedPrice.toString();
+      request.fields['quantity_available'] = quantityAvailable.toString();
+      request.fields['expires_at'] = expiresAt.toIso8601String();
+      if (allergenInfo != null && allergenInfo.isNotEmpty) {
+        request.fields['allergen_info'] = allergenInfo.trim();
+      }
+
+      // Add image file if provided
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final file = File(imagePath);
+        if (await file.exists()) {
+          final stream = http.ByteStream(file.openRead());
+          final length = await file.length();
+          final multipartFile = http.MultipartFile(
+            'file',
+            stream,
+            length,
+            filename: path.basename(imagePath),
+          );
+          request.files.add(multipartFile);
+        }
+      }
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = ApiService.parseResponse(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final deal = Deal.fromJson(responseData['data'] as Map<String, dynamic>);
+          return DealResult.success(deal: deal);
+        } else {
+          return DealResult.error(
+            message: responseData['error'] ?? 'Failed to create deal',
+            code: 'API_ERROR',
+          );
+        }
+      } else {
+        return DealResult.error(
+          message: 'HTTP Error: ${response.statusCode}',
+          code: 'HTTP_ERROR',
+        );
+      }
+
+    } catch (e) {
+      return DealResult.error(
+        message: 'Unexpected error creating deal with image: ${e.toString()}',
+        code: 'UNKNOWN_ERROR',
+      );
+    }
+  }
+
+  /// Create a new deal with image upload using image bytes (web-compatible)
+  Future<DealResult> createDealWithImageBytes({
+    required String businessId,
+    required String title,
+    required String description,
+    required double originalPrice,
+    required double discountedPrice,
+    required int quantityAvailable,
+    required DateTime expiresAt,
+    Uint8List? imageBytes,
+    String? imageName,
+    String? allergenInfo,
+  }) async {
+    try {
+      // Comprehensive input validation
+      final validationError = _validateDealInput(
+        businessId: businessId,
+        title: title,
+        originalPrice: originalPrice,
+        discountedPrice: discountedPrice,
+        quantityAvailable: quantityAvailable,
+        expiresAt: expiresAt,
+      );
+
+      if (validationError != null) {
+        return DealResult.error(message: validationError, code: 'VALIDATION_ERROR');
+      }
+
+      // Create multipart request
+      final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.dealsUrl));
+      
+      // Add authentication header
+      final token = await ApiService.getAuthToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add text fields
+      request.fields['business_id'] = businessId;
+      request.fields['title'] = title.trim();
+      request.fields['description'] = description.trim();
+      request.fields['original_price'] = originalPrice.toString();
+      request.fields['discounted_price'] = discountedPrice.toString();
+      request.fields['quantity_available'] = quantityAvailable.toString();
+      request.fields['expires_at'] = expiresAt.toIso8601String();
+      if (allergenInfo != null && allergenInfo.isNotEmpty) {
+        request.fields['allergen_info'] = allergenInfo.trim();
+      }
+
+      // Add image bytes if provided
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        // Determine MIME type from filename extension
+        String contentType = 'image/jpeg'; // Default
+        if (imageName != null) {
+          final extension = imageName.toLowerCase().split('.').last;
+          switch (extension) {
+            case 'png':
+              contentType = 'image/png';
+              break;
+            case 'jpg':
+            case 'jpeg':
+              contentType = 'image/jpeg';
+              break;
+            case 'webp':
+              contentType = 'image/webp';
+              break;
+            default:
+              contentType = 'image/jpeg';
+          }
+          
+          developer.log('🖼️ Image upload details:');
+          developer.log('   Filename: $imageName');
+          developer.log('   Extension: $extension');
+          developer.log('   Content-Type: $contentType');
+          developer.log('   Size: ${imageBytes.length} bytes');
+        }
+        
+        final multipartFile = http.MultipartFile.fromBytes(
+          'file',
+          imageBytes,
+          filename: imageName ?? 'deal-image.jpg',
+          contentType: MediaType.parse(contentType),
+        );
+        request.files.add(multipartFile);
+      }
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = ApiService.parseResponse(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final deal = Deal.fromJson(responseData['data'] as Map<String, dynamic>);
+          return DealResult.success(deal: deal);
+        } else {
+          return DealResult.error(
+            message: responseData['error'] ?? 'Failed to create deal',
+            code: 'API_ERROR',
+          );
+        }
+      } else {
+        return DealResult.error(
+          message: 'HTTP Error: ${response.statusCode}',
+          code: 'HTTP_ERROR',
+        );
+      }
+
+    } catch (e) {
+      return DealResult.error(
+        message: 'Unexpected error creating deal with image: ${e.toString()}',
+        code: 'UNKNOWN_ERROR',
+      );
+    }
+  }
+
+  /// Upload a deal image using bytes (web-compatible) and return the URL
+  Future<String?> uploadDealImageBytes(String dealId, Uint8List imageBytes, String imageName) async {
+    try {
+      if (imageBytes.isEmpty) {
+        developer.log('No image bytes provided');
+        return null;
+      }
+
+      // Use standalone upload endpoint for individual image uploads
+      final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.uploadUrl));
+      
+      // Add authentication header
+      final token = await ApiService.getAuthToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Determine MIME type from filename extension
+      String contentType = 'image/jpeg'; // Default
+      final extension = imageName.toLowerCase().split('.').last;
+      switch (extension) {
+        case 'png':
+          contentType = 'image/png';
+          break;
+        case 'jpg':
+        case 'jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case 'webp':
+          contentType = 'image/webp';
+          break;
+        default:
+          contentType = 'image/jpeg';
+      }
+
+      developer.log('🖼️ Uploading image for deal $dealId:');
+      developer.log('   Filename: $imageName');
+      developer.log('   Content-Type: $contentType');
+      developer.log('   Size: ${imageBytes.length} bytes');
+
+      // Add the image file with proper content type
+      // Note: Upload API expects field name 'file', not 'image'
+      final multipartFile = http.MultipartFile.fromBytes(
+        'file',
+        imageBytes,
+        filename: 'deal-$dealId-${DateTime.now().millisecondsSinceEpoch}.${extension}',
+        contentType: MediaType.parse(contentType),
+      );
+      request.files.add(multipartFile);
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = ApiService.parseResponse(response.body);
+        developer.log('📤 Upload API response: $responseData');
+        
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          final imageUrl = data['url'] as String?;
+          developer.log('✅ Image uploaded successfully: $imageUrl');
+          return imageUrl;
+        } else {
+          developer.log('❌ Upload API returned unsuccessful: $responseData');
+        }
+      } else {
+        developer.log('❌ Upload API HTTP error ${response.statusCode}: ${response.body}');
+      }
+
+      return null;
+
+    } catch (e) {
+      developer.log('Error uploading deal image bytes: $e');
+      return null;
+    }
+  }
+
+  /// Upload a deal image and return the URL (mobile)
+  Future<String?> uploadDealImage(String dealId, String imagePath) async {
+    try {
+      if (imagePath.isEmpty) {
+        developer.log('No image path provided');
+        return null;
+      }
+
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        developer.log('Image file does not exist: $imagePath');
+        return null;
+      }
+
+      // Use standalone upload endpoint for individual image uploads
+      final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.uploadUrl));
+      
+      // Add authentication header
+      final token = await ApiService.getAuthToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add the image file
+      // Note: Upload API expects field name 'file', not 'image'
+      final stream = http.ByteStream(file.openRead());
+      final length = await file.length();
+      final multipartFile = http.MultipartFile(
+        'file',
+        stream,
+        length,
+        filename: 'deal-${dealId}-${DateTime.now().millisecondsSinceEpoch}.${path.extension(imagePath).substring(1)}',
+      );
+      request.files.add(multipartFile);
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = ApiService.parseResponse(response.body);
+        developer.log('📤 Upload API response (mobile): $responseData');
+        
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          final imageUrl = data['url'] as String?;
+          developer.log('✅ Image uploaded successfully (mobile): $imageUrl');
+          return imageUrl;
+        } else {
+          developer.log('❌ Upload API returned unsuccessful (mobile): $responseData');
+        }
+      } else {
+        developer.log('❌ Upload API HTTP error (mobile) ${response.statusCode}: ${response.body}');
+      }
+
+      return null;
+
+    } catch (e) {
+      developer.log('Error uploading deal image: $e');
+      return null;
     }
   }
 

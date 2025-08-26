@@ -690,7 +690,7 @@ class OrderDetailsScreen extends ConsumerWidget {
         return Colors.purple;
       case OrderStatus.ready:
         return const Color(0xFF4CAF50);
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         return Colors.green[700]!;
       case OrderStatus.cancelled:
         return Colors.red;

@@ -415,8 +415,7 @@ class RecentOrdersSection extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -430,26 +429,27 @@ class RecentOrdersSection extends ConsumerWidget {
       ),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.receipt_long_outlined,
-            size: 32,
+            size: 28,
             color: Color(0xFF9E9E9E),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 6),
           Text(
             'No recent orders',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Color(0xFF757575),
             ),
           ),
-          SizedBox(height: 4),
+          SizedBox(height: 2),
           Text(
             'Orders will appear here as they come in',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: Color(0xFF9E9E9E),
             ),
             textAlign: TextAlign.center,
@@ -465,7 +465,7 @@ class RecentOrdersSection extends ConsumerWidget {
         return const Color(0xFFFF9800);
       case 'ready':
         return const Color(0xFF4CAF50);
-      case 'delivered':
+      case 'completed':
         return const Color(0xFF2196F3);
       default:
         return const Color(0xFF757575);
@@ -478,8 +478,8 @@ class RecentOrdersSection extends ConsumerWidget {
         return 'Preparing';
       case 'ready':
         return 'Ready';
-      case 'delivered':
-        return 'Delivered';
+      case 'completed':
+        return 'Completed';
       default:
         return 'Unknown';
     }
@@ -544,7 +544,7 @@ class RecentOrdersSection extends ConsumerWidget {
   Future<void> _markOrderDelivered(BuildContext context, Order order, WidgetRef ref) async {
     try {
       final orderService = ref.read(orderServiceProvider);
-      await orderService.updateOrderStatus(order.id, OrderStatus.delivered);
+      await orderService.updateOrderStatus(order.id, OrderStatus.completed);
       
       // Refresh the orders list
       ref.invalidate(businessOrdersProvider(businessUser.businessId!));
@@ -596,8 +596,8 @@ class RecentOrdersSection extends ConsumerWidget {
         return '10 min';
       case OrderStatus.ready:
         return 'Ready now';
-      case OrderStatus.delivered:
-        return 'Delivered';
+      case OrderStatus.completed:
+        return 'Completed';
       case OrderStatus.cancelled:
         return 'Cancelled';
     }

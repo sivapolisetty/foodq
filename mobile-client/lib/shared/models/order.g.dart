@@ -122,7 +122,7 @@ const _$OrderStatusEnumMap = {
   OrderStatus.confirmed: 'confirmed',
   OrderStatus.preparing: 'preparing',
   OrderStatus.ready: 'ready',
-  OrderStatus.delivered: 'delivered',
+  OrderStatus.completed: 'completed',
   OrderStatus.cancelled: 'cancelled',
 };
 

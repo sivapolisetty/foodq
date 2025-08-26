@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/api_config.dart';
 import 'network_logger.dart';
 
@@ -193,6 +194,39 @@ class ApiService {
         error: 'Failed to parse response: ${e.toString()}',
         code: 'PARSE_ERROR',
       );
+    }
+  }
+
+  /// Get current authentication token
+  static Future<String?> getAuthToken() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final session = supabase.auth.currentSession;
+      return session?.accessToken;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Parse HTTP response body as JSON
+  static Map<String, dynamic> parseResponse(String body) {
+    try {
+      final dynamic decodedData = jsonDecode(body);
+      if (decodedData is Map<String, dynamic>) {
+        return decodedData;
+      } else {
+        return {
+          'success': false,
+          'error': 'Unexpected response format',
+          'code': 'PARSE_ERROR',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to parse response: ${e.toString()}',
+        'code': 'PARSE_ERROR',
+      };
     }
   }
 

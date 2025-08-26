@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
 import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../../shared/models/deal.dart';
 import '../../../shared/models/app_user.dart';
 import '../providers/deal_provider.dart';
+import '../services/deal_service.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
 
 class CreateDealBottomSheet extends ConsumerStatefulWidget {
@@ -35,6 +40,10 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
   
   DateTime? _expiresAt;
   bool _isSubmitting = false;
+  File? _selectedImage;
+  Uint8List? _selectedImageBytes; // For web compatibility
+  String? _selectedImageName;
+  String? _currentImageUrl;
   
   // Cache the current user at the widget level
   AppUser? _currentUser;
@@ -56,6 +65,7 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
       _quantityController.text = deal.quantityAvailable.toString();
       _allergenInfoController.text = deal.allergenInfo ?? '';
       _expiresAt = deal.expiresAt;
+      _currentImageUrl = deal.imageUrl;
     }
   }
 
@@ -68,6 +78,39 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
     _quantityController.dispose();
     _allergenInfoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null) {
+      if (kIsWeb) {
+        // For web, read the file as bytes
+        final bytes = await pickedFile.readAsBytes();
+        print('🌐 Web image selected:');
+        print('   Name: ${pickedFile.name}');
+        print('   Size: ${bytes.length} bytes');
+        print('   Extension: ${pickedFile.name.split('.').last}');
+        setState(() {
+          _selectedImageBytes = bytes;
+          _selectedImageName = pickedFile.name;
+          _selectedImage = null; // Clear file reference for web
+        });
+      } else {
+        // For mobile, use file
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+          _selectedImageBytes = null; // Clear bytes for mobile
+          _selectedImageName = pickedFile.name;
+        });
+      }
+    }
   }
 
   @override
@@ -147,6 +190,8 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
                     children: [
                       _buildBasicInfoSection(),
                       const SizedBox(height: 24),
+                      _buildImageSection(),
+                      const SizedBox(height: 24),
                       _buildPricingSection(),
                       const SizedBox(height: 24),
                       _buildQuantityAndTimeSection(),
@@ -211,6 +256,142 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          icon: Icons.image,
+          title: 'Deal Image',
+        ),
+        const SizedBox(height: 16),
+        
+        GestureDetector(
+          onTap: _selectImage,
+          child: Container(
+            width: double.infinity,
+            height: 180,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.outline.withOpacity(0.5),
+                width: 1.5,
+              ),
+            ),
+            child: _hasSelectedImage()
+                ? Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildSelectedImage(),
+                      ),
+                      // Show "NEW" badge when a new image is selected in edit mode
+                      if (widget.deal != null)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'NEW',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                : _currentImageUrl != null && _currentImageUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          _currentImageUrl!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildImagePlaceholder();
+                          },
+                        ),
+                      )
+                    : _buildImagePlaceholder(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _hasSelectedImage() {
+    return (kIsWeb && _selectedImageBytes != null) || (!kIsWeb && _selectedImage != null);
+  }
+
+  Widget _buildSelectedImage() {
+    if (kIsWeb && _selectedImageBytes != null) {
+      return Image.memory(
+        _selectedImageBytes!,
+        fit: BoxFit.cover,
+      );
+    } else if (!kIsWeb && _selectedImage != null) {
+      return Image.file(
+        _selectedImage!,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return _buildImagePlaceholder();
+    }
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate,
+          size: 48,
+          color: AppColors.onSurfaceVariant,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Tap to add image',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Optional - helps customers see your food',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.onSurfaceVariant.withOpacity(0.7),
           ),
         ),
       ],
@@ -649,26 +830,57 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
     });
 
     try {
-      final dealData = {
-        'business_id': currentUser.businessId, // Use dynamic business ID from current user
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim().isEmpty 
-            ? null 
-            : _descriptionController.text.trim(),
-        'original_price': double.parse(_originalPriceController.text),
-        'discounted_price': double.parse(_discountedPriceController.text),
-        'quantity_available': int.parse(_quantityController.text),
-        'expires_at': _expiresAt!.toIso8601String(),
-        'allergen_info': _allergenInfoController.text.trim().isEmpty 
-            ? null 
-            : _allergenInfoController.text.trim(),
-      };
-
-      print('📋 Deal data prepared: $dealData');
-
       bool success;
       if (widget.deal != null) {
         print('✏️ Updating existing deal');
+        
+        // Handle image upload for existing deal if new image selected
+        String? imageUrl = _currentImageUrl;
+        if (_hasSelectedImage()) {
+          final dealService = DealService();
+          if (!kIsWeb && _selectedImage != null) {
+            // Mobile: Upload using file path
+            print('📱 Uploading image for existing deal (mobile)');
+            imageUrl = await dealService.uploadDealImage(
+              widget.deal!.id,
+              _selectedImage!.path,
+            );
+          } else if (kIsWeb && _selectedImageBytes != null && _selectedImageName != null) {
+            // Web: Upload using image bytes
+            print('🌐 Uploading image for existing deal (web)');
+            print('   Deal ID: ${widget.deal!.id}');
+            print('   Image name: $_selectedImageName');
+            print('   Image bytes size: ${_selectedImageBytes!.length}');
+            imageUrl = await dealService.uploadDealImageBytes(
+              widget.deal!.id,
+              _selectedImageBytes!,
+              _selectedImageName!,
+            );
+          }
+          
+          if (imageUrl != null) {
+            print('✅ Image uploaded successfully: $imageUrl');
+          } else {
+            print('❌ Failed to upload image');
+          }
+        }
+        
+        final dealData = {
+          'business_id': currentUser.businessId,
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim().isEmpty 
+              ? null 
+              : _descriptionController.text.trim(),
+          'original_price': double.parse(_originalPriceController.text),
+          'discounted_price': double.parse(_discountedPriceController.text),
+          'quantity_available': int.parse(_quantityController.text),
+          'expires_at': _expiresAt!.toIso8601String(),
+          'allergen_info': _allergenInfoController.text.trim().isEmpty 
+              ? null 
+              : _allergenInfoController.text.trim(),
+          if (imageUrl != null) 'image_url': imageUrl,
+        };
+        
         // Update existing deal
         success = await ref.read(dealListProvider.notifier).updateDeal(
           widget.deal!.id,
@@ -676,9 +888,81 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
         );
       } else {
         print('➕ Creating new deal');
-        // Create new deal
-        success = await ref.read(dealListProvider.notifier).createDeal(dealData);
+        
+        // Create new deal with image upload support
+        if (_hasSelectedImage() && !kIsWeb && _selectedImage != null) {
+          // Mobile: Create deal with image using form data
+          final dealService = DealService();
+          final dealResult = await dealService.createDealWithImage(
+            businessId: currentUser.businessId!,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim().isEmpty 
+                ? 'No description provided'
+                : _descriptionController.text.trim(),
+            originalPrice: double.parse(_originalPriceController.text),
+            discountedPrice: double.parse(_discountedPriceController.text),
+            quantityAvailable: int.parse(_quantityController.text),
+            expiresAt: _expiresAt!,
+            imagePath: _selectedImage!.path,
+            allergenInfo: _allergenInfoController.text.trim().isEmpty 
+                ? null 
+                : _allergenInfoController.text.trim(),
+          );
+          
+          success = dealResult.isSuccess;
+          if (!success) {
+            throw Exception(dealResult.error ?? 'Unknown error');
+          }
+        } else if (kIsWeb && _hasSelectedImage()) {
+          // Web: Create deal with image using bytes
+          print('🌐 Creating deal with image on web');
+          print('   Image name: $_selectedImageName');
+          print('   Image bytes size: ${_selectedImageBytes?.length ?? 0}');
+          final dealService = DealService();
+          final dealResult = await dealService.createDealWithImageBytes(
+            businessId: currentUser.businessId!,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim().isEmpty 
+                ? 'No description provided'
+                : _descriptionController.text.trim(),
+            originalPrice: double.parse(_originalPriceController.text),
+            discountedPrice: double.parse(_discountedPriceController.text),
+            quantityAvailable: int.parse(_quantityController.text),
+            expiresAt: _expiresAt!,
+            imageBytes: _selectedImageBytes,
+            imageName: _selectedImageName,
+            allergenInfo: _allergenInfoController.text.trim().isEmpty 
+                ? null 
+                : _allergenInfoController.text.trim(),
+          );
+          
+          success = dealResult.isSuccess;
+          if (!success) {
+            throw Exception(dealResult.error ?? 'Unknown error');
+          }
+        } else {
+          // Create deal without image using standard method
+          final dealData = {
+            'business_id': currentUser.businessId,
+            'title': _titleController.text.trim(),
+            'description': _descriptionController.text.trim().isEmpty 
+                ? null 
+                : _descriptionController.text.trim(),
+            'original_price': double.parse(_originalPriceController.text),
+            'discounted_price': double.parse(_discountedPriceController.text),
+            'quantity_available': int.parse(_quantityController.text),
+            'expires_at': _expiresAt!.toIso8601String(),
+            'allergen_info': _allergenInfoController.text.trim().isEmpty 
+                ? null 
+                : _allergenInfoController.text.trim(),
+          };
+          
+          success = await ref.read(dealListProvider.notifier).createDeal(dealData);
+        }
       }
+
+      print('📋 Deal data prepared and processed');
+      print('✅ Deal operation result: $success');
 
       print('✅ Deal operation result: $success');
 

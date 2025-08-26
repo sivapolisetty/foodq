@@ -533,7 +533,7 @@ class EnhancedOrderCard extends ConsumerWidget {
         return Colors.purple;
       case OrderStatus.ready:
         return AppColors.primary;
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         return Colors.green[700]!;
       case OrderStatus.cancelled:
         return Colors.red;

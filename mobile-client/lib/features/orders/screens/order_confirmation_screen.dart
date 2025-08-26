@@ -450,7 +450,7 @@ class _OrderConfirmationScreenState extends ConsumerState<OrderConfirmationScree
         return Colors.blue;
       case OrderStatus.ready:
         return AppColors.primary;
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         return AppColors.success;
       case OrderStatus.cancelled:
         return AppColors.error;

@@ -1,37 +1,39 @@
-import { validateAuth, getCorsHeaders } from '../../utils/auth.js';
-import { createServiceRoleClient, createSuccessResponse, createErrorResponse, Env } from '../../utils/supabase.js';
+import { getAuthFromRequest, verifyToken, handleCors, getCorsHeaders } from '../../utils/auth.js';
+import { getDBClient } from '../../utils/db-client.js';
+import { Env, createSuccessResponse, createErrorResponse } from '../../utils/supabase.js';
 
 // Handle OPTIONS requests for CORS preflight
 export async function onRequestOptions(context: { request: Request; env: Env }) {
-  const corsHeaders = getCorsHeaders(context.request.headers.get('Origin') || '*');
-  return new Response(null, { 
-    status: 200,
-    headers: {
-      ...corsHeaders,
-      'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
-  });
+  return handleCors(context.request, context.env);
 }
 
 // Handle GET requests for specific order
 export async function onRequestGet(context: { request: Request; env: Env; params: { id: string } }) {
   const { request, env, params } = context;
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
-    const auth = await validateAuth(request, env);
-    
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
+    // Get authentication token
+    const token = getAuthFromRequest(request);
+    if (!token) {
+      return createErrorResponse('No token provided', 401, corsHeaders);
+    }
+
+    const supabase = getDBClient(env, 'Orders.GET_BY_ID');
+    const authResult = await verifyToken(token, supabase, env);
+    if (!authResult) {
+      return createErrorResponse('Invalid token', 401, corsHeaders);
     }
 
     const orderId = params.id;
     if (!orderId) {
       return createErrorResponse('Order ID is required', 400, corsHeaders);
     }
-
-    const supabase = createServiceRoleClient(env);
     
     const { data: order, error } = await supabase
       .from('orders')
@@ -65,16 +67,18 @@ export async function onRequestGet(context: { request: Request; env: Env; params
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', auth.user.id)
+      .eq('id', authResult.userId)
       .single();
 
-    // Check if user has permission to view this order
-    const userBusinessId = userData?.business_id;
-    const isBusinessOwner = userBusinessId && order.business_id === userBusinessId;
-    const isCustomer = order.user_id === auth.user.id;
+    // Check if user has permission to view this order (bypass for API key auth)
+    if (!authResult.user.isApiKeyAuth) {
+      const userBusinessId = userData?.business_id;
+      const isBusinessOwner = userBusinessId && order.business_id === userBusinessId;
+      const isCustomer = order.user_id === authResult.userId;
 
-    if (!isBusinessOwner && !isCustomer) {
-      return createErrorResponse('You do not have permission to view this order', 403, corsHeaders);
+      if (!isBusinessOwner && !isCustomer) {
+        return createErrorResponse('You do not have permission to view this order', 403, corsHeaders);
+      }
     }
 
     return createSuccessResponse(order, corsHeaders);
@@ -86,13 +90,24 @@ export async function onRequestGet(context: { request: Request; env: Env; params
 // Handle PUT requests for updating specific order
 export async function onRequestPut(context: { request: Request; env: Env; params: { id: string } }) {
   const { request, env, params } = context;
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
-    const auth = await validateAuth(request, env);
-    
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
+    // Get authentication token
+    const token = getAuthFromRequest(request);
+    if (!token) {
+      return createErrorResponse('No token provided', 401, corsHeaders);
+    }
+
+    const supabase = getDBClient(env, 'Orders.PUT_BY_ID');
+    const authResult = await verifyToken(token, supabase, env);
+    if (!authResult) {
+      return createErrorResponse('Invalid token', 401, corsHeaders);
     }
 
     const orderId = params.id;
@@ -101,7 +116,6 @@ export async function onRequestPut(context: { request: Request; env: Env; params
     }
 
     const updateData = await request.json();
-    const supabase = createServiceRoleClient(env);
 
     // Get the order first to verify ownership/permissions
     const { data: existingOrder, error: fetchError } = await supabase
@@ -118,17 +132,24 @@ export async function onRequestPut(context: { request: Request; env: Env; params
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', auth.user.id)
+      .eq('id', authResult.userId)
       .single();
 
+    // Check if user has permission to update this order (bypass for API key auth)
+    let isBusinessOwner = false;
+    let isCustomer = false;
+    
+    if (!authResult.user.isApiKeyAuth) {
+      const userBusinessId = userData?.business_id;
+      isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
+      isCustomer = existingOrder.user_id === authResult.userId;
 
-    // Check if user has permission to update this order
-    const userBusinessId = userData?.business_id;
-    const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
-    const isCustomer = existingOrder.user_id === auth.user.id;
-
-    if (!isBusinessOwner && !isCustomer) {
-      return createErrorResponse('You do not have permission to update this order', 403, corsHeaders);
+      if (!isBusinessOwner && !isCustomer) {
+        return createErrorResponse('You do not have permission to update this order', 403, corsHeaders);
+      }
+    } else {
+      // For API key auth, allow all updates as if they are a business owner
+      isBusinessOwner = true;
     }
 
     // Prepare update data based on user type
@@ -139,7 +160,7 @@ export async function onRequestPut(context: { request: Request; env: Env; params
     if (isBusinessOwner) {
       // Business can update status, pickup_time, delivery_instructions
       if (updateData.status) {
-        const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+        const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'];
         if (validStatuses.includes(updateData.status)) {
           allowedUpdates.status = updateData.status;
         }
@@ -196,21 +217,30 @@ export async function onRequestPut(context: { request: Request; env: Env; params
 // Handle DELETE requests for cancelling specific order
 export async function onRequestDelete(context: { request: Request; env: Env; params: { id: string } }) {
   const { request, env, params } = context;
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
-    const auth = await validateAuth(request, env);
-    
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
+    // Get authentication token
+    const token = getAuthFromRequest(request);
+    if (!token) {
+      return createErrorResponse('No token provided', 401, corsHeaders);
+    }
+
+    const supabase = getDBClient(env, 'Orders.DELETE_BY_ID');
+    const authResult = await verifyToken(token, supabase, env);
+    if (!authResult) {
+      return createErrorResponse('Invalid token', 401, corsHeaders);
     }
 
     const orderId = params.id;
     if (!orderId) {
       return createErrorResponse('Order ID is required', 400, corsHeaders);
     }
-
-    const supabase = createServiceRoleClient(env);
 
     // Get the order first to verify ownership/permissions
     const { data: existingOrder, error: fetchError } = await supabase
@@ -227,16 +257,18 @@ export async function onRequestDelete(context: { request: Request; env: Env; par
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', auth.user.id)
+      .eq('id', authResult.userId)
       .single();
 
-    // Check if user has permission to delete this order
-    const userBusinessId = userData?.business_id;
-    const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
-    const isCustomer = existingOrder.user_id === auth.user.id;
+    // Check if user has permission to delete this order (bypass for API key auth)
+    if (!authResult.user.isApiKeyAuth) {
+      const userBusinessId = userData?.business_id;
+      const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
+      const isCustomer = existingOrder.user_id === authResult.userId;
 
-    if (!isBusinessOwner && !isCustomer) {
-      return createErrorResponse('You do not have permission to delete this order', 403, corsHeaders);
+      if (!isBusinessOwner && !isCustomer) {
+        return createErrorResponse('You do not have permission to delete this order', 403, corsHeaders);
+      }
     }
 
     // Only allow cancellation if order is still pending or confirmed

@@ -302,7 +302,7 @@ class OrderService {
 
   /// Complete an order
   Future<Order> completeOrder(String orderId) async {
-    return updateOrderStatus(orderId, OrderStatus.delivered);
+    return updateOrderStatus(orderId, OrderStatus.completed);
   }
 
   /// Update pickup time

@@ -43,7 +43,7 @@ class CartScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'KraveKart now supports direct order placement!\nBrowse deals and order directly for pickup.',
+                  'GraBeat now supports direct order placement!\nBrowse deals and order directly for pickup.',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[500],

@@ -13,8 +13,8 @@ enum OrderStatus {
   preparing,
   @JsonValue('ready')
   ready,
-  @JsonValue('delivered')
-  delivered,
+  @JsonValue('completed')
+  completed,
   @JsonValue('cancelled')
   cancelled,
 }
@@ -53,7 +53,7 @@ extension OrderStatusExtension on OrderStatus {
         return 'Preparing';
       case OrderStatus.ready:
         return 'Ready for Pickup';
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         return 'Completed';
       case OrderStatus.cancelled:
         return 'Cancelled';
@@ -202,7 +202,7 @@ class Order with _$Order {
         return 'Being Prepared';
       case OrderStatus.ready:
         return 'Ready for Pickup';
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         return 'Completed';
       case OrderStatus.cancelled:
         return 'Cancelled';
@@ -242,7 +242,7 @@ class Order with _$Order {
 
   /// Check if order is active (not completed or cancelled)
   bool get isActive {
-    return status != OrderStatus.delivered && status != OrderStatus.cancelled;
+    return status != OrderStatus.completed && status != OrderStatus.cancelled;
   }
 
   /// Get formatted total amount
@@ -306,7 +306,7 @@ class Order with _$Order {
         return 0.6;
       case OrderStatus.ready:
         return 0.8;
-      case OrderStatus.delivered:
+      case OrderStatus.completed:
         return 1.0;
       case OrderStatus.cancelled:
         return 0.0;
