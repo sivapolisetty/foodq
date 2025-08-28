@@ -1,4 +1,4 @@
-import { getAuthFromRequest, verifyToken, handleCors, getCorsHeaders } from '../../utils/auth.js';
+import { validateAuth, handleCors, getCorsHeaders } from '../../utils/auth.js';
 import { getDBClient } from '../../utils/db-client.js';
 import { Env, createSuccessResponse, createErrorResponse } from '../../utils/supabase.js';
 
@@ -18,17 +18,13 @@ export async function onRequestGet(context: { request: Request; env: Env; params
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
-    // Get authentication token
-    const token = getAuthFromRequest(request);
-    if (!token) {
-      return createErrorResponse('No token provided', 401, corsHeaders);
+    const auth = await validateAuth(request, env);
+    
+    if (!auth.isAuthenticated) {
+      return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
     const supabase = getDBClient(env, 'Orders.GET_BY_ID');
-    const authResult = await verifyToken(token, supabase, env);
-    if (!authResult) {
-      return createErrorResponse('Invalid token', 401, corsHeaders);
-    }
 
     const orderId = params.id;
     if (!orderId) {
@@ -67,18 +63,16 @@ export async function onRequestGet(context: { request: Request; env: Env; params
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', authResult.userId)
+      .eq('id', auth.user.id)
       .single();
 
-    // Check if user has permission to view this order (bypass for API key auth)
-    if (!authResult.user.isApiKeyAuth) {
-      const userBusinessId = userData?.business_id;
-      const isBusinessOwner = userBusinessId && order.business_id === userBusinessId;
-      const isCustomer = order.user_id === authResult.userId;
+    // Check if user has permission to view this order
+    const userBusinessId = userData?.business_id;
+    const isBusinessOwner = userBusinessId && order.business_id === userBusinessId;
+    const isCustomer = order.user_id === auth.user.id;
 
-      if (!isBusinessOwner && !isCustomer) {
-        return createErrorResponse('You do not have permission to view this order', 403, corsHeaders);
-      }
+    if (!isBusinessOwner && !isCustomer) {
+      return createErrorResponse('You do not have permission to view this order', 403, corsHeaders);
     }
 
     return createSuccessResponse(order, corsHeaders);
@@ -98,17 +92,13 @@ export async function onRequestPut(context: { request: Request; env: Env; params
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
-    // Get authentication token
-    const token = getAuthFromRequest(request);
-    if (!token) {
-      return createErrorResponse('No token provided', 401, corsHeaders);
+    const auth = await validateAuth(request, env);
+    
+    if (!auth.isAuthenticated) {
+      return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
     const supabase = getDBClient(env, 'Orders.PUT_BY_ID');
-    const authResult = await verifyToken(token, supabase, env);
-    if (!authResult) {
-      return createErrorResponse('Invalid token', 401, corsHeaders);
-    }
 
     const orderId = params.id;
     if (!orderId) {
@@ -132,24 +122,16 @@ export async function onRequestPut(context: { request: Request; env: Env; params
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', authResult.userId)
+      .eq('id', auth.user.id)
       .single();
 
-    // Check if user has permission to update this order (bypass for API key auth)
-    let isBusinessOwner = false;
-    let isCustomer = false;
-    
-    if (!authResult.user.isApiKeyAuth) {
-      const userBusinessId = userData?.business_id;
-      isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
-      isCustomer = existingOrder.user_id === authResult.userId;
+    // Check if user has permission to update this order
+    const userBusinessId = userData?.business_id;
+    const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
+    const isCustomer = existingOrder.user_id === auth.user.id;
 
-      if (!isBusinessOwner && !isCustomer) {
-        return createErrorResponse('You do not have permission to update this order', 403, corsHeaders);
-      }
-    } else {
-      // For API key auth, allow all updates as if they are a business owner
-      isBusinessOwner = true;
+    if (!isBusinessOwner && !isCustomer) {
+      return createErrorResponse('You do not have permission to update this order', 403, corsHeaders);
     }
 
     // Prepare update data based on user type
@@ -225,17 +207,13 @@ export async function onRequestDelete(context: { request: Request; env: Env; par
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
-    // Get authentication token
-    const token = getAuthFromRequest(request);
-    if (!token) {
-      return createErrorResponse('No token provided', 401, corsHeaders);
+    const auth = await validateAuth(request, env);
+    
+    if (!auth.isAuthenticated) {
+      return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
     const supabase = getDBClient(env, 'Orders.DELETE_BY_ID');
-    const authResult = await verifyToken(token, supabase, env);
-    if (!authResult) {
-      return createErrorResponse('Invalid token', 401, corsHeaders);
-    }
 
     const orderId = params.id;
     if (!orderId) {
@@ -257,18 +235,16 @@ export async function onRequestDelete(context: { request: Request; env: Env; par
     const { data: userData, error: userError } = await supabase
       .from('app_users')
       .select('business_id')
-      .eq('id', authResult.userId)
+      .eq('id', auth.user.id)
       .single();
 
-    // Check if user has permission to delete this order (bypass for API key auth)
-    if (!authResult.user.isApiKeyAuth) {
-      const userBusinessId = userData?.business_id;
-      const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
-      const isCustomer = existingOrder.user_id === authResult.userId;
+    // Check if user has permission to delete this order
+    const userBusinessId = userData?.business_id;
+    const isBusinessOwner = userBusinessId && existingOrder.business_id === userBusinessId;
+    const isCustomer = existingOrder.user_id === auth.user.id;
 
-      if (!isBusinessOwner && !isCustomer) {
-        return createErrorResponse('You do not have permission to delete this order', 403, corsHeaders);
-      }
+    if (!isBusinessOwner && !isCustomer) {
+      return createErrorResponse('You do not have permission to delete this order', 403, corsHeaders);
     }
 
     // Only allow cancellation if order is still pending or confirmed
