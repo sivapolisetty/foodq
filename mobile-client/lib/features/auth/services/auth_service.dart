@@ -125,7 +125,7 @@ class AuthService {
     try {
       final response = await _supabaseClient.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'http://localhost:8081/auth/callback',
+        redirectTo: 'com.foodqapp.foodqapp://login-callback',
       );
       return response;
     } catch (e) {
@@ -139,7 +139,7 @@ class AuthService {
     try {
       await _supabaseClient.auth.signInWithOtp(
         email: email,
-        emailRedirectTo: 'http://localhost:8081/auth/callback',
+        emailRedirectTo: 'com.foodqapp.foodqapp://login-callback',
       );
       return const AuthResult.success(null);
     } on AuthException catch (e) {

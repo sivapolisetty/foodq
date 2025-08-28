@@ -121,7 +121,7 @@ const RestaurantPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Create Your Profile</h3>
               <p className="text-gray-600">
-                Set up your restaurant profile with photos, menu highlights, and basic information.
+                Set up your restaurant profile with photos, cuisine type, and menu highlights.
               </p>
             </div>
 

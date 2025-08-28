@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:kravekart/main.dart' as app;
+import 'package:grabeat/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('KraveKart App Integration Tests', () {
+  group('GraBeat App Integration Tests', () {
     testWidgets('App launches and shows welcome screen', (WidgetTester tester) async {
       // Launch the app
       app.main();
@@ -16,7 +16,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
       // Verify app title or key elements
-      expect(find.text('KraveKart'), findsAtLeastOneWidget);
+      expect(find.text('GraBeat'), findsAtLeastOneWidget);
       
       // Look for welcome screen elements
       expect(

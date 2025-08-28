@@ -9,14 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:kravekart/main.dart';
+import 'package:grabeat/main.dart';
 
 void main() {
-  testWidgets('KraveKart app smoke test', (WidgetTester tester) async {
+  testWidgets('GraBeat app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: KraveKartApp()));
+    await tester.pumpWidget(const ProviderScope(child: GraBeatApp()));
 
     // Verify that our app loads correctly.
-    expect(find.text('KraveKart Demo'), findsOneWidget);
+    expect(find.text('GraBeat Demo'), findsOneWidget);
   });
 }

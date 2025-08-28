@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/services/business_service.dart';
-import 'package:kravekart/services/deal_service.dart';
+import 'package:grabeat/services/business_service.dart';
+import 'package:grabeat/services/deal_service.dart';
 
 /// Real API Integration Tests
 /// These test actual Supabase API calls and would have caught the 400 error

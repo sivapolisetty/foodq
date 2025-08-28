@@ -1,30 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/business.dart';
 import '../models/deal.dart';
-import '../services/deal_service.dart';
+import '../features/deals/services/deal_service.dart';
+import '../features/deals/providers/deal_provider.dart';
 import '../widgets/yindii_app_bar.dart';
 import '../widgets/yindii_button.dart';
 import '../widgets/yindii_input_field.dart';
 
-class AddEditDealScreen extends StatefulWidget {
+class AddEditDealScreen extends ConsumerStatefulWidget {
   final Business business;
   final DealService dealService;
   final Deal? deal; // null for add, Deal for edit
 
   const AddEditDealScreen({
-    Key? key,
+    super.key,
     required this.business,
     required this.dealService,
     this.deal,
-  }) : super(key: key);
+  });
 
   @override
-  State<AddEditDealScreen> createState() => _AddEditDealScreenState();
+  ConsumerState<AddEditDealScreen> createState() => _AddEditDealScreenState();
 }
 
-class _AddEditDealScreenState extends State<AddEditDealScreen> {
+class _AddEditDealScreenState extends ConsumerState<AddEditDealScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -94,18 +97,81 @@ class _AddEditDealScreenState extends State<AddEditDealScreen> {
   }
 
   Future<void> _selectImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      maxHeight: 1200,
-      imageQuality: 85,
-    );
+    try {
+      final picker = ImagePicker();
+      
+      // Show action sheet to choose camera or gallery
+      final ImageSource? source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        builder: (BuildContext context) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Choose from Gallery'),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Take a Photo'),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cancel),
+                  title: const Text('Cancel'),
+                  onTap: () => Navigator.pop(context, null),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      
+      if (source == null) return;
+      
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+        requestFullMetadata: false, // iOS optimization
+      );
 
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
+      if (pickedFile != null) {
+        final file = File(pickedFile.path);
+        
+        // Check if file exists and is accessible
+        if (await file.exists()) {
+          final fileSize = await file.length();
+          print('📷 Selected image: ${pickedFile.path}');
+          print('📊 Image size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+          
+          setState(() {
+            _selectedImage = file;
+          });
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unable to access the selected image'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ Error selecting image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -152,64 +218,132 @@ class _AddEditDealScreenState extends State<AddEditDealScreen> {
     });
 
     try {
-      String? imageUrl = _currentImageUrl;
-
-      // Upload image if new one is selected
-      if (_selectedImage != null) {
-        final tempDealId = widget.deal?.id ?? 'temp_${DateTime.now().millisecondsSinceEpoch}';
-        imageUrl = await widget.dealService.uploadDealImage(
-          tempDealId,
-          _selectedImage!.path,
-        );
-      }
-
-      final deal = Deal(
-        id: widget.deal?.id ?? '',
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty 
-            ? null 
-            : _descriptionController.text.trim(),
-        originalPrice: double.parse(_originalPriceController.text),
-        discountedPrice: double.parse(_discountedPriceController.text),
-        discountPercentage: _discountPercentage,
-        businessId: widget.business.id,
-        imageUrl: imageUrl,
-        isActive: _isActive,
-        validFrom: _validFrom,
-        validUntil: _validUntil,
-        termsConditions: _termsController.text.trim().isEmpty 
-            ? null 
-            : _termsController.text.trim(),
-        maxRedemptions: int.tryParse(_maxRedemptionsController.text) ?? 0,
-        currentRedemptions: widget.deal?.currentRedemptions ?? 0,
-        createdAt: widget.deal?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
       if (widget.deal == null) {
-        await widget.dealService.createDeal(deal);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deal created successfully!')),
-        );
+        // Creating a new deal
+        print('💾 Creating deal with ${_selectedImage != null ? 'image' : 'no image'}');
+        if (_selectedImage != null) {
+          print('📁 Image path: ${_selectedImage!.path}');
+          print('📄 Image exists: ${await _selectedImage!.exists()}');
+        }
+        
+        final dealResult = _selectedImage != null 
+            ? await widget.dealService.createDealWithImage(
+                businessId: widget.business.id,
+                title: _titleController.text.trim(),
+                description: _descriptionController.text.trim().isEmpty 
+                    ? 'No description provided'
+                    : _descriptionController.text.trim(),
+                originalPrice: double.parse(_originalPriceController.text),
+                discountedPrice: double.parse(_discountedPriceController.text),
+                quantityAvailable: int.tryParse(_maxRedemptionsController.text) ?? 1,
+                expiresAt: _validUntil,
+                imagePath: _selectedImage!.path,
+                allergenInfo: _termsController.text.trim().isEmpty 
+                    ? null 
+                    : _termsController.text.trim(),
+              )
+            : await widget.dealService.createDeal(
+                businessId: widget.business.id,
+                title: _titleController.text.trim(),
+                description: _descriptionController.text.trim().isEmpty 
+                    ? 'No description provided'
+                    : _descriptionController.text.trim(),
+                originalPrice: double.parse(_originalPriceController.text),
+                discountedPrice: double.parse(_discountedPriceController.text),
+                quantityAvailable: int.tryParse(_maxRedemptionsController.text) ?? 1,
+                expiresAt: _validUntil,
+                imageUrl: _currentImageUrl,
+                allergenInfo: _termsController.text.trim().isEmpty 
+                    ? null 
+                    : _termsController.text.trim(),
+              );
+
+        if (dealResult.isSuccess) {
+          if (mounted) {
+            // Refresh the Riverpod deal provider
+            await ref.read(dealListProvider.notifier).loadDeals(
+              businessId: widget.business.id,
+              forceRefresh: true,
+            );
+            
+            if (mounted) {
+              // Navigate to deals page and show success message
+              context.go('/deals');
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Deal created successfully!')),
+              );
+            }
+          }
+        } else {
+          throw Exception(dealResult.error ?? 'Failed to create deal');
+        }
       } else {
-        await widget.dealService.updateDeal(deal);
+        // Updating existing deal
+        String? imageUrl = _currentImageUrl;
+
+        // Upload new image if selected
+        if (_selectedImage != null) {
+          imageUrl = await widget.dealService.uploadDealImage(
+            widget.deal!.id,
+            _selectedImage!.path,
+          );
+        }
+
+        final updateData = {
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim().isEmpty 
+              ? null 
+              : _descriptionController.text.trim(),
+          'original_price': double.parse(_originalPriceController.text),
+          'discounted_price': double.parse(_discountedPriceController.text),
+          'quantity_available': int.tryParse(_maxRedemptionsController.text) ?? 0,
+          'expires_at': _validUntil.toIso8601String(),
+          'allergen_info': _termsController.text.trim().isEmpty 
+              ? null 
+              : _termsController.text.trim(),
+          'status': _isActive ? 'active' : 'inactive',
+          if (imageUrl != null) 'image_url': imageUrl,
+        };
+
+        final updateResult = await widget.dealService.updateDeal(widget.deal!.id, updateData);
+        
+        if (updateResult.isSuccess) {
+          if (mounted) {
+            // Refresh the Riverpod deal provider
+            await ref.read(dealListProvider.notifier).loadDeals(
+              businessId: widget.business.id,
+              forceRefresh: true,
+            );
+            
+            if (mounted) {
+              // Navigate to deals page and show success message
+              context.go('/deals');
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Deal updated successfully!')),
+              );
+            }
+          }
+        } else {
+          throw Exception(updateResult.error ?? 'Failed to update deal');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deal updated successfully!')),
+          SnackBar(
+            content: Text('Failed to save deal: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
-
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save deal: ${e.toString().replaceAll('Exception: ', '')}'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

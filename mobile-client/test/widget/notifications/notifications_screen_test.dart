@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:kravekart/features/notifications/screens/notifications_screen.dart';
-import 'package:kravekart/features/notifications/providers/notification_provider.dart';
-import 'package:kravekart/features/notifications/models/notification.dart';
-import 'package:kravekart/features/notifications/services/notification_service.dart';
+import 'package:grabeat/features/notifications/screens/notifications_screen.dart';
+import 'package:grabeat/features/notifications/providers/notification_provider.dart';
+import 'package:grabeat/features/notifications/models/notification.dart';
+import 'package:grabeat/features/notifications/services/notification_service.dart';
 
 @GenerateMocks([NotificationService])
 import 'notifications_screen_test.mocks.dart';

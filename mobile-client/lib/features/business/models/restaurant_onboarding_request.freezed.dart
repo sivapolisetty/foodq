@@ -22,34 +22,51 @@ RestaurantOnboardingRequest _$RestaurantOnboardingRequestFromJson(
 /// @nodoc
 mixin _$RestaurantOnboardingRequest {
   String get id => throw _privateConstructorUsedError; // Restaurant Information
+  @JsonKey(name: 'restaurant_name')
   String get restaurantName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'cuisine_type')
   String get cuisineType => throw _privateConstructorUsedError;
+  @JsonKey(name: 'restaurant_description')
   String? get restaurantDescription => throw _privateConstructorUsedError;
+  @JsonKey(name: 'restaurant_photo_url')
   String? get restaurantPhotoUrl =>
       throw _privateConstructorUsedError; // Owner Information
+  @JsonKey(name: 'owner_name')
   String get ownerName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'owner_email')
   String get ownerEmail => throw _privateConstructorUsedError;
+  @JsonKey(name: 'owner_phone')
   String get ownerPhone =>
       throw _privateConstructorUsedError; // Location Information
   String get address => throw _privateConstructorUsedError;
+  @JsonKey(name: 'zip_code')
   String get zipCode => throw _privateConstructorUsedError;
   String? get city => throw _privateConstructorUsedError;
   String? get state => throw _privateConstructorUsedError;
   double? get latitude => throw _privateConstructorUsedError;
   double? get longitude =>
       throw _privateConstructorUsedError; // Business Information
+  @JsonKey(name: 'business_license')
   String? get businessLicense =>
       throw _privateConstructorUsedError; // Application Status
   String get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'admin_notes')
   String? get adminNotes => throw _privateConstructorUsedError;
+  @JsonKey(name: 'onboarding_completed')
   bool get onboardingCompleted =>
       throw _privateConstructorUsedError; // User Reference
+  @JsonKey(name: 'user_id')
   String get userId => throw _privateConstructorUsedError; // Timestamps
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'updated_at')
   DateTime get updatedAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reviewed_at')
   DateTime? get reviewedAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'completed_at')
   DateTime? get completedAt =>
       throw _privateConstructorUsedError; // Restaurant reference (populated when approved)
+  @JsonKey(name: 'restaurant_id')
   String? get restaurantId => throw _privateConstructorUsedError;
 
   /// Serializes this RestaurantOnboardingRequest to a JSON map.
@@ -72,29 +89,29 @@ abstract class $RestaurantOnboardingRequestCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String restaurantName,
-      String cuisineType,
-      String? restaurantDescription,
-      String? restaurantPhotoUrl,
-      String ownerName,
-      String ownerEmail,
-      String ownerPhone,
+      @JsonKey(name: 'restaurant_name') String restaurantName,
+      @JsonKey(name: 'cuisine_type') String cuisineType,
+      @JsonKey(name: 'restaurant_description') String? restaurantDescription,
+      @JsonKey(name: 'restaurant_photo_url') String? restaurantPhotoUrl,
+      @JsonKey(name: 'owner_name') String ownerName,
+      @JsonKey(name: 'owner_email') String ownerEmail,
+      @JsonKey(name: 'owner_phone') String ownerPhone,
       String address,
-      String zipCode,
+      @JsonKey(name: 'zip_code') String zipCode,
       String? city,
       String? state,
       double? latitude,
       double? longitude,
-      String? businessLicense,
+      @JsonKey(name: 'business_license') String? businessLicense,
       String status,
-      String? adminNotes,
-      bool onboardingCompleted,
-      String userId,
-      DateTime createdAt,
-      DateTime updatedAt,
-      DateTime? reviewedAt,
-      DateTime? completedAt,
-      String? restaurantId});
+      @JsonKey(name: 'admin_notes') String? adminNotes,
+      @JsonKey(name: 'onboarding_completed') bool onboardingCompleted,
+      @JsonKey(name: 'user_id') String userId,
+      @JsonKey(name: 'created_at') DateTime createdAt,
+      @JsonKey(name: 'updated_at') DateTime updatedAt,
+      @JsonKey(name: 'reviewed_at') DateTime? reviewedAt,
+      @JsonKey(name: 'completed_at') DateTime? completedAt,
+      @JsonKey(name: 'restaurant_id') String? restaurantId});
 }
 
 /// @nodoc
@@ -250,29 +267,29 @@ abstract class _$$RestaurantOnboardingRequestImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      String restaurantName,
-      String cuisineType,
-      String? restaurantDescription,
-      String? restaurantPhotoUrl,
-      String ownerName,
-      String ownerEmail,
-      String ownerPhone,
+      @JsonKey(name: 'restaurant_name') String restaurantName,
+      @JsonKey(name: 'cuisine_type') String cuisineType,
+      @JsonKey(name: 'restaurant_description') String? restaurantDescription,
+      @JsonKey(name: 'restaurant_photo_url') String? restaurantPhotoUrl,
+      @JsonKey(name: 'owner_name') String ownerName,
+      @JsonKey(name: 'owner_email') String ownerEmail,
+      @JsonKey(name: 'owner_phone') String ownerPhone,
       String address,
-      String zipCode,
+      @JsonKey(name: 'zip_code') String zipCode,
       String? city,
       String? state,
       double? latitude,
       double? longitude,
-      String? businessLicense,
+      @JsonKey(name: 'business_license') String? businessLicense,
       String status,
-      String? adminNotes,
-      bool onboardingCompleted,
-      String userId,
-      DateTime createdAt,
-      DateTime updatedAt,
-      DateTime? reviewedAt,
-      DateTime? completedAt,
-      String? restaurantId});
+      @JsonKey(name: 'admin_notes') String? adminNotes,
+      @JsonKey(name: 'onboarding_completed') bool onboardingCompleted,
+      @JsonKey(name: 'user_id') String userId,
+      @JsonKey(name: 'created_at') DateTime createdAt,
+      @JsonKey(name: 'updated_at') DateTime updatedAt,
+      @JsonKey(name: 'reviewed_at') DateTime? reviewedAt,
+      @JsonKey(name: 'completed_at') DateTime? completedAt,
+      @JsonKey(name: 'restaurant_id') String? restaurantId});
 }
 
 /// @nodoc
@@ -422,29 +439,29 @@ class _$RestaurantOnboardingRequestImpl
     implements _RestaurantOnboardingRequest {
   const _$RestaurantOnboardingRequestImpl(
       {required this.id,
-      required this.restaurantName,
-      required this.cuisineType,
-      this.restaurantDescription,
-      this.restaurantPhotoUrl,
-      required this.ownerName,
-      required this.ownerEmail,
-      required this.ownerPhone,
+      @JsonKey(name: 'restaurant_name') required this.restaurantName,
+      @JsonKey(name: 'cuisine_type') required this.cuisineType,
+      @JsonKey(name: 'restaurant_description') this.restaurantDescription,
+      @JsonKey(name: 'restaurant_photo_url') this.restaurantPhotoUrl,
+      @JsonKey(name: 'owner_name') required this.ownerName,
+      @JsonKey(name: 'owner_email') required this.ownerEmail,
+      @JsonKey(name: 'owner_phone') required this.ownerPhone,
       required this.address,
-      required this.zipCode,
+      @JsonKey(name: 'zip_code') required this.zipCode,
       this.city,
       this.state,
       this.latitude,
       this.longitude,
-      this.businessLicense,
+      @JsonKey(name: 'business_license') this.businessLicense,
       this.status = 'pending',
-      this.adminNotes,
-      this.onboardingCompleted = false,
-      required this.userId,
-      required this.createdAt,
-      required this.updatedAt,
-      this.reviewedAt,
-      this.completedAt,
-      this.restaurantId});
+      @JsonKey(name: 'admin_notes') this.adminNotes,
+      @JsonKey(name: 'onboarding_completed') this.onboardingCompleted = false,
+      @JsonKey(name: 'user_id') required this.userId,
+      @JsonKey(name: 'created_at') required this.createdAt,
+      @JsonKey(name: 'updated_at') required this.updatedAt,
+      @JsonKey(name: 'reviewed_at') this.reviewedAt,
+      @JsonKey(name: 'completed_at') this.completedAt,
+      @JsonKey(name: 'restaurant_id') this.restaurantId});
 
   factory _$RestaurantOnboardingRequestImpl.fromJson(
           Map<String, dynamic> json) =>
@@ -454,24 +471,32 @@ class _$RestaurantOnboardingRequestImpl
   final String id;
 // Restaurant Information
   @override
+  @JsonKey(name: 'restaurant_name')
   final String restaurantName;
   @override
+  @JsonKey(name: 'cuisine_type')
   final String cuisineType;
   @override
+  @JsonKey(name: 'restaurant_description')
   final String? restaurantDescription;
   @override
+  @JsonKey(name: 'restaurant_photo_url')
   final String? restaurantPhotoUrl;
 // Owner Information
   @override
+  @JsonKey(name: 'owner_name')
   final String ownerName;
   @override
+  @JsonKey(name: 'owner_email')
   final String ownerEmail;
   @override
+  @JsonKey(name: 'owner_phone')
   final String ownerPhone;
 // Location Information
   @override
   final String address;
   @override
+  @JsonKey(name: 'zip_code')
   final String zipCode;
   @override
   final String? city;
@@ -483,30 +508,38 @@ class _$RestaurantOnboardingRequestImpl
   final double? longitude;
 // Business Information
   @override
+  @JsonKey(name: 'business_license')
   final String? businessLicense;
 // Application Status
   @override
   @JsonKey()
   final String status;
   @override
+  @JsonKey(name: 'admin_notes')
   final String? adminNotes;
   @override
-  @JsonKey()
+  @JsonKey(name: 'onboarding_completed')
   final bool onboardingCompleted;
 // User Reference
   @override
+  @JsonKey(name: 'user_id')
   final String userId;
 // Timestamps
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
   @override
+  @JsonKey(name: 'reviewed_at')
   final DateTime? reviewedAt;
   @override
+  @JsonKey(name: 'completed_at')
   final DateTime? completedAt;
 // Restaurant reference (populated when approved)
   @override
+  @JsonKey(name: 'restaurant_id')
   final String? restaurantId;
 
   @override
@@ -613,28 +646,30 @@ abstract class _RestaurantOnboardingRequest
     implements RestaurantOnboardingRequest {
   const factory _RestaurantOnboardingRequest(
       {required final String id,
-      required final String restaurantName,
-      required final String cuisineType,
+      @JsonKey(name: 'restaurant_name') required final String restaurantName,
+      @JsonKey(name: 'cuisine_type') required final String cuisineType,
+      @JsonKey(name: 'restaurant_description')
       final String? restaurantDescription,
-      final String? restaurantPhotoUrl,
-      required final String ownerName,
-      required final String ownerEmail,
-      required final String ownerPhone,
+      @JsonKey(name: 'restaurant_photo_url') final String? restaurantPhotoUrl,
+      @JsonKey(name: 'owner_name') required final String ownerName,
+      @JsonKey(name: 'owner_email') required final String ownerEmail,
+      @JsonKey(name: 'owner_phone') required final String ownerPhone,
       required final String address,
-      required final String zipCode,
+      @JsonKey(name: 'zip_code') required final String zipCode,
       final String? city,
       final String? state,
       final double? latitude,
       final double? longitude,
-      final String? businessLicense,
+      @JsonKey(name: 'business_license') final String? businessLicense,
       final String status,
-      final String? adminNotes,
-      final bool onboardingCompleted,
-      required final String userId,
-      required final DateTime createdAt,
-      required final DateTime updatedAt,
-      final DateTime? reviewedAt,
-      final DateTime? completedAt,
+      @JsonKey(name: 'admin_notes') final String? adminNotes,
+      @JsonKey(name: 'onboarding_completed') final bool onboardingCompleted,
+      @JsonKey(name: 'user_id') required final String userId,
+      @JsonKey(name: 'created_at') required final DateTime createdAt,
+      @JsonKey(name: 'updated_at') required final DateTime updatedAt,
+      @JsonKey(name: 'reviewed_at') final DateTime? reviewedAt,
+      @JsonKey(name: 'completed_at') final DateTime? completedAt,
+      @JsonKey(name: 'restaurant_id')
       final String? restaurantId}) = _$RestaurantOnboardingRequestImpl;
 
   factory _RestaurantOnboardingRequest.fromJson(Map<String, dynamic> json) =
@@ -643,22 +678,30 @@ abstract class _RestaurantOnboardingRequest
   @override
   String get id; // Restaurant Information
   @override
+  @JsonKey(name: 'restaurant_name')
   String get restaurantName;
   @override
+  @JsonKey(name: 'cuisine_type')
   String get cuisineType;
   @override
+  @JsonKey(name: 'restaurant_description')
   String? get restaurantDescription;
   @override
+  @JsonKey(name: 'restaurant_photo_url')
   String? get restaurantPhotoUrl; // Owner Information
   @override
+  @JsonKey(name: 'owner_name')
   String get ownerName;
   @override
+  @JsonKey(name: 'owner_email')
   String get ownerEmail;
   @override
+  @JsonKey(name: 'owner_phone')
   String get ownerPhone; // Location Information
   @override
   String get address;
   @override
+  @JsonKey(name: 'zip_code')
   String get zipCode;
   @override
   String? get city;
@@ -669,24 +712,33 @@ abstract class _RestaurantOnboardingRequest
   @override
   double? get longitude; // Business Information
   @override
+  @JsonKey(name: 'business_license')
   String? get businessLicense; // Application Status
   @override
   String get status;
   @override
+  @JsonKey(name: 'admin_notes')
   String? get adminNotes;
   @override
+  @JsonKey(name: 'onboarding_completed')
   bool get onboardingCompleted; // User Reference
   @override
+  @JsonKey(name: 'user_id')
   String get userId; // Timestamps
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   DateTime get updatedAt;
   @override
+  @JsonKey(name: 'reviewed_at')
   DateTime? get reviewedAt;
   @override
+  @JsonKey(name: 'completed_at')
   DateTime? get completedAt; // Restaurant reference (populated when approved)
   @override
+  @JsonKey(name: 'restaurant_id')
   String? get restaurantId;
 
   /// Create a copy of RestaurantOnboardingRequest

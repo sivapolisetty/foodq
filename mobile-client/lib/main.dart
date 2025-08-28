@@ -178,12 +178,16 @@ class GrabeatApp extends ConsumerWidget {
         GoRoute(
           path: '/business-home',
           name: 'businessHome',
-          builder: (context, state) => const BusinessHomeScreen(),
+          builder: (context, state) => const ProductionAuthWrapper(
+            child: BusinessHomeScreen(),
+          ),
         ),
         GoRoute(
           path: '/business-profile',
           name: 'businessProfile',
-          builder: (context, state) => const BusinessProfileScreen(),
+          builder: (context, state) => const ProductionAuthWrapper(
+            child: BusinessProfileScreen(),
+          ),
         ),
         GoRoute(
           path: '/customer-home',
@@ -195,12 +199,16 @@ class GrabeatApp extends ConsumerWidget {
         GoRoute(
           path: '/orders',
           name: 'orders',
-          builder: (context, state) => const OrdersScreen(),
+          builder: (context, state) => const ProductionAuthWrapper(
+            child: OrdersScreen(),
+          ),
         ),
         GoRoute(
           path: '/finances',
           name: 'finances',
-          builder: (context, state) => const FinanceScreen(),
+          builder: (context, state) => const ProductionAuthWrapper(
+            child: FinanceScreen(),
+          ),
         ),
         GoRoute(
           path: '/favorites',

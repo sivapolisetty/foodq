@@ -160,7 +160,7 @@ class LocationImpactCards extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'by Yindii Community',
+                'by FoodQ Community',
                 style: TextStyle(
                   color: Color(0xFF9E9E9E),
                   fontSize: 9,

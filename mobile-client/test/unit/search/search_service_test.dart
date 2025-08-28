@@ -2,11 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/features/search/services/search_service.dart';
-import 'package:kravekart/shared/models/deal.dart';
-import 'package:kravekart/shared/models/business.dart';
-import 'package:kravekart/features/search/models/search_result.dart';
-import 'package:kravekart/features/search/models/search_filters.dart';
+import 'package:grabeat/features/search/services/search_service.dart';
+import 'package:grabeat/shared/models/deal.dart';
+import 'package:grabeat/shared/models/business.dart';
+import 'package:grabeat/features/search/models/search_result.dart';
+import 'package:grabeat/features/search/models/search_filters.dart';
 
 @GenerateMocks([SupabaseClient])
 import 'search_service_test.mocks.dart';

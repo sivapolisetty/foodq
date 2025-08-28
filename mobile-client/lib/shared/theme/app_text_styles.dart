@@ -111,7 +111,7 @@ class AppTextStyles {
     height: 1.33,
   );
 
-  // KraveKart Specific Styles
+  // GraBeat Specific Styles
   static const TextStyle priceOriginal = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,

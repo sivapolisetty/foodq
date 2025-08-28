@@ -130,35 +130,101 @@ class DealService {
       // Add image file if provided
       if (imagePath != null && imagePath.isNotEmpty) {
         final file = File(imagePath);
+        print('🔍 Checking image file at: $imagePath');
+        
         if (await file.exists()) {
-          final stream = http.ByteStream(file.openRead());
           final length = await file.length();
-          final multipartFile = http.MultipartFile(
-            'file',
-            stream,
-            length,
-            filename: path.basename(imagePath),
+          print('📊 Image file size: ${(length / 1024).toStringAsFixed(2)} KB');
+          
+          // iOS-specific fix: Use readAsBytes instead of stream for better reliability
+          try {
+            final bytes = await file.readAsBytes();
+            final fileName = path.basename(imagePath);
+            final extension = path.extension(imagePath).toLowerCase();
+            
+            // Determine content type based on file extension
+            MediaType? contentType;
+            switch (extension) {
+              case '.jpg':
+              case '.jpeg':
+                contentType = MediaType('image', 'jpeg');
+                break;
+              case '.png':
+                contentType = MediaType('image', 'png');
+                break;
+              case '.webp':
+                contentType = MediaType('image', 'webp');
+                break;
+              default:
+                contentType = MediaType('image', 'jpeg'); // Default fallback
+            }
+            
+            final multipartFile = http.MultipartFile.fromBytes(
+              'image',  // Changed from 'file' to 'image' to match backend API
+              bytes,
+              filename: fileName,
+              contentType: contentType,
+            );
+            request.files.add(multipartFile);
+            print('✅ Image file added to request: ${multipartFile.filename} (${contentType?.mimeType})');
+          } catch (e) {
+            print('❌ Error reading image file: $e');
+            return DealResult.error(
+              message: 'Failed to read image file: ${e.toString()}',
+              code: 'FILE_READ_ERROR',
+            );
+          }
+        } else {
+          print('❌ Image file does not exist at path: $imagePath');
+          return DealResult.error(
+            message: 'Selected image file not found',
+            code: 'FILE_NOT_FOUND',
           );
-          request.files.add(multipartFile);
         }
       }
 
       // Send request
+      print('📤 Sending multipart request to: ${ApiConfig.dealsUrl}');
+      print('📤 Request fields: ${request.fields}');
+      print('📤 Request files count: ${request.files.length}');
+      
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      print('📥 HTTP Response Status: ${response.statusCode}');
+      print('📥 HTTP Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
+        print('✅ HTTP 200 - Parsing response...');
         final responseData = ApiService.parseResponse(response.body);
+        print('📊 Parsed response data: $responseData');
+        print('📊 Success field: ${responseData['success']}');
+        print('📊 Data field exists: ${responseData['data'] != null}');
+        
+        // Handle two possible response formats:
+        // Format 1: {success: true, data: {deal object}}
+        // Format 2: {deal object directly}
+        
         if (responseData['success'] == true && responseData['data'] != null) {
+          print('✅ API success - Format 1 (wrapped response)');
           final deal = Deal.fromJson(responseData['data'] as Map<String, dynamic>);
+          print('✅ Deal created: ID=${deal.id}, Title=${deal.title}');
+          return DealResult.success(deal: deal);
+        } else if (responseData['id'] != null) {
+          // Direct deal object format - check for required fields
+          print('✅ API success - Format 2 (direct deal object)');
+          final deal = Deal.fromJson(responseData);
+          print('✅ Deal created: ID=${deal.id}, Title=${deal.title}');
           return DealResult.success(deal: deal);
         } else {
+          print('❌ API returned success=false or no recognizable data');
           return DealResult.error(
             message: responseData['error'] ?? 'Failed to create deal',
             code: 'API_ERROR',
           );
         }
       } else {
+        print('❌ HTTP Error: Status ${response.statusCode}');
         return DealResult.error(
           message: 'HTTP Error: ${response.statusCode}',
           code: 'HTTP_ERROR',
@@ -166,6 +232,7 @@ class DealService {
       }
 
     } catch (e) {
+      print('❌ Exception in createDealWithImage: $e');
       return DealResult.error(
         message: 'Unexpected error creating deal with image: ${e.toString()}',
         code: 'UNKNOWN_ERROR',
@@ -251,7 +318,7 @@ class DealService {
         }
         
         final multipartFile = http.MultipartFile.fromBytes(
-          'file',
+          'image',  // Changed from 'file' to 'image' to match backend API
           imageBytes,
           filename: imageName ?? 'deal-image.jpg',
           contentType: MediaType.parse(contentType),
@@ -265,8 +332,14 @@ class DealService {
 
       if (response.statusCode == 200) {
         final responseData = ApiService.parseResponse(response.body);
+        
+        // Handle both response formats (wrapped or direct deal object)
         if (responseData['success'] == true && responseData['data'] != null) {
           final deal = Deal.fromJson(responseData['data'] as Map<String, dynamic>);
+          return DealResult.success(deal: deal);
+        } else if (responseData['id'] != null) {
+          // Direct deal object format
+          final deal = Deal.fromJson(responseData);
           return DealResult.success(deal: deal);
         } else {
           return DealResult.error(
@@ -282,6 +355,7 @@ class DealService {
       }
 
     } catch (e) {
+      print('❌ Exception in createDealWithImage: $e');
       return DealResult.error(
         message: 'Unexpected error creating deal with image: ${e.toString()}',
         code: 'UNKNOWN_ERROR',
@@ -390,21 +464,50 @@ class DealService {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
-      // Add the image file
+      // Add the image file (iOS-optimized approach)
       // Note: Upload API expects field name 'file', not 'image'
-      final stream = http.ByteStream(file.openRead());
-      final length = await file.length();
-      final multipartFile = http.MultipartFile(
+      print('🔍 Reading image file for upload: $imagePath');
+      final bytes = await file.readAsBytes();
+      final fileName = 'deal-${dealId}-${DateTime.now().millisecondsSinceEpoch}.${path.extension(imagePath).substring(1)}';
+      
+      print('📊 Image file size: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+      
+      // Determine content type based on file extension
+      final extension = path.extension(imagePath).toLowerCase();
+      MediaType? contentType;
+      switch (extension) {
+        case '.jpg':
+        case '.jpeg':
+          contentType = MediaType('image', 'jpeg');
+          break;
+        case '.png':
+          contentType = MediaType('image', 'png');
+          break;
+        case '.webp':
+          contentType = MediaType('image', 'webp');
+          break;
+        default:
+          contentType = MediaType('image', 'jpeg'); // Default fallback
+      }
+      
+      final multipartFile = http.MultipartFile.fromBytes(
         'file',
-        stream,
-        length,
-        filename: 'deal-${dealId}-${DateTime.now().millisecondsSinceEpoch}.${path.extension(imagePath).substring(1)}',
+        bytes,
+        filename: fileName,
+        contentType: contentType,
       );
       request.files.add(multipartFile);
+      print('✅ Image file added to upload request: $fileName (${contentType?.mimeType})');
 
       // Send request
+      print('🚀 Sending upload request to: ${request.url}');
+      print('📁 Upload files: ${request.files.map((f) => f.filename).toList()}');
+      
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+      
+      print('📡 Upload response status: ${response.statusCode}');
+      print('📄 Upload response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = ApiService.parseResponse(response.body);
@@ -419,6 +522,7 @@ class DealService {
           developer.log('❌ Upload API returned unsuccessful (mobile): $responseData');
         }
       } else {
+        print('❌ Upload API HTTP error (mobile) ${response.statusCode}: ${response.body}');
         developer.log('❌ Upload API HTTP error (mobile) ${response.statusCode}: ${response.body}');
       }
 

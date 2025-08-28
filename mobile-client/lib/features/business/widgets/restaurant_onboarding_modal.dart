@@ -5,7 +5,8 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/image_picker_service.dart';
-import '../../../core/widgets/address_autocomplete_field.dart';
+import '../../../core/widgets/custom_address_autocomplete_field.dart';
+import '../../../core/services/address_service.dart';
 import '../models/restaurant_onboarding_request.dart';
 import '../providers/restaurant_onboarding_provider.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
@@ -178,7 +179,10 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : _submitApplication,
+                      onPressed: _isSubmitting ? null : () {
+                        print('🔘 Button onPressed triggered');
+                        _submitApplication();
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -399,27 +403,55 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '🔧 DEBUG: AddressAutocompleteField should appear below.\nIf you see a regular text field with warning icon, Places API needs to be enabled.',
+                    '🔧 DEBUG: CustomAddressAutocompleteField now uses our API endpoint instead of CORS proxy.\nNo more direct Google Places API calls from Flutter.',
                     style: TextStyle(fontSize: 10, color: Colors.orange[800]),
                   ),
                 ),
-                AddressAutocompleteField(
+                CustomAddressAutocompleteField(
                   controller: _addressController,
                   labelText: 'Full Address *',
                   hintText: 'Start typing your address...',
                   prefixIcon: Icons.location_on,
                   onChanged: _validateAddress,
-                  onAddressSelected: (address) {
-                    print('🏠 Address selected from autocomplete: ${address.formattedAddress}');
+                  onAddressSelected: (addressText) {
+                    print('🏠 Address selected from autocomplete: $addressText');
                     setState(() {
-                      _currentLatitude = address.latitude;
-                      _currentLongitude = address.longitude;
-                      _cityController.text = address.city;
-                      _stateController.text = address.state;
-                      _zipCodeController.text = address.postalCode;
                       _addressValidated = true;
                       _addressValidationMessage = '✓ Address selected from suggestions';
                     });
+                  },
+                  onPlaceSelected: (placeDetails) {
+                    print('📍 [MODAL] onPlaceSelected callback triggered!');
+                    print('🏠 [MODAL] Place details received: ${placeDetails.formattedAddress}');
+                    print('🏙️ [MODAL] Details breakdown:');
+                    print('   - Street: "${placeDetails.street}"');
+                    print('   - City: "${placeDetails.city}"');
+                    print('   - State: "${placeDetails.state}"');
+                    print('   - ZIP: "${placeDetails.zipCode}"');
+                    print('   - Country: "${placeDetails.country}"');
+                    print('   - Lat/Lng: ${placeDetails.latitude}, ${placeDetails.longitude}');
+                    
+                    print('🔧 [MODAL] Current field values before update:');
+                    print('   - City field: "${_cityController.text}"');
+                    print('   - State field: "${_stateController.text}"');
+                    print('   - ZIP field: "${_zipCodeController.text}"');
+                    
+                    setState(() {
+                      print('🔄 [MODAL] Updating fields with setState...');
+                      _cityController.text = placeDetails.city;
+                      _stateController.text = placeDetails.state;
+                      _zipCodeController.text = placeDetails.zipCode;
+                      _currentLatitude = placeDetails.latitude;
+                      _currentLongitude = placeDetails.longitude;
+                      _addressValidated = true;
+                      _addressValidationMessage = '✓ Address details populated from selection';
+                      print('✅ [MODAL] Fields updated successfully');
+                    });
+                    
+                    print('✅ [MODAL] Final field values after update:');
+                    print('   - City field: "${_cityController.text}"');
+                    print('   - State field: "${_stateController.text}"');
+                    print('   - ZIP field: "${_zipCodeController.text}"');
                   },
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -479,6 +511,47 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
         ),
         
         const SizedBox(height: 16),
+        
+        // Debug info for field values
+        Container(
+          padding: const EdgeInsets.all(8),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            border: Border.all(color: Colors.blue[200]!),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '🔍 DEBUG: Current field values',
+                style: TextStyle(fontSize: 12, color: Colors.blue[800], fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'City: "${_cityController.text}" | State: "${_stateController.text}" | ZIP: "${_zipCodeController.text}"',
+                style: TextStyle(fontSize: 10, color: Colors.blue[700]),
+              ),
+              if (_cityController.text.isNotEmpty || _stateController.text.isNotEmpty || _zipCodeController.text.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '✅ FIELDS POPULATED!',
+                    style: TextStyle(
+                      fontSize: 10, 
+                      color: Colors.green[800], 
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
         
         // City and State Row
         Row(
@@ -922,17 +995,32 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
   }
 
   Future<void> _submitApplication() async {
+    print('🚀 Submit button clicked');
+    
     if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Get current user
-    final currentUserAsync = ref.read(authenticatedUserProvider);
-    final currentUser = currentUserAsync.value;
-    if (currentUser == null) {
+      print('❌ Form validation failed');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a user first'),
+          content: Text('Please fill in all required fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    print('✅ Form validation passed');
+
+    // Get current user
+    print('📱 Getting current user...');
+    final currentUserAsync = ref.read(authenticatedUserProvider);
+    final currentUser = currentUserAsync.value;
+    print('👤 Current user: ${currentUser?.id} - ${currentUser?.name}');
+    
+    if (currentUser == null) {
+      print('❌ No current user found');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login first to submit application'),
           backgroundColor: Colors.red,
         ),
       );

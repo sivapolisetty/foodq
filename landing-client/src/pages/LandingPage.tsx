@@ -103,12 +103,12 @@ const LandingPage: React.FC = () => {
               </div>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-gray-900 leading-tight mb-6">
-                Rescue Food,
-                <span className="text-green-600 block">Save Money!</span>
+                Save on Fresh Food,
+                <span className="text-green-600 block">Every Day!</span>
               </h1>
               
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Join thousands of food lovers who are fighting food waste while enjoying delicious meals at unbeatable prices. Find surprise bags from your favorite local restaurants!
+                Get up to 50% off on delicious meals from your favorite local restaurants. Enjoy fresh food at amazing prices while helping reduce food waste!
               </p>
               
               {/* App Download Buttons - Yindii Style */}
@@ -173,11 +173,11 @@ const LandingPage: React.FC = () => {
                               <Utensils className="h-8 w-8 text-green-600" />
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">Surprise Bag - Pizza Place</h3>
-                              <p className="text-sm text-gray-600 mt-1">Save 3 meals from waste</p>
+                              <h3 className="font-semibold text-gray-900">Italian Special - Bella Vista</h3>
+                              <p className="text-sm text-gray-600 mt-1">Fresh pasta & garlic bread</p>
                               <div className="flex items-center justify-between mt-2">
-                                <span className="text-2xl font-bold text-green-600">$4.99</span>
-                                <span className="text-sm text-gray-500 line-through">$15.00</span>
+                                <span className="text-2xl font-bold text-green-600">$8.99</span>
+                                <span className="text-sm text-gray-500 line-through">$17.99</span>
                               </div>
                             </div>
                           </div>
@@ -189,11 +189,11 @@ const LandingPage: React.FC = () => {
                               <ShoppingBag className="h-8 w-8 text-orange-600" />
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">Bakery Magic Box</h3>
-                              <p className="text-sm text-gray-600 mt-1">Fresh pastries & bread</p>
+                              <h3 className="font-semibold text-gray-900">Sushi Combo - Tokyo Express</h3>
+                              <p className="text-sm text-gray-600 mt-1">Fresh rolls & miso soup</p>
                               <div className="flex items-center justify-between mt-2">
-                                <span className="text-2xl font-bold text-green-600">$3.99</span>
-                                <span className="text-sm text-gray-500 line-through">$12.00</span>
+                                <span className="text-2xl font-bold text-green-600">$11.99</span>
+                                <span className="text-sm text-gray-500 line-through">$23.99</span>
                               </div>
                             </div>
                           </div>
@@ -205,11 +205,11 @@ const LandingPage: React.FC = () => {
                               <Heart className="h-8 w-8 text-purple-600" />
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">Healthy Bowl Surprise</h3>
-                              <p className="text-sm text-gray-600 mt-1">Nutritious & delicious</p>
+                              <h3 className="font-semibold text-gray-900">Mexican Feast - Taco Fiesta</h3>
+                              <p className="text-sm text-gray-600 mt-1">Tacos, burritos & sides</p>
                               <div className="flex items-center justify-between mt-2">
-                                <span className="text-2xl font-bold text-green-600">$5.99</span>
-                                <span className="text-sm text-gray-500 line-through">$18.00</span>
+                                <span className="text-2xl font-bold text-green-600">$7.99</span>
+                                <span className="text-sm text-gray-500 line-through">$15.99</span>
                               </div>
                             </div>
                           </div>
@@ -284,7 +284,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Browse & Discover</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Open the app to discover available Surprise Bags from stores near you. Filter by pickup time, dietary preferences, or store type.
+                  Open the app to discover available meals from restaurants near you. Filter by cuisine type, dietary preferences, or pickup time.
                 </p>
               </div>
               {/* Connector */}
@@ -304,7 +304,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Reserve & Pay</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Reserve your Surprise Bag with just a tap and pay directly through the app. It's quick, secure, and contactless.
+                  Reserve your meal with just a tap and pay directly through the app. It's quick, secure, and contactless.
                 </p>
               </div>
               {/* Connector */}
@@ -324,7 +324,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Collect & Enjoy</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Pick up your Surprise Bag at the designated time, enjoy your delicious meal, and feel good about fighting food waste!
+                  Pick up your fresh meal at the designated time, enjoy delicious food, and feel good about fighting food waste!
                 </p>
               </div>
             </div>
@@ -360,7 +360,7 @@ const LandingPage: React.FC = () => {
                 <Clock className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Real-Time Updates</h3>
-              <p className="text-gray-600">Get instant notifications when your favorite stores post new Surprise Bags.</p>
+              <p className="text-gray-600">Get instant notifications when your favorite restaurants post new deals.</p>
             </div>
 
             {/* Feature 3 */}
@@ -377,8 +377,8 @@ const LandingPage: React.FC = () => {
               <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
                 <Gift className="h-7 w-7 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Surprise Element</h3>
-              <p className="text-gray-600">Every bag is a delightful surprise! Discover new favorites with each order.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Quality Guaranteed</h3>
+              <p className="text-gray-600">Enjoy fresh, quality meals from verified local restaurants at amazing prices.</p>
             </div>
 
             {/* Feature 5 */}
@@ -467,7 +467,7 @@ const LandingPage: React.FC = () => {
                 Start Saving Today!
               </h2>
               <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                Download Grabeat now and join the food saving revolution. Your first Surprise Bag is waiting!
+                Download Grabeat now and start saving on delicious meals from your favorite restaurants!
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -1,6 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/supabase_service.dart';
 import '../../../shared/models/deal.dart';
 import '../../../shared/models/business.dart';
 import '../services/search_service.dart';
@@ -11,7 +9,7 @@ part 'search_provider.g.dart';
 
 @riverpod
 SearchService searchService(SearchServiceRef ref) {
-  return SearchService(supabaseClient: SupabaseService.client);
+  return SearchService();
 }
 
 @riverpod

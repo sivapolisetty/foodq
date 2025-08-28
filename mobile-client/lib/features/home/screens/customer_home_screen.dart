@@ -228,9 +228,6 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 const SizedBox(height: 20),
                 // Search bar (moved above carousel)
                 _buildStandaloneSearchBar(),
-                const SizedBox(height: 12),
-                // Become a Partner link
-                _buildBecomePartnerLink(),
                 const SizedBox(height: 20),
                 // Main carousel banner (without search overlay)
                 _buildMainCarouselBanner(),

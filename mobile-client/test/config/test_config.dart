@@ -16,7 +16,7 @@ class TestConfig {
       'your-test-service-key';
 
   // Test user credentials - use a dedicated test account
-  static const String testUserEmail = 'test-owner@kravekart-e2e.com';
+  static const String testUserEmail = 'test-owner@grabeat-e2e.com';
   static const String testUserPassword = 'TestPassword123!';
   static const String testUserId = 'test-owner-e2e-uuid'; // Will be generated
   

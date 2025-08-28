@@ -141,7 +141,7 @@ class _RestaurantOwnerSignupScreenState extends ConsumerState<RestaurantOwnerSig
         ),
         const SizedBox(height: 12),
         Text(
-          'Join thousands of restaurants using KraveKart to reach more customers and grow their business.',
+          'Join thousands of restaurants using GraBeat to reach more customers and grow their business.',
           style: AppTextStyles.bodyLarge.copyWith(
             color: Colors.grey[600],
             height: 1.5,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/business.dart';
 import '../models/deal.dart';
 import '../services/business_service.dart';
-import '../services/deal_service.dart';
+import '../features/deals/services/deal_service.dart';
 import '../widgets/yindii_app_bar.dart';
 import '../widgets/yindii_button.dart';
 import '../widgets/yindii_bottom_nav.dart';

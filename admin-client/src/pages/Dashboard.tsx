@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Users, 
   Store, 
@@ -18,6 +18,7 @@ import { useDashboardStats, useRecentActivities } from '../hooks/useDashboardDat
 const Dashboard: React.FC = () => {
   const { logout, currentUserEmail } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
 
   // Fetch dashboard data
@@ -43,7 +44,7 @@ const Dashboard: React.FC = () => {
   ] : [];
 
   const menuItems = [
-    { label: 'Dashboard', icon: TrendingUp, active: true, path: '/dashboard' },
+    { label: 'Dashboard', icon: TrendingUp, path: '/dashboard' },
     { label: 'Business Onboarding', icon: Store, path: '/onboarding' },
     { label: 'Users', icon: Users },
     { label: 'Businesses', icon: Store },
@@ -76,7 +77,7 @@ const Dashboard: React.FC = () => {
                 key={item.label}
                 onClick={() => navigate(item.path!)}
                 className={`flex items-center px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors w-full text-left ${
-                  item.active ? 'bg-green-50 text-green-600 border-r-4 border-green-600' : ''
+                  location.pathname === item.path ? 'bg-green-50 text-green-600 border-r-4 border-green-600' : ''
                 }`}
               >
                 <item.icon className="h-5 w-5" />
@@ -86,9 +87,7 @@ const Dashboard: React.FC = () => {
               <a
                 key={item.label}
                 href="#"
-                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors ${
-                  item.active ? 'bg-green-50 text-green-600 border-r-4 border-green-600' : ''
-                }`}
+                className="flex items-center px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors"
               >
                 <item.icon className="h-5 w-5" />
                 {sidebarOpen && <span className="ml-3">{item.label}</span>}

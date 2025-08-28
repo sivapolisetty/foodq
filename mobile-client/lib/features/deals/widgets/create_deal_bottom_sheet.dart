@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -10,6 +9,7 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
 import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../../shared/models/deal.dart';
+import '../../../shared/models/deal_result.dart';
 import '../../../shared/models/app_user.dart';
 import '../providers/deal_provider.dart';
 import '../services/deal_service.dart';
@@ -889,74 +889,102 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
       } else {
         print('➕ Creating new deal');
         
-        // Create new deal with image upload support
-        if (_hasSelectedImage() && !kIsWeb && _selectedImage != null) {
-          // Mobile: Create deal with image using form data
+        // Create new deal - use consistent approach for all cases
+        final dealData = {
+          'business_id': currentUser.businessId,
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim().isEmpty 
+              ? null 
+              : _descriptionController.text.trim(),
+          'original_price': double.parse(_originalPriceController.text),
+          'discounted_price': double.parse(_discountedPriceController.text),
+          'quantity_available': int.parse(_quantityController.text),
+          'expires_at': _expiresAt!.toIso8601String(),
+          'allergen_info': _allergenInfoController.text.trim().isEmpty 
+              ? null 
+              : _allergenInfoController.text.trim(),
+        };
+
+        if (_hasSelectedImage()) {
+          // Handle image upload through the deal service directly
           final dealService = DealService();
-          final dealResult = await dealService.createDealWithImage(
-            businessId: currentUser.businessId!,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty 
-                ? 'No description provided'
-                : _descriptionController.text.trim(),
-            originalPrice: double.parse(_originalPriceController.text),
-            discountedPrice: double.parse(_discountedPriceController.text),
-            quantityAvailable: int.parse(_quantityController.text),
-            expiresAt: _expiresAt!,
-            imagePath: _selectedImage!.path,
-            allergenInfo: _allergenInfoController.text.trim().isEmpty 
-                ? null 
-                : _allergenInfoController.text.trim(),
-          );
+          DealResult dealResult;
           
-          success = dealResult.isSuccess;
-          if (!success) {
-            throw Exception(dealResult.error ?? 'Unknown error');
+          print('📱 Creating deal with image...');
+          print('   Platform: ${kIsWeb ? "Web" : "Mobile"}');
+          print('   Business ID: ${currentUser.businessId}');
+          print('   Title: ${_titleController.text.trim()}');
+          print('   Original Price: ${_originalPriceController.text}');
+          print('   Discounted Price: ${_discountedPriceController.text}');
+          
+          if (!kIsWeb && _selectedImage != null) {
+            // Mobile: Create deal with image using file path
+            print('📱 Mobile: Calling createDealWithImage');
+            dealResult = await dealService.createDealWithImage(
+              businessId: currentUser.businessId!,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim().isEmpty 
+                  ? 'No description provided'
+                  : _descriptionController.text.trim(),
+              originalPrice: double.parse(_originalPriceController.text),
+              discountedPrice: double.parse(_discountedPriceController.text),
+              quantityAvailable: int.parse(_quantityController.text),
+              expiresAt: _expiresAt!,
+              imagePath: _selectedImage!.path,
+              allergenInfo: _allergenInfoController.text.trim().isEmpty 
+                  ? null 
+                  : _allergenInfoController.text.trim(),
+            );
+            print('📱 Mobile: createDealWithImage completed');
+          } else {
+            // Web: Create deal with image using bytes
+            print('🌐 Web: Creating deal with image using bytes');
+            print('   Image name: $_selectedImageName');
+            print('   Image bytes size: ${_selectedImageBytes?.length ?? 0}');
+            dealResult = await dealService.createDealWithImageBytes(
+              businessId: currentUser.businessId!,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim().isEmpty 
+                  ? 'No description provided'
+                  : _descriptionController.text.trim(),
+              originalPrice: double.parse(_originalPriceController.text),
+              discountedPrice: double.parse(_discountedPriceController.text),
+              quantityAvailable: int.parse(_quantityController.text),
+              expiresAt: _expiresAt!,
+              imageBytes: _selectedImageBytes,
+              imageName: _selectedImageName,
+              allergenInfo: _allergenInfoController.text.trim().isEmpty 
+                  ? null 
+                  : _allergenInfoController.text.trim(),
+            );
+            print('🌐 Web: createDealWithImageBytes completed');
           }
-        } else if (kIsWeb && _hasSelectedImage()) {
-          // Web: Create deal with image using bytes
-          print('🌐 Creating deal with image on web');
-          print('   Image name: $_selectedImageName');
-          print('   Image bytes size: ${_selectedImageBytes?.length ?? 0}');
-          final dealService = DealService();
-          final dealResult = await dealService.createDealWithImageBytes(
-            businessId: currentUser.businessId!,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty 
-                ? 'No description provided'
-                : _descriptionController.text.trim(),
-            originalPrice: double.parse(_originalPriceController.text),
-            discountedPrice: double.parse(_discountedPriceController.text),
-            quantityAvailable: int.parse(_quantityController.text),
-            expiresAt: _expiresAt!,
-            imageBytes: _selectedImageBytes,
-            imageName: _selectedImageName,
-            allergenInfo: _allergenInfoController.text.trim().isEmpty 
-                ? null 
-                : _allergenInfoController.text.trim(),
-          );
-          
-          success = dealResult.isSuccess;
-          if (!success) {
+
+          print('🔍 DETAILED RESULT DEBUG:');
+          print('   dealResult type: ${dealResult.runtimeType}');
+          print('   dealResult.isSuccess: ${dealResult.isSuccess}');
+          print('   dealResult.error: ${dealResult.error}');
+          print('   dealResult.deal != null: ${dealResult.deal != null}');
+          if (dealResult.deal != null) {
+            print('   dealResult.deal.id: ${dealResult.deal!.id}');
+            print('   dealResult.deal.title: ${dealResult.deal!.title}');
+          }
+
+          if (dealResult.isSuccess && dealResult.deal != null) {
+            print('✅ SUCCESS BRANCH: About to add deal to provider state');
+            // Add the new deal to provider state using the proper method
+            ref.read(dealListProvider.notifier).addDealToState(dealResult.deal!);
+            success = true;
+            print('✅ Deal with image created and added to provider state');
+          } else {
+            print('❌ FAILURE BRANCH: dealResult indicates failure');
+            print('   isSuccess: ${dealResult.isSuccess}');
+            print('   error: ${dealResult.error}');
+            success = false;
             throw Exception(dealResult.error ?? 'Unknown error');
           }
         } else {
-          // Create deal without image using standard method
-          final dealData = {
-            'business_id': currentUser.businessId,
-            'title': _titleController.text.trim(),
-            'description': _descriptionController.text.trim().isEmpty 
-                ? null 
-                : _descriptionController.text.trim(),
-            'original_price': double.parse(_originalPriceController.text),
-            'discounted_price': double.parse(_discountedPriceController.text),
-            'quantity_available': int.parse(_quantityController.text),
-            'expires_at': _expiresAt!.toIso8601String(),
-            'allergen_info': _allergenInfoController.text.trim().isEmpty 
-                ? null 
-                : _allergenInfoController.text.trim(),
-          };
-          
+          // Create deal without image using provider method
           success = await ref.read(dealListProvider.notifier).createDeal(dealData);
         }
       }
@@ -968,28 +996,22 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
 
       if (mounted) {
         if (success) {
-          print('🎉 Deal operation successful - closing modal and navigating to deals');
-          Navigator.of(context).pop();
+          print('🎉 Deal operation successful - closing modal');
           
-          // Force refresh the deal list to show updates immediately
-          await ref.read(dealListProvider.notifier).loadDeals(
-            businessId: currentUser.businessId,
-            forceRefresh: true,
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                widget.deal != null ? 'Deal updated successfully!' : 'Deal created successfully!',
+              ),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 2),
+            ),
           );
           
-          // Navigate to deals page to show the updated list
-          if (mounted) {
-            context.go('/deals');
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  widget.deal != null ? 'Deal updated successfully!' : 'Deal created successfully!',
-                ),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
+          // Simply close the modal - no navigation needed since we're already on the deals page
+          Navigator.of(context).pop();
+          
         } else {
           print('❌ Deal operation failed');
           ScaffoldMessenger.of(context).showSnackBar(

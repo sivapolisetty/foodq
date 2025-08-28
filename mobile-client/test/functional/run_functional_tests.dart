@@ -8,7 +8,7 @@ import 'cart_checkout_flow_test.dart' as cart_tests;
 import 'business_management_flow_test.dart' as business_tests;
 import 'notifications_flow_test.dart' as notification_tests;
 
-/// Comprehensive functional test suite for KraveKart
+/// Comprehensive functional test suite for GraBeat
 /// 
 /// This replaces manual testing by automating all user flows:
 /// - Authentication (customer, business, staff)
@@ -19,7 +19,7 @@ import 'notifications_flow_test.dart' as notification_tests;
 /// 
 /// Run with: flutter test test/functional/run_functional_tests.dart
 void main() {
-  group('KraveKart Functional Tests - Complete User Journey', () {
+  group('GraBeat Functional Tests - Complete User Journey', () {
     setUpAll(() {
       // Initialize patrol for end-to-end testing
       // This allows testing across the entire app flow

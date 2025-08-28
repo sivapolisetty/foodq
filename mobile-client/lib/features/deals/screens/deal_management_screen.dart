@@ -439,11 +439,13 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
           ),
           ElevatedButton(
             onPressed: () async {
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               Navigator.of(context).pop();
+              
               final success = await ref.read(dealListProvider.notifier).deactivateDeal(deal.id);
               
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              if (mounted && context.mounted) {
+                scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text(
                       success 

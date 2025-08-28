@@ -41,7 +41,7 @@ const CustomerPage: React.FC = () => {
               <span className="text-green-600 block">Works for You</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Discover amazing food deals from local restaurants, save money on delicious meals, 
+              Discover amazing deals from local restaurants, save money on delicious meals, 
               and support your community—all through the Grabeat app.
             </p>
             
@@ -85,7 +85,7 @@ const CustomerPage: React.FC = () => {
               <Search className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Discover Deals</h3>
               <p className="text-gray-600">
-                Browse real-time deals from restaurants near you. Filter by cuisine, discount, or pickup time.
+                Browse real-time deals from restaurants near you. Filter by cuisine type, price, or pickup time.
               </p>
             </div>
 
@@ -173,7 +173,7 @@ const CustomerPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Smart Filters</h3>
               <p className="text-gray-600">
-                Filter deals by cuisine type, discount percentage, pickup time, or dietary preferences.
+                Filter by cuisine type, price range, dietary preferences, or distance from you.
               </p>
             </div>
 
@@ -183,7 +183,7 @@ const CustomerPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Exclusive Deals</h3>
               <p className="text-gray-600">
-                Access deals that are only available through Grabeat. Save up to 50% on your favorite meals.
+                Access exclusive deals on all types of cuisines. Save up to 50% on your favorite meals.
               </p>
             </div>
           </div>

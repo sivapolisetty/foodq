@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../shared/models/app_user.dart';
 
@@ -111,46 +112,58 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withOpacity(0.95),
+            Colors.white,
+          ],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 32,
             offset: const Offset(0, -8),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
             spreadRadius: 0,
           ),
         ],
         border: Border(
           top: BorderSide(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.08),
             width: 0.5,
           ),
         ),
       ),
-      child: SafeArea(
-        child: Container(
-          height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: navItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return Expanded(
-                child: _buildNavItem(
-                  icon: item.icon,
-                  label: item.label,
-                  index: index,
-                  isSelected: widget.currentIndex == index,
-                ),
-              );
-            }).toList(),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: SafeArea(
+            child: Container(
+              height: 72,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: navItems.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return Expanded(
+                    child: _buildNavItem(
+                      icon: item.icon,
+                      label: item.label,
+                      index: index,
+                      isSelected: widget.currentIndex == index,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ),
@@ -183,8 +196,8 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
     required int index,
     required bool isSelected,
   }) {
-    final primaryColor = const Color(0xFF4CAF50);
-    final inactiveColor = const Color(0xFF9E9E9E);
+    const primaryColor = Color(0xFF4CAF50);
+    const inactiveColor = Color(0xFF9E9E9E);
     
     return Semantics(
       label: label,
@@ -193,34 +206,62 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
         key: label == 'Profile' ? const Key('profile-nav-button') : null,
         onTap: () => _handleTap(index),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           decoration: isSelected ? BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                primaryColor.withOpacity(0.12),
+                primaryColor.withOpacity(0.06),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: primaryColor.withOpacity(0.2),
+              width: 0.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ) : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(1),
-                child: Icon(
-                  icon,
-                  size: isSelected ? 22 : 20,
-                  color: isSelected ? primaryColor : inactiveColor,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                transform: Matrix4.identity()..scale(isSelected ? 1.1 : 1.0),
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: isSelected ? BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ) : null,
+                  child: Icon(
+                    icon,
+                    size: isSelected ? 24 : 22,
+                    color: isSelected ? primaryColor : inactiveColor,
+                  ),
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               Flexible(
                 child: AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 200),
                   style: TextStyle(
-                    fontSize: isSelected ? 10 : 9,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: isSelected ? 10.5 : 9.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? primaryColor : inactiveColor,
-                    letterSpacing: 0.3,
+                    letterSpacing: isSelected ? 0.2 : 0.1,
+                    height: 1.1,
                   ),
                   child: Text(
                     label,

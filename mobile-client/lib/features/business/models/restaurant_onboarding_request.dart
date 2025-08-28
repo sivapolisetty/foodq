@@ -11,43 +11,43 @@ class RestaurantOnboardingRequest with _$RestaurantOnboardingRequest {
     required String id,
     
     // Restaurant Information
-    required String restaurantName,
-    required String cuisineType,
-    String? restaurantDescription,
-    String? restaurantPhotoUrl,
+    @JsonKey(name: 'restaurant_name') required String restaurantName,
+    @JsonKey(name: 'cuisine_type') required String cuisineType,
+    @JsonKey(name: 'restaurant_description') String? restaurantDescription,
+    @JsonKey(name: 'restaurant_photo_url') String? restaurantPhotoUrl,
     
     // Owner Information
-    required String ownerName,
-    required String ownerEmail,
-    required String ownerPhone,
+    @JsonKey(name: 'owner_name') required String ownerName,
+    @JsonKey(name: 'owner_email') required String ownerEmail,
+    @JsonKey(name: 'owner_phone') required String ownerPhone,
     
     // Location Information
     required String address,
-    required String zipCode,
+    @JsonKey(name: 'zip_code') required String zipCode,
     String? city,
     String? state,
     double? latitude,
     double? longitude,
     
     // Business Information
-    String? businessLicense,
+    @JsonKey(name: 'business_license') String? businessLicense,
     
     // Application Status
     @Default('pending') String status,
-    String? adminNotes,
-    @Default(false) bool onboardingCompleted,
+    @JsonKey(name: 'admin_notes') String? adminNotes,
+    @JsonKey(name: 'onboarding_completed') @Default(false) bool onboardingCompleted,
     
     // User Reference
-    required String userId,
+    @JsonKey(name: 'user_id') required String userId,
     
     // Timestamps
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    DateTime? reviewedAt,
-    DateTime? completedAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
+    @JsonKey(name: 'updated_at') required DateTime updatedAt,
+    @JsonKey(name: 'reviewed_at') DateTime? reviewedAt,
+    @JsonKey(name: 'completed_at') DateTime? completedAt,
     
     // Restaurant reference (populated when approved)
-    String? restaurantId,
+    @JsonKey(name: 'restaurant_id') String? restaurantId,
   }) = _RestaurantOnboardingRequest;
 
   factory RestaurantOnboardingRequest.fromJson(Map<String, dynamic> json) =>

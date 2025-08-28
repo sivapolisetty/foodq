@@ -7,7 +7,7 @@ import '../../../shared/models/business_result.dart';
 class BusinessService {
   final String _baseUrl = ApiConfig.baseUrl;
 
-  /// Enroll a new business
+  /// Enroll a new business (creates restaurant onboarding request)
   Future<BusinessResult> enrollBusiness({
     required String ownerId,
     required String name,
@@ -24,37 +24,53 @@ class BusinessService {
         return const BusinessResult.failure('All required fields must be filled');
       }
 
-      final businessData = {
-        'owner_id': ownerId,
-        'name': name,
-        'description': description,
+      final requestData = {
+        'restaurant_name': name,
+        'restaurant_description': description,
         'address': address,
         'latitude': latitude,
         'longitude': longitude,
-        'phone': phone,
-        'email': email,
+        'owner_phone': phone ?? '',
+        'owner_email': email ?? '',
+        'owner_name': name, // Using restaurant name as owner name for now
       };
 
-      print('🏢 Enrolling business via Workers API: ${json.encode(businessData)}');
+      print('🏢 Creating restaurant onboarding request via Workers API: ${json.encode(requestData)}');
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/businesses'),
+        Uri.parse('$_baseUrl/api/restaurant-onboarding-requests'),
         headers: ApiConfig.headers,
-        body: json.encode(businessData),
+        body: json.encode(requestData),
       );
 
-      print('📋 Enroll business response: ${response.statusCode} - ${response.body}');
+      print('📋 Restaurant onboarding response: ${response.statusCode} - ${response.body}');
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
-          final business = Business.fromJson(data['data']);
-          return BusinessResult.success(business);
+          // Create a mock business object to satisfy the UI flow
+          // The actual business will be created when approved
+          final mockBusiness = Business(
+            id: data['data']['id'] ?? 'pending',
+            ownerId: ownerId,
+            name: name,
+            description: description,
+            address: address,
+            phone: phone ?? '',
+            email: email ?? '',
+            latitude: latitude,
+            longitude: longitude,
+            isActive: false, // Not yet approved
+            isApproved: false, // Pending approval
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          return BusinessResult.success(mockBusiness);
         }
       }
 
       final errorData = json.decode(response.body);
-      return BusinessResult.failure(errorData['error'] ?? 'Failed to enroll business');
+      return BusinessResult.failure(errorData['error'] ?? 'Failed to submit restaurant onboarding request');
     } catch (e) {
       print('💥 Error enrolling business: $e');
       return BusinessResult.failure('Failed to enroll business: ${e.toString()}');

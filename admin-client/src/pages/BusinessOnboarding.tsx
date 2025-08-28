@@ -8,28 +8,29 @@ import {
   Check,
   X,
   Eye,
-  RefreshCw,
   AlertCircle,
   ArrowLeft,
   Loader2
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
 import { onboardingApiService } from '../services/onboardingApi';
 import type { OnboardingRequest } from '../services/onboardingApi';
+import AdminLayout from '../components/AdminLayout';
 
 const BusinessOnboarding: React.FC = () => {
-  const { currentUserEmail } = useAuth();
   const [requests, setRequests] = useState<OnboardingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<OnboardingRequest | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showAllRequests, setShowAllRequests] = useState(false);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await onboardingApiService.getPendingRequests();
+      const data = showAllRequests 
+        ? await onboardingApiService.getAllRequests()
+        : await onboardingApiService.getPendingRequests();
       setRequests(data);
     } catch (err: any) {
       setError(err.message);
@@ -41,21 +42,34 @@ const BusinessOnboarding: React.FC = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [showAllRequests]);
 
   const handleApprove = async (requestId: string) => {
     try {
       setActionLoading(requestId);
+      const request = requests.find(r => r.id === requestId);
+      
+      if (request?.status !== 'pending') {
+        alert(`This request has already been ${request?.status}. Please refresh the page.`);
+        return;
+      }
+      
       await onboardingApiService.approveRequest(requestId);
       
-      // Remove from pending list
-      setRequests(prev => prev.filter(req => req.id !== requestId));
+      // Refresh the list to get updated data
+      await fetchRequests();
       setSelectedRequest(null);
       
       // Show success message (you could add a toast notification here)
       alert('Business approved successfully!');
     } catch (err: any) {
-      alert(`Failed to approve business: ${err.message}`);
+      if (err.message.includes('already approved')) {
+        alert('This request has already been approved. Refreshing list...');
+        await fetchRequests();
+        setSelectedRequest(null);
+      } else {
+        alert(`Failed to approve business: ${err.message}`);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -64,10 +78,17 @@ const BusinessOnboarding: React.FC = () => {
   const handleReject = async (requestId: string) => {
     try {
       setActionLoading(requestId);
+      const request = requests.find(r => r.id === requestId);
+      
+      if (request?.status !== 'pending') {
+        alert(`This request has already been ${request?.status}. Please refresh the page.`);
+        return;
+      }
+      
       await onboardingApiService.rejectRequest(requestId);
       
-      // Remove from pending list
-      setRequests(prev => prev.filter(req => req.id !== requestId));
+      // Refresh the list to get updated data
+      await fetchRequests();
       setSelectedRequest(null);
       
       // Show success message
@@ -91,25 +112,17 @@ const BusinessOnboarding: React.FC = () => {
 
   if (selectedRequest) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <AdminLayout title="Business Details">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setSelectedRequest(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <ArrowLeft className="h-5 w-5 text-gray-600" />
-              </button>
-              <h1 className="text-3xl font-bold text-gray-800">Business Details</h1>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-                {currentUserEmail.charAt(0).toUpperCase()}
-              </div>
-              <span className="text-gray-700 text-sm">{currentUserEmail}</span>
-            </div>
+          {/* Back Button */}
+          <div className="flex items-center space-x-4 mb-8">
+            <button
+              onClick={() => setSelectedRequest(null)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-600" />
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Business Details</h1>
           </div>
 
           {/* Business Details Card */}
@@ -123,12 +136,22 @@ const BusinessOnboarding: React.FC = () => {
                 </div>
               </div>
               <div className="text-right">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                  Pending Review
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  selectedRequest.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  selectedRequest.status === 'approved' ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {selectedRequest.status === 'pending' ? 'Pending Review' :
+                   selectedRequest.status === 'approved' ? 'Approved' : 'Rejected'}
                 </span>
                 <p className="text-xs text-gray-500 mt-2">
                   Submitted {formatDate(selectedRequest.created_at)}
                 </p>
+                {selectedRequest.reviewed_at && (
+                  <p className="text-xs text-gray-500">
+                    {selectedRequest.status === 'approved' ? 'Approved' : 'Rejected'} {formatDate(selectedRequest.reviewed_at)}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -195,60 +218,83 @@ const BusinessOnboarding: React.FC = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 pt-6 border-t">
-              <button
-                onClick={() => handleReject(selectedRequest.id)}
-                disabled={actionLoading === selectedRequest.id}
-                className="flex items-center px-6 py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-              >
-                {actionLoading === selectedRequest.id ? (
-                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                ) : (
-                  <X className="h-4 w-4 mr-2" />
-                )}
-                Reject
-              </button>
-              <button
-                onClick={() => handleApprove(selectedRequest.id)}
-                disabled={actionLoading === selectedRequest.id}
-                className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                {actionLoading === selectedRequest.id ? (
-                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                ) : (
-                  <Check className="h-4 w-4 mr-2" />
-                )}
-                Approve
-              </button>
-            </div>
+            {/* Admin Notes */}
+            {selectedRequest.admin_notes && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Admin Notes
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-700">{selectedRequest.admin_notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons - Only show for pending requests */}
+            {selectedRequest.status === 'pending' && (
+              <div className="flex justify-end space-x-4 pt-6 border-t">
+                <button
+                  onClick={() => handleReject(selectedRequest.id)}
+                  disabled={actionLoading === selectedRequest.id}
+                  className="flex items-center px-6 py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  {actionLoading === selectedRequest.id ? (
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                  ) : (
+                    <X className="h-4 w-4 mr-2" />
+                  )}
+                  Reject
+                </button>
+                <button
+                  onClick={() => handleApprove(selectedRequest.id)}
+                  disabled={actionLoading === selectedRequest.id}
+                  className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {actionLoading === selectedRequest.id ? (
+                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-2" />
+                  )}
+                  Approve
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <AdminLayout 
+      title="Business Onboarding" 
+      onRefresh={fetchRequests} 
+      refreshing={loading}
+    >
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Business Onboarding</h1>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={fetchRequests}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-              disabled={loading}
-            >
-              <RefreshCw className={`h-5 w-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-                {currentUserEmail.charAt(0).toUpperCase()}
-              </div>
-              <span className="text-gray-700 text-sm">{currentUserEmail}</span>
-            </div>
-          </div>
+        {/* Filter Tabs */}
+        <div className="flex items-center space-x-4 mb-8">
+          <button
+            onClick={() => setShowAllRequests(false)}
+            className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+              !showAllRequests 
+                ? 'bg-green-100 text-green-800 font-medium' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Pending ({requests.length})
+          </button>
+          <button
+            onClick={() => setShowAllRequests(true)}
+            className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+              showAllRequests 
+                ? 'bg-blue-100 text-blue-800 font-medium' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            All Requests
+          </button>
         </div>
 
         {/* Error State */}
@@ -283,14 +329,28 @@ const BusinessOnboarding: React.FC = () => {
         ) : (
           /* Requests Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {requests.map((request) => (
-              <div key={request.id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800 truncate">{request.restaurant_name}</h3>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Pending
-                  </span>
-                </div>
+            {requests.map((request) => {
+              const getStatusBadge = (status: string) => {
+                switch (status) {
+                  case 'pending':
+                    return 'bg-yellow-100 text-yellow-800';
+                  case 'approved':
+                    return 'bg-green-100 text-green-800';
+                  case 'rejected':
+                    return 'bg-red-100 text-red-800';
+                  default:
+                    return 'bg-gray-100 text-gray-800';
+                }
+              };
+
+              return (
+                <div key={request.id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 truncate">{request.restaurant_name}</h3>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(request.status)}`}>
+                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                    </span>
+                  </div>
                 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm text-gray-600">
@@ -320,33 +380,43 @@ const BusinessOnboarding: React.FC = () => {
                     View Details
                   </button>
                   
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleReject(request.id)}
-                      disabled={actionLoading === request.id}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleApprove(request.id)}
-                      disabled={actionLoading === request.id}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {actionLoading === request.id ? (
-                        <Loader2 className="animate-spin h-4 w-4" />
-                      ) : (
-                        <Check className="h-4 w-4" />
+                  {request.status === 'pending' ? (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleReject(request.id)}
+                        disabled={actionLoading === request.id}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleApprove(request.id)}
+                        disabled={actionLoading === request.id}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {actionLoading === request.id ? (
+                          <Loader2 className="animate-spin h-4 w-4" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500">
+                      {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                      {request.reviewed_at && (
+                        <div>{formatDate(request.reviewed_at)}</div>
                       )}
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

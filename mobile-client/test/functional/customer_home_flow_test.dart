@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:kravekart/features/home/screens/customer_home_screen.dart';
-import 'package:kravekart/features/deals/screens/deal_details_screen.dart';
-import 'package:kravekart/features/search/screens/search_screen.dart';
+import 'package:grabeat/features/home/screens/customer_home_screen.dart';
+import 'package:grabeat/features/deals/screens/deal_details_screen.dart';
+import 'package:grabeat/features/search/screens/search_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'test_setup.dart';
 

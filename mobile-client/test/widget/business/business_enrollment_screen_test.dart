@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/mockito.dart';
-import 'package:kravekart/features/business/screens/business_enrollment_screen.dart';
-import 'package:kravekart/features/business/providers/business_provider.dart';
-import 'package:kravekart/features/business/services/business_service.dart';
-import 'package:kravekart/shared/models/business_result.dart';
-import 'package:kravekart/shared/models/business.dart';
+import 'package:grabeat/features/business/screens/business_enrollment_screen.dart';
+import 'package:grabeat/features/business/providers/business_provider.dart';
+import 'package:grabeat/features/business/services/business_service.dart';
+import 'package:grabeat/shared/models/business_result.dart';
+import 'package:grabeat/shared/models/business.dart';
 
 import '../../widget/test_helpers.dart';
 
@@ -33,7 +33,7 @@ void main() {
 
       // Assert
       expect(find.text('Enroll Your Business'), findsOneWidget);
-      expect(find.text('Join KraveKart and start reducing food waste'), findsOneWidget);
+      expect(find.text('Join GraBeat and start reducing food waste'), findsOneWidget);
       expect(find.byKey(const Key('business_name_field')), findsOneWidget);
       expect(find.byKey(const Key('business_description_field')), findsOneWidget);
       expect(find.byKey(const Key('business_address_field')), findsOneWidget);

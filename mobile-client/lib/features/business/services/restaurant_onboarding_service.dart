@@ -188,50 +188,11 @@ class RestaurantOnboardingService {
 
   // Note: Delete application functionality is not implemented in the Workers API
 
-  /// Convert API date fields to DateTime objects
+  /// Convert API date fields to DateTime objects  
+  /// Note: Field mapping is now handled by @JsonKey annotations in the model
   Map<String, dynamic> _convertDatesFromApi(Map<String, dynamic> data) {
-    final convertedData = Map<String, dynamic>.from(data);
-    
-    // Convert snake_case to camelCase and handle dates
-    final fieldMappings = {
-      'restaurant_name': 'restaurantName',
-      'cuisine_type': 'cuisineType',
-      'restaurant_description': 'restaurantDescription',
-      'restaurant_photo_url': 'restaurantPhotoUrl',
-      'owner_name': 'ownerName',
-      'owner_email': 'ownerEmail',
-      'owner_phone': 'ownerPhone',
-      'zip_code': 'zipCode',
-      'business_license': 'businessLicense',
-      'admin_notes': 'adminNotes',
-      'user_id': 'userId',
-      'created_at': 'createdAt',
-      'updated_at': 'updatedAt',
-      'reviewed_at': 'reviewedAt',
-      'restaurant_id': 'restaurantId',
-    };
-
-    final result = <String, dynamic>{};
-    
-    for (final entry in convertedData.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      final mappedKey = fieldMappings[key] ?? key;
-      
-      // Convert date strings to DateTime objects
-      if ((key.endsWith('_at') || mappedKey.endsWith('At')) && value != null) {
-        if (value is String) {
-          result[mappedKey] = DateTime.parse(value);
-        } else if (value is DateTime) {
-          result[mappedKey] = value;
-        } else {
-          result[mappedKey] = value; // Keep as-is if not a string or DateTime
-        }
-      } else {
-        result[mappedKey] = value;
-      }
-    }
-    
-    return result;
+    // No field conversion needed - @JsonKey annotations handle snake_case mapping
+    // Just return the original data for the model to handle
+    return data;
   }
 }

@@ -1,0 +1,10 @@
+# Appfile for FoodQ Android
+
+# App Package Name
+package_name("com.foodq.foodq")
+
+# JSON Key file for Google Play Console
+json_key_file(ENV["GOOGLE_PLAY_JSON_KEY_PATH"])
+
+# Firebase configuration
+firebase_app_id(ENV["FIREBASE_APP_ID_ANDROID"])

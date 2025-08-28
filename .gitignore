@@ -16,6 +16,7 @@ mobile-client/pubspec.lock
 .env
 .env.local
 .env.production
+.env.deploy
 .dev.vars
 
 # Wrangler

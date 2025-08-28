@@ -14,7 +14,7 @@ import '../widgets/application_status_card.dart';
 import '../providers/restaurant_onboarding_provider.dart';
 
 /// Restaurant Partnership Onboarding Page
-/// Entry point for restaurants wanting to join KraveKart
+/// Entry point for restaurants wanting to join GraBeat
 class RestaurantOnboardingPage extends ConsumerStatefulWidget {
   const RestaurantOnboardingPage({super.key});
 
@@ -181,7 +181,7 @@ class _RestaurantOnboardingPageState extends ConsumerState<RestaurantOnboardingP
           const SizedBox(height: 20),
           
           Text(
-            'Join KraveKart as a Restaurant Partner',
+            'Join GraBeat as a Restaurant Partner',
             style: AppTextStyles.headlineMedium.copyWith(
               color: AppColors.onSurface,
               fontWeight: FontWeight.bold,

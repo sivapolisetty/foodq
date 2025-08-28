@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:kravekart/features/auth/screens/login_screen.dart';
-import 'package:kravekart/features/home/screens/customer_home_screen.dart';
-import 'package:kravekart/features/business/screens/business_enrollment_screen.dart';
+import 'package:grabeat/features/auth/screens/login_screen.dart';
+import 'package:grabeat/features/home/screens/customer_home_screen.dart';
+import 'package:grabeat/features/business/screens/business_enrollment_screen.dart';
 import 'test_setup.dart';
 
 void main() {

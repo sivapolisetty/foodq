@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Basic UI tests for KraveKart functionality
+/// Basic UI tests for GraBeat functionality
 /// These tests validate core user interface elements and interactions
 void main() {
-  group('KraveKart Basic UI Tests', () {
+  group('GraBeat Basic UI Tests', () {
     
     testWidgets('Login Screen - Core Elements', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            appBar: AppBar(title: Text('KraveKart')),
+            appBar: AppBar(title: Text('GraBeat')),
             body: Column(
               children: [
-                Text('Welcome to KraveKart'),
+                Text('Welcome to GraBeat'),
                 TextField(
                   key: Key('email_field'),
                   decoration: InputDecoration(labelText: 'Email'),
@@ -35,8 +35,8 @@ void main() {
       );
 
       // Verify login elements
-      expect(find.text('KraveKart'), findsOneWidget);
-      expect(find.text('Welcome to KraveKart'), findsOneWidget);
+      expect(find.text('GraBeat'), findsOneWidget);
+      expect(find.text('Welcome to GraBeat'), findsOneWidget);
       expect(find.byKey(Key('email_field')), findsOneWidget);
       expect(find.byKey(Key('password_field')), findsOneWidget);
       expect(find.byKey(Key('login_button')), findsOneWidget);
@@ -46,7 +46,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            appBar: AppBar(title: Text('KraveKart')),
+            appBar: AppBar(title: Text('GraBeat')),
             body: Column(
               children: [
                 TextField(
@@ -292,7 +292,7 @@ void main() {
         MaterialApp(
           home: StatefulBuilder(
             builder: (context, setState) => Scaffold(
-              appBar: AppBar(title: Text('KraveKart')),
+              appBar: AppBar(title: Text('GraBeat')),
               body: Column(
                 children: [
                   Row(

@@ -594,7 +594,7 @@ class _OrderCard extends StatelessWidget {
         return Colors.orange;
       case 'pending':
         return Colors.blue;
-      case 'delivered':
+      case 'completed':
         return Colors.purple;
       default:
         return Colors.grey;

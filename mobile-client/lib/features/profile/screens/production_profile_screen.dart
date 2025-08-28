@@ -9,12 +9,15 @@ import '../../../shared/enums/user_type.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
 import '../../auth/services/production_auth_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../home/widgets/custom_bottom_nav.dart';
 
 class ProductionProfileScreen extends ConsumerWidget {
   const ProductionProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserAsync = ref.watch(authenticatedUserProvider);
+    
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -29,6 +32,15 @@ class ProductionProfileScreen extends ConsumerWidget {
           loading: () => _buildLoadingState(),
           error: (error, stackTrace) => _buildErrorState(error),
         ),
+      ),
+      bottomNavigationBar: currentUserAsync.when(
+        data: (currentUser) => currentUser != null ? CustomBottomNav(
+          currentIndex: 4, // Profile is index 4
+          currentUser: currentUser,
+          onTap: (index) => _handleBottomNavTap(context, index),
+        ) : null,
+        loading: () => null,
+        error: (_, __) => null,
       ),
     );
   }
@@ -406,6 +418,26 @@ class ProductionProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _handleBottomNavTap(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        context.go('/');
+        break;
+      case 1:
+        context.go('/search');
+        break;
+      case 2:
+        context.go('/favorites');
+        break;
+      case 3:
+        context.go('/orders');
+        break;
+      case 4:
+        // Already on profile, do nothing
+        break;
+    }
   }
 
   Future<void> _signOut(WidgetRef ref) async {

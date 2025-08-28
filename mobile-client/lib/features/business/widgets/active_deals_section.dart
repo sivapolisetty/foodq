@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/models/deal.dart';
 import '../../deals/providers/deal_provider.dart';
@@ -101,7 +102,7 @@ class ActiveDealsSection extends ConsumerWidget {
     }
 
     return SizedBox(
-      height: 240,
+      height: 280,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: businessDeals.length,
@@ -109,7 +110,7 @@ class ActiveDealsSection extends ConsumerWidget {
         itemBuilder: (context, index) {
           final deal = businessDeals[index];
           return SizedBox(
-            width: 300,
+            width: 280,
             child: _buildDealCard(context, deal),
           );
         },
@@ -120,6 +121,9 @@ class ActiveDealsSection extends ConsumerWidget {
   Widget _buildDealCard(BuildContext context, Deal deal) {
     final hoursUntilExpiry = deal.expiresAt.difference(DateTime.now()).inHours;
     final isExpiringSoon = hoursUntilExpiry <= 2;
+    
+    // Debug: Print deal image URL
+    print('🖼️ Deal "${deal.title}" image URL: ${deal.imageUrl}');
 
     return Container(
       decoration: BoxDecoration(
@@ -150,25 +154,33 @@ class ActiveDealsSection extends ConsumerWidget {
             ),
             child: Stack(
               children: [
-                // Placeholder image
-                Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.grey[300]!,
-                        Colors.grey[200]!,
-                      ],
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.restaurant_menu,
-                    size: 32,
-                    color: Colors.white,
-                  ),
-                ),
+                // Deal image or placeholder
+                deal.imageUrl != null && deal.imageUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        child: CachedNetworkImage(
+                          imageUrl: deal.imageUrl!,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                              color: Colors.grey[200],
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => _buildImagePlaceholder(),
+                        ),
+                      )
+                    : _buildImagePlaceholder(),
                 
                 // Status indicators
                 Positioned(
@@ -220,30 +232,30 @@ class ActiveDealsSection extends ConsumerWidget {
           // Deal info
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     deal.title,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF212121),
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   
                   Text(
                     deal.description ?? '',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 10,
                       color: Color(0xFF757575),
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   
@@ -255,11 +267,12 @@ class ActiveDealsSection extends ConsumerWidget {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             '\$${deal.originalPrice.toStringAsFixed(2)}',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               color: Color(0xFF9E9E9E),
                               decoration: TextDecoration.lineThrough,
                             ),
@@ -267,7 +280,7 @@ class ActiveDealsSection extends ConsumerWidget {
                           Text(
                             '\$${deal.discountedPrice.toStringAsFixed(2)}',
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF212121),
                             ),
@@ -276,18 +289,19 @@ class ActiveDealsSection extends ConsumerWidget {
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             '${deal.quantitySold} sold',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               color: Color(0xFF757575),
                             ),
                           ),
                           Text(
                             '${deal.quantityAvailable} left',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               color: Color(0xFF4CAF50),
                               fontWeight: FontWeight.w600,
                             ),
@@ -297,7 +311,7 @@ class ActiveDealsSection extends ConsumerWidget {
                     ],
                   ),
                   
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   
                   // Quick actions
                   Row(
@@ -306,7 +320,7 @@ class ActiveDealsSection extends ConsumerWidget {
                         child: TextButton(
                           onPressed: () => _editDeal(context, deal),
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             backgroundColor: const Color(0xFFF5F5F5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
@@ -315,19 +329,19 @@ class ActiveDealsSection extends ConsumerWidget {
                           child: const Text(
                             'Edit',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF757575),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: TextButton(
                           onPressed: () => _viewDealDetails(context, deal),
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             backgroundColor: const Color(0xFF4CAF50),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
@@ -336,7 +350,7 @@ class ActiveDealsSection extends ConsumerWidget {
                           child: const Text(
                             'View',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
@@ -356,8 +370,8 @@ class ActiveDealsSection extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.all(24),
+      height: 140,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -369,18 +383,16 @@ class ActiveDealsSection extends ConsumerWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.local_offer_outlined,
-              size: 24,
-              color: Color(0xFF9E9E9E),
-            ),
-            const SizedBox(height: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.local_offer_outlined,
+            size: 28,
+            color: Color(0xFF9E9E9E),
+          ),
+          const SizedBox(height: 8),
           const Text(
             'No active deals',
             style: TextStyle(
@@ -388,20 +400,26 @@ class ActiveDealsSection extends ConsumerWidget {
               fontWeight: FontWeight.w600,
               color: Color(0xFF757575),
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           TextButton(
             onPressed: () => context.go('/deals'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             child: const Text(
               'Create your first deal',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: Color(0xFF4CAF50),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
         ],
-        ),
       ),
     );
   }
@@ -491,5 +509,26 @@ class ActiveDealsSection extends ConsumerWidget {
 
   void _viewDealDetails(BuildContext context, Deal deal) {
     context.go('/deals');
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        gradient: LinearGradient(
+          colors: [
+            Colors.grey[300]!,
+            Colors.grey[200]!,
+          ],
+        ),
+      ),
+      child: const Icon(
+        Icons.restaurant_menu,
+        size: 32,
+        color: Colors.white,
+      ),
+    );
   }
 }

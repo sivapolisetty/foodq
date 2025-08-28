@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/mockito.dart';
-import 'package:kravekart/features/auth/screens/login_screen.dart';
-import 'package:kravekart/features/auth/providers/auth_provider.dart';
-import 'package:kravekart/shared/models/user_role.dart';
-import 'package:kravekart/shared/models/auth_result.dart';
-import 'package:kravekart/shared/models/app_user.dart';
-import 'package:kravekart/shared/theme/app_theme.dart';
+import 'package:grabeat/features/auth/screens/login_screen.dart';
+import 'package:grabeat/features/auth/providers/auth_provider.dart';
+import 'package:grabeat/shared/models/user_role.dart';
+import 'package:grabeat/shared/models/auth_result.dart';
+import 'package:grabeat/shared/models/app_user.dart';
+import 'package:grabeat/shared/theme/app_theme.dart';
 
 import '../test_helpers.dart';
 
@@ -31,7 +31,7 @@ void main() {
       );
 
       // Assert
-      expect(find.text('Welcome to KraveKart'), findsOneWidget);
+      expect(find.text('Welcome to GraBeat'), findsOneWidget);
       expect(find.text('Customer'), findsOneWidget);
       expect(find.text('Business'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);

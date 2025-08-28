@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = kravekart
+PRODUCT_NAME = foodq
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.kravekart.kravekart
+PRODUCT_BUNDLE_IDENTIFIER = com.foodq.foodq
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.kravekart. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.foodq. All rights reserved.

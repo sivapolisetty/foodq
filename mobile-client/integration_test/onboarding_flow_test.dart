@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import 'package:kravekart/main.dart' as app;
+import 'package:grabeat/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('KraveKart Onboarding Flow Tests', () {
+  group('GraBeat Onboarding Flow Tests', () {
     testWidgets('Complete Customer User Creation Flow', (WidgetTester tester) async {
       // Launch the app
       app.main();

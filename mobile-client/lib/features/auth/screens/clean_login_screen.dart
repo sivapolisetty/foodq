@@ -96,7 +96,7 @@ class _CleanLoginScreenState extends ConsumerState<CleanLoginScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          'Welcome to KraveKart',
+          'Welcome to GraBeat',
           style: AppTextStyles.headlineMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black87,

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Simple functional tests that demonstrate core KraveKart functionality
+/// Simple functional tests that demonstrate core GraBeat functionality
 /// These tests replace manual testing for basic user flows
 void main() {
-  group('KraveKart Functional Tests - Basic Flows', () {
+  group('GraBeat Functional Tests - Basic Flows', () {
     
     testWidgets('Login Screen - UI Elements Present', (WidgetTester tester) async {
       // Test: Login screen displays required elements
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            appBar: AppBar(title: const Text('KraveKart')),
+            appBar: AppBar(title: const Text('GraBeat')),
             body: const Column(
               children: [
-                Text('Welcome to KraveKart'),
+                Text('Welcome to GraBeat'),
                 TextField(
                   key: Key('email_field'),
                   decoration: InputDecoration(labelText: 'Email'),
@@ -48,8 +48,8 @@ void main() {
       );
 
       // Verify all login elements are present
-      expect(find.text('KraveKart'), findsOneWidget);
-      expect(find.text('Welcome to KraveKart'), findsOneWidget);
+      expect(find.text('GraBeat'), findsOneWidget);
+      expect(find.text('Welcome to GraBeat'), findsOneWidget);
       expect(find.byKey(const Key('email_field')), findsOneWidget);
       expect(find.byKey(const Key('password_field')), findsOneWidget);
       expect(find.byKey(const Key('login_button')), findsOneWidget);
@@ -64,7 +64,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             appBar: AppBar(
-              title: const Text('KraveKart'),
+              title: const Text('GraBeat'),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.notifications),
@@ -402,7 +402,7 @@ void main() {
           home: StatefulBuilder(
             builder: (context, setState) => Scaffold(
               appBar: AppBar(
-                title: const Text('KraveKart'),
+                title: const Text('GraBeat'),
                 actions: [
                   Stack(
                     children: [

@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:kravekart/models/deal.dart';
-import 'package:kravekart/models/business.dart';
-import 'package:kravekart/services/deal_service.dart';
-import 'package:kravekart/services/business_service.dart';
-import 'package:kravekart/screens/deal_management_screen.dart';
-import 'package:kravekart/screens/customer_home_screen.dart';
-import 'package:kravekart/widgets/deal_card.dart';
-import 'package:kravekart/widgets/yindii_button.dart';
+import 'package:grabeat/models/deal.dart';
+import 'package:grabeat/models/business.dart';
+import 'package:grabeat/services/deal_service.dart';
+import 'package:grabeat/services/business_service.dart';
+import 'package:grabeat/screens/deal_management_screen.dart';
+import 'package:grabeat/screens/customer_home_screen.dart';
+import 'package:grabeat/widgets/deal_card.dart';
+import 'package:grabeat/widgets/yindii_button.dart';
 
 @GenerateMocks([DealService, BusinessService])
 import 'deal_management_test.mocks.dart';
@@ -348,7 +348,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        expect(find.text('Welcome to KraveKart'), findsOneWidget);
+        expect(find.text('Welcome to GraBeat'), findsOneWidget);
         expect(find.text('Customer Deal 1'), findsOneWidget);
         expect(find.text('20% OFF'), findsOneWidget);
       });

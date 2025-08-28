@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:kravekart/features/auth/services/auth_service.dart';
-import 'package:kravekart/shared/theme/app_theme.dart';
+import 'package:grabeat/features/auth/services/auth_service.dart';
+import 'package:grabeat/shared/theme/app_theme.dart';
 
 @GenerateMocks([AuthService])
 import 'test_helpers.mocks.dart';

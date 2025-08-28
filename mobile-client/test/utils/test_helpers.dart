@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/models/deal.dart';
-import 'package:kravekart/models/business.dart';
+import 'package:grabeat/models/deal.dart';
+import 'package:grabeat/models/business.dart';
 
 /// Test helper utilities for API testing
 class TestHelpers {

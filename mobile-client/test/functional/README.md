@@ -1,8 +1,8 @@
-# KraveKart Functional Tests
+# GraBeat Functional Tests
 
 ## Overview
 
-This directory contains comprehensive functional tests for KraveKart that **replace manual testing entirely**. These tests simulate real user interactions and validate complete user journeys across the application.
+This directory contains comprehensive functional tests for GraBeat that **replace manual testing entirely**. These tests simulate real user interactions and validate complete user journeys across the application.
 
 ## Test Structure
 

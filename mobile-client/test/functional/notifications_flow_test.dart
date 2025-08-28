@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:kravekart/features/notifications/screens/notifications_screen.dart';
+import 'package:grabeat/features/notifications/screens/notifications_screen.dart';
 import 'test_setup.dart';
 
 void main() {
@@ -307,7 +307,7 @@ void main() {
       await tester.pumpWidget(const TestApp(
         child: Scaffold(
           appBar: AppBar(
-            title: Text('KraveKart'),
+            title: Text('GraBeat'),
             actions: [
               Stack(
                 children: [

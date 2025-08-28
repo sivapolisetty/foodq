@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/features/notifications/services/notification_service.dart';
-import 'package:kravekart/features/notifications/models/notification.dart';
-import 'package:kravekart/features/orders/models/order.dart';
-import 'package:kravekart/shared/models/deal.dart';
+import 'package:grabeat/features/notifications/services/notification_service.dart';
+import 'package:grabeat/features/notifications/models/notification.dart';
+import 'package:grabeat/features/orders/models/order.dart';
+import 'package:grabeat/shared/models/deal.dart';
 
 @GenerateMocks([SupabaseClient])
 import 'notification_service_test.mocks.dart';

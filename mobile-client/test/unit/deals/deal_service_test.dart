@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kravekart/features/deals/services/deal_service.dart';
-import 'package:kravekart/shared/models/deal.dart';
-import 'package:kravekart/shared/models/deal_result.dart';
+import 'package:grabeat/features/deals/services/deal_service.dart';
+import 'package:grabeat/shared/models/deal.dart';
+import 'package:grabeat/shared/models/deal_result.dart';
 
 void main() {
   late DealService dealService;

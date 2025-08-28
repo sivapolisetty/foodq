@@ -40,7 +40,8 @@ export async function onRequestGet(context: { request: Request; env: Env; params
           name,
           address,
           phone,
-          image_url
+          logo_url,
+          cover_image_url
         ),
         order_items (
           *,
@@ -172,7 +173,8 @@ export async function onRequestPut(context: { request: Request; env: Env; params
           name,
           address,
           phone,
-          image_url
+          logo_url,
+          cover_image_url
         ),
         order_items (
           *,
@@ -267,7 +269,8 @@ export async function onRequestDelete(context: { request: Request; env: Env; par
           name,
           address,
           phone,
-          image_url
+          logo_url,
+          cover_image_url
         ),
         order_items (
           *,

@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { supabase } from '../lib/supabase';
 
-const API_BASE_URL = 'http://localhost:8788/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://grabeat-api.pages.dev') + '/api';
+
+console.log('Onboarding API Configuration:');
+console.log('- API Base URL:', API_BASE_URL);
 
 const onboardingApi = axios.create({
   baseURL: API_BASE_URL,
@@ -41,11 +44,25 @@ export interface OnboardingRequest {
 }
 
 export const onboardingApiService = {
+  // Get all onboarding requests
+  getAllRequests: async (): Promise<OnboardingRequest[]> => {
+    try {
+      const response = await onboardingApi.get('/restaurant-onboarding-requests');
+      const allRequests = response.data.data || response.data;
+      return allRequests;
+    } catch (error: any) {
+      console.error('Error fetching onboarding requests:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch onboarding requests');
+    }
+  },
+
   // Get pending onboarding requests
   getPendingRequests: async (): Promise<OnboardingRequest[]> => {
     try {
       const response = await onboardingApi.get('/restaurant-onboarding-requests');
-      return response.data.data || response.data;
+      const allRequests = response.data.data || response.data;
+      // Filter to only return pending requests
+      return allRequests.filter((req: OnboardingRequest) => req.status === 'pending');
     } catch (error: any) {
       console.error('Error fetching onboarding requests:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch onboarding requests');
@@ -53,30 +70,28 @@ export const onboardingApiService = {
   },
 
   // Approve a business onboarding request
-  approveRequest: async (requestId: string): Promise<{ success: boolean; message: string }> => {
+  approveRequest: async (requestId: string, adminNotes?: string): Promise<OnboardingRequest> => {
     try {
-      const response = await onboardingApi.post('/restaurant-onboarding-requests', {
-        action: 'approve',
-        requestId
+      const response = await onboardingApi.put(`/restaurant-onboarding-requests/${requestId}/approve`, {
+        admin_notes: adminNotes || 'Approved by admin'
       });
-      return response.data;
+      return response.data.data;
     } catch (error: any) {
       console.error('Error approving request:', error);
-      throw new Error(error.response?.data?.message || 'Failed to approve request');
+      throw new Error(error.response?.data?.error || 'Failed to approve request');
     }
   },
 
   // Reject a business onboarding request
-  rejectRequest: async (requestId: string): Promise<{ success: boolean; message: string }> => {
+  rejectRequest: async (requestId: string, adminNotes?: string): Promise<OnboardingRequest> => {
     try {
-      const response = await onboardingApi.post('/restaurant-onboarding-requests', {
-        action: 'reject',
-        requestId
+      const response = await onboardingApi.put(`/restaurant-onboarding-requests/${requestId}/reject`, {
+        admin_notes: adminNotes || 'Rejected by admin'
       });
-      return response.data;
+      return response.data.data;
     } catch (error: any) {
       console.error('Error rejecting request:', error);
-      throw new Error(error.response?.data?.message || 'Failed to reject request');
+      throw new Error(error.response?.data?.error || 'Failed to reject request');
     }
   },
 };

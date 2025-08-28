@@ -257,7 +257,7 @@ class _ProductionLoginScreenState extends ConsumerState<ProductionLoginScreen> {
       return '${Uri.base.origin}/auth/callback';
     } else {
       // For mobile apps, use deep link that matches the intent filter
-      return 'com.grabeat.grabeat://login-callback';
+      return 'com.foodqapp.foodqapp://login-callback';
     }
   }
 

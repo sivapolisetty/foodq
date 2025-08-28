@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/deal.dart';
-import '../services/deal_service.dart';
+import '../features/deals/services/deal_service.dart';
 import '../widgets/yindii_app_bar.dart';
 import '../widgets/yindii_button.dart';
 
@@ -49,7 +49,7 @@ class _DealDetailsScreenState extends State<DealDetailsScreen> {
   void _shareDeal() {
     Share.share(
       'Check out this amazing deal: ${widget.deal.title} - ${widget.deal.discountPercentage}% OFF! Only ₹${widget.deal.discountedPrice} (was ₹${widget.deal.originalPrice})',
-      subject: 'Amazing Deal on KraveKart',
+      subject: 'Amazing Deal on GraBeat',
     );
   }
 

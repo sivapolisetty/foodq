@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>grabeat</string>
+	<string>foodqapp</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>kravekart</string>
+	<string>foodqapp</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -21,7 +21,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>5</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -49,17 +49,46 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>grabeat.auth</string>
+			<string>foodqapp.auth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.grabeat.grabeat</string>
+				<string>com.foodqapp.foodqapp</string>
 			</array>
 		</dict>
 	</array>
-	<!-- Location permissions -->
+	<!-- Privacy Permissions -->
+	<!-- Camera -->
+	<key>NSCameraUsageDescription</key>
+	<string>foodqapp needs access to your camera to take photos of food items and scan QR codes for pickup verification.</string>
+	
+	<!-- Photo Library -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>foodqapp needs access to your photo library to select photos of food items for your business profile.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>foodqapp needs permission to save photos to your photo library.</string>
+	
+	<!-- Location -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to populate restaurant address information when you tap 'Use Current Location'.</string>
+	<string>foodqapp needs your location to show nearby restaurant deals and calculate distances to help you find the best food offers in your area.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to populate restaurant address information when you tap 'Use Current Location'.</string>
+	<string>foodqapp needs your location to show nearby restaurant deals and send you notifications about new deals in your area.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>foodqapp needs your location to send you notifications about new deals when you're near participating restaurants.</string>
+	
+	<!-- Microphone (if needed for future features) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>foodqapp needs access to your microphone to record voice messages for customer support.</string>
+	
+	<!-- Notifications -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>foodqapp sends notifications about order updates, new deals, and special offers from your favorite restaurants.</string>
+	
+	<!-- Contacts (if needed) -->
+	<key>NSContactsUsageDescription</key>
+	<string>foodqapp needs access to your contacts to help you share deals with friends.</string>
+	
+	<!-- Motion (if using activity tracking) -->
+	<key>NSMotionUsageDescription</key>
+	<string>foodqapp uses motion data to provide better location accuracy when finding nearby deals.</string>
 </dict>
 </plist>

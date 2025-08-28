@@ -3,11 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kravekart/features/home/screens/customer_home_screen.dart';
-import 'package:kravekart/features/deals/services/deal_service.dart';
-import 'package:kravekart/shared/models/deal.dart';
-import 'package:kravekart/features/deals/models/restaurant.dart';
-import 'package:kravekart/shared/theme/app_theme.dart';
+import 'package:grabeat/features/home/screens/customer_home_screen.dart';
+import 'package:grabeat/features/deals/services/deal_service.dart';
+import 'package:grabeat/shared/models/deal.dart';
+import 'package:grabeat/features/deals/models/restaurant.dart';
+import 'package:grabeat/shared/theme/app_theme.dart';
 
 @GenerateMocks([DealService])
 import 'customer_home_comprehensive_test.mocks.dart';
@@ -90,7 +90,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.text('KraveKart'), findsOneWidget);
+      expect(find.text('GraBeat'), findsOneWidget);
       expect(find.byType(AppBar), findsOneWidget);
     });
 

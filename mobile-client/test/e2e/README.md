@@ -15,7 +15,7 @@ These tests perform **real operations** against a Supabase cloud database, creat
 
 1. Go to [supabase.com](https://supabase.com)
 2. Create a new project specifically for testing
-3. Name it something like "kravekart-test"
+3. Name it something like "grabeat-test"
 4. Deploy the database schema:
 
 ```bash

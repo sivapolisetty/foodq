@@ -101,8 +101,8 @@ class BusinessEnrollmentScreen extends ConsumerWidget {
                     .shimmer(duration: 1000.ms)
                     .then(delay: 2000.ms)
                     .callback(callback: (_) {
-                      // Navigate to dashboard after success animation
-                      Navigator.of(context).pushReplacementNamed('/dashboard');
+                      // Navigate to restaurant onboarding status page to show approval status
+                      Navigator.of(context).pushReplacementNamed('/restaurant-onboarding');
                     }),
               ],
             ),
@@ -154,7 +154,7 @@ class _HeaderSection extends StatelessWidget {
         const SizedBox(height: 8),
         
         Text(
-          'Join KraveKart and start reducing food waste while reaching more customers',
+          'Join GraBeat and start reducing food waste while reaching more customers',
           style: AppTextStyles.bodyLarge.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -381,7 +381,7 @@ class _SuccessState extends StatelessWidget {
           const SizedBox(height: 16),
           
           Text(
-            'Business Successfully Enrolled!',
+            'Restaurant Application Submitted!',
             style: AppTextStyles.titleLarge.copyWith(
               color: AppColors.onSuccessContainer,
               fontWeight: FontWeight.bold,
@@ -392,7 +392,7 @@ class _SuccessState extends StatelessWidget {
           const SizedBox(height: 8),
           
           Text(
-            'Your business "${business.name}" has been submitted for approval. You\'ll receive a notification once it\'s reviewed.',
+            'Your restaurant "${business.name}" application has been submitted for review. You can check the status and refresh for updates on the next screen.',
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.onSuccessContainer,
             ),

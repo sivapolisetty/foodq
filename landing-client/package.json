@@ -1,7 +1,7 @@
 {
-  "name": "grabeat",
+  "name": "foodq",
   "version": "1.0.0",
-  "description": "Grabeat - Find Amazing Food Deals Near You",
+  "description": "FoodQ - Find Amazing Food Deals Near You",
   "private": true,
   "type": "module",
   "scripts": {

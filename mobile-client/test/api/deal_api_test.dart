@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/models/deal.dart';
-import 'package:kravekart/models/business.dart';
-import 'package:kravekart/services/deal_service.dart';
-import 'package:kravekart/services/business_service.dart';
+import 'package:grabeat/models/deal.dart';
+import 'package:grabeat/models/business.dart';
+import 'package:grabeat/services/deal_service.dart';
+import 'package:grabeat/services/business_service.dart';
 
 void main() {
   late SupabaseClient supabase;

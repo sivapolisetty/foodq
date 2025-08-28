@@ -3,11 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kravekart/features/deals/screens/deal_management_screen.dart';
-import 'package:kravekart/features/deals/services/deal_service.dart';
-import 'package:kravekart/shared/models/deal.dart';
-import 'package:kravekart/shared/models/deal_result.dart';
-import 'package:kravekart/shared/theme/app_theme.dart';
+import 'package:grabeat/features/deals/screens/deal_management_screen.dart';
+import 'package:grabeat/features/deals/services/deal_service.dart';
+import 'package:grabeat/shared/models/deal.dart';
+import 'package:grabeat/shared/models/deal_result.dart';
+import 'package:grabeat/shared/theme/app_theme.dart';
 
 @GenerateMocks([DealService])
 import 'deal_management_comprehensive_test.mocks.dart';

@@ -261,6 +261,19 @@ class DealListNotifier extends StateNotifier<DealListState> {
     state = state.copyWith(error: null);
   }
 
+  /// Add a deal to the current state (for when deals are created through other methods)
+  void addDealToState(Deal deal) {
+    final currentDeals = state.deals ?? [];
+    final updatedDeals = [deal, ...currentDeals];
+    
+    state = state.copyWith(
+      deals: updatedDeals,
+      lastUpdated: DateTime.now(),
+    );
+    
+    print('✅ Deal added directly to provider state, total deals: ${updatedDeals.length}');
+  }
+
   /// Get deals by urgency for notifications
   Future<List<Deal>> getDealsByUrgency(DealUrgency urgency) async {
     try {

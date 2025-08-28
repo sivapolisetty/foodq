@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/models/business.dart';
-import 'package:kravekart/services/business_service.dart';
+import 'package:grabeat/models/business.dart';
+import 'package:grabeat/services/business_service.dart';
 import '../utils/test_helpers.dart';
 
 void main() {

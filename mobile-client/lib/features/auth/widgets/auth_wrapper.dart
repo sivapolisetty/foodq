@@ -45,7 +45,7 @@ class AuthLoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // KraveKart logo
+            // GraBeat logo
             Container(
               width: 120,
               height: 120,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors (Vibrant Green Theme for KraveKart)
+  // Primary Colors (Vibrant Green Theme for GraBeat)
   static const Color primary = Color(0xFF2E7D32); // Deep green
   static const Color primaryLight = Color(0xFF4CAF50); // Lighter green
   static const Color primaryDark = Color(0xFF1B5E20); // Darker green
@@ -71,7 +71,7 @@ class AppColors {
   static const Color darkSurfaceVariant = Color(0xFF2D2D2D);
   static const Color darkOnSurfaceVariant = Color(0xFFCAC4D0);
 
-  // KraveKart Specific Colors
+  // GraBeat Specific Colors
   static const Color discountRed = Color(0xFFE53935);
   static const Color discountGreen = Color(0xFF43A047);
   static const Color savingsGold = Color(0xFFFFC107);

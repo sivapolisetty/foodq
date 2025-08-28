@@ -87,7 +87,7 @@ class AuthService {
         redirectUrl = Uri.base.origin;
       } else {
         // Running on mobile - use app scheme
-        redirectUrl = 'com.grabeat.grabeat://login-callback/';
+        redirectUrl = 'com.foodqapp.foodqapp://login-callback/';
       }
       
       // Use Supabase's built-in OAuth flow

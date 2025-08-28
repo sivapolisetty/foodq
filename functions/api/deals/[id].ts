@@ -1,9 +1,9 @@
-import { validateAuth, getCorsHeaders } from '../../utils/auth.js';
-import { createServiceRoleClient, createSuccessResponse, createErrorResponse, Env } from '../../utils/supabase.js';
+import { validateAuth, handleCors, getCorsHeaders } from '../../utils/auth.js';
+import { getDBClient } from '../../utils/db-client.js';
+import { Env, createSuccessResponse, createErrorResponse } from '../../utils/supabase.js';
 
 export async function onRequestOptions(context: { request: Request; env: Env }) {
-  const corsHeaders = getCorsHeaders(context.request.headers.get('Origin') || '*');
-  return new Response(null, { headers: corsHeaders });
+  return handleCors(context.request, context.env);
 }
 
 export async function onRequestGet(context: { 
@@ -12,11 +12,16 @@ export async function onRequestGet(context: {
   params: { id: string } 
 }) {
   const { request, env, params } = context;
-  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   const dealId = params.id;
   
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
+  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  
   try {
-    const supabase = createServiceRoleClient(env);
+    const supabase = getDBClient(env, 'Deals.GET_BY_ID');
     
     // Get deal data with business information
     const { data: dealData, error: dealError } = await supabase
@@ -55,8 +60,13 @@ export async function onRequestPut(context: {
   params: { id: string } 
 }) {
   const { request, env, params } = context;
-  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   const dealId = params.id;
+  
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+
+  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   
   try {
     const auth = await validateAuth(request, env);
@@ -65,10 +75,10 @@ export async function onRequestPut(context: {
       return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
+    const supabase = getDBClient(env, 'Deals.PUT_BY_ID');
+
     const updates = await request.json();
     updates.updated_at = new Date().toISOString();
-
-    const supabase = createServiceRoleClient(env);
     
     // Check if user owns the business that owns this deal (unless using API key)
     if (!auth.isApiKeyAuth) {
@@ -76,14 +86,14 @@ export async function onRequestPut(context: {
         .from('deals')
         .select(`
           business_id,
-          businesses (
+          businesses!inner (
             owner_id
           )
         `)
         .eq('id', dealId)
         .single();
         
-      if (checkError || deal?.businesses?.owner_id !== auth.user?.id) {
+      if (checkError || deal?.businesses?.owner_id !== auth.user.id) {
         return createErrorResponse('Access denied: You can only update deals for your own business', 403, corsHeaders);
       }
     }
@@ -125,7 +135,7 @@ export async function onRequestDelete(context: {
       return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
-    const supabase = createServiceRoleClient(env);
+    const supabase = getDBClient(env, 'Deals.DELETE_BY_ID');
     
     // Check if user owns the business that owns this deal (unless using API key)
     if (!auth.isApiKeyAuth) {

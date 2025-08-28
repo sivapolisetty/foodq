@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-const supabaseUrl = 'https://zobhorsszzthyljriiim.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYmhvcnNzenp0aHlsanJpaWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODIzNzYsImV4cCI6MjA2OTU1ODM3Nn0.91GlHZxmJGg5E-T2iR5rzgLrQJzNPNW-SzS2VhqlymA';
+// Environment-based configuration
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://zobhorsszzthyljriiim.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYmhvcnNzenp0aHlsanJpaWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODIzNzYsImV4cCI6MjA2OTU1ODM3Nn0.91GlHZxmJGg5E-T2iR5rzgLrQJzNPNW-SzS2VhqlymA';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://grabeat-api.pages.dev';
+const environment = import.meta.env.VITE_ENVIRONMENT || 'production';
+
+console.log('Admin Client Environment Configuration:');
+console.log(`- Environment: ${environment}`);
+console.log(`- Supabase URL: ${supabaseUrl}`);
+console.log(`- API Base URL: ${apiBaseUrl}`);
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -24,8 +31,8 @@ const checkAdminStatus = async (email: string) => {
   
   console.log(`Checking admin status for email: ${email}`);
   
-  // Call the local API endpoint
-  const apiUrl = 'http://localhost:8788/api/admin/check';
+  // Call the API endpoint (environment-aware)
+  const apiUrl = `${apiBaseUrl}/api/admin/check`;
   
   const response = await fetch(apiUrl, {
     method: 'POST',

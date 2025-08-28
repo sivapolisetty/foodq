@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kravekart/features/deals/services/deal_service.dart';
+import 'package:grabeat/features/deals/services/deal_service.dart';
 
 void main() {
   group('Create Deal Integration Tests', () {

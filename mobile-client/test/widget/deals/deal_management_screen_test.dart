@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/mockito.dart';
-import 'package:kravekart/features/deals/screens/deal_management_screen.dart';
-import 'package:kravekart/features/deals/providers/deal_provider.dart';
-import 'package:kravekart/shared/models/deal.dart';
-import 'package:kravekart/shared/theme/app_theme.dart';
+import 'package:grabeat/features/deals/screens/deal_management_screen.dart';
+import 'package:grabeat/features/deals/providers/deal_provider.dart';
+import 'package:grabeat/shared/models/deal.dart';
+import 'package:grabeat/shared/theme/app_theme.dart';
 
 // Mock providers for testing
 class MockDealListNotifier extends StateNotifier<DealListState> {

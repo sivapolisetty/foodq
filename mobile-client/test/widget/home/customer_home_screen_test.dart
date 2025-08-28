@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:kravekart/features/home/screens/customer_home_screen.dart';
-import 'package:kravekart/features/search/services/search_service.dart';
-import 'package:kravekart/shared/models/deal.dart';
+import 'package:grabeat/features/home/screens/customer_home_screen.dart';
+import 'package:grabeat/features/search/services/search_service.dart';
+import 'package:grabeat/shared/models/deal.dart';
 
 @GenerateMocks([SearchService])
 import 'customer_home_screen_test.mocks.dart';
@@ -83,7 +83,7 @@ void main() {
 
       // Assert
       expect(find.text('Rescue Impact'), findsOneWidget);
-      expect(find.text('by KraveKart Community'), findsOneWidget);
+      expect(find.text('by GraBeat Community'), findsOneWidget);
       expect(find.textContaining('kg CO₂'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
     });

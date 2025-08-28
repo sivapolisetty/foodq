@@ -228,7 +228,7 @@ class TestDataManager {
       'owner_id': ownerId ?? TestConfig.testUserId,
       'address': '123 Test Street, Test City',
       'phone': '+1234567890',
-      'email': 'test$suffix@kravekart-e2e.com',
+      'email': 'test$suffix@grabeat-e2e.com',
       'latitude': 12.9716,
       'longitude': 77.5946,
       'is_active': true,

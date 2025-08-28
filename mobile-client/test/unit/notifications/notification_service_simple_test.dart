@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kravekart/features/notifications/models/notification.dart';
-import 'package:kravekart/features/orders/models/order.dart';
-import 'package:kravekart/shared/models/deal.dart';
+import 'package:grabeat/features/notifications/models/notification.dart';
+import 'package:grabeat/features/orders/models/order.dart';
+import 'package:grabeat/shared/models/deal.dart';
 
 void main() {
   group('NotificationService Unit Tests (Simple)', () {

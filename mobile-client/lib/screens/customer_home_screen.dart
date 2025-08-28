@@ -323,7 +323,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
                                     ),
                                   ),
                                   Text(
-                                    'KraveKart',
+                                    'GraBeat',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 28,

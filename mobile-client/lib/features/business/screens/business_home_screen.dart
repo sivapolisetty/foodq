@@ -35,13 +35,15 @@ class _BusinessHomeScreenState extends ConsumerState<BusinessHomeScreen> {
 
     return currentUserAsync.when(
       data: (currentUser) {
-        if (currentUser == null || !currentUser.isBusiness) {
+        // ProductionAuthWrapper ensures currentUser is not null
+        // Here we only check if user is a business user
+        if (currentUser != null && !currentUser.isBusiness) {
           return _buildUnauthorizedState();
         }
         
         // The auth wrapper already handles onboarding status checks
         // If we're here, the user is authorized to see the business dashboard
-        return _buildBusinessDashboard(currentUser);
+        return _buildBusinessDashboard(currentUser!);
       },
       loading: () => const Scaffold(
         body: Center(
@@ -103,7 +105,7 @@ class _BusinessHomeScreenState extends ConsumerState<BusinessHomeScreen> {
 
   Widget _buildSliverAppBar(AppUser businessUser) {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 70,
       floating: false,
       pinned: true,
       elevation: 0,
@@ -115,63 +117,32 @@ class _BusinessHomeScreenState extends ConsumerState<BusinessHomeScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF2E7D32), // Darker green
-                Color(0xFF4CAF50), // Medium green
-                Color(0xFF66BB6A), // Lighter green
+                Color(0xFF2E7D32), // Dark green
+                Color(0xFF4CAF50), // Light green
               ],
-              stops: [0.0, 0.5, 1.0],
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Business Dashboard',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
             ),
           ),
         ),
+        titlePadding: const EdgeInsets.only(left: 24, bottom: 14),
         title: Text(
           businessUser.name,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
+            letterSpacing: -0.3,
           ),
         ),
         centerTitle: false,
       ),
       actions: [
-        // Notifications
+        // Clean notifications button
         IconButton(
           onPressed: () => context.go('/notifications'),
           icon: Stack(
             children: [
               const Icon(
-                Icons.notifications_outlined,
+                Icons.notifications_none_rounded,
                 color: Colors.white,
                 size: 24,
               ),

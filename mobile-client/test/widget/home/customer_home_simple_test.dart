@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kravekart/features/home/screens/customer_home_screen.dart';
-import 'package:kravekart/shared/models/deal.dart';
+import 'package:grabeat/features/home/screens/customer_home_screen.dart';
+import 'package:grabeat/shared/models/deal.dart';
 
 void main() {
   group('CustomerHomeScreen Simple Tests', () {
@@ -70,7 +70,7 @@ void main() {
       expect(find.text('Your Location'), findsOneWidget);
       expect(find.text('Current Location'), findsOneWidget);
       expect(find.text('Rescue Impact'), findsOneWidget);
-      expect(find.text('by KraveKart Community'), findsOneWidget);
+      expect(find.text('by GraBeat Community'), findsOneWidget);
     });
 
     testWidgets('should display bottom navigation', (WidgetTester tester) async {

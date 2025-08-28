@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kravekart/models/deal.dart';
-import 'package:kravekart/models/business.dart';
+import 'package:grabeat/models/deal.dart';
+import 'package:grabeat/models/business.dart';
 
 void main() {
   group('Deal Model Tests', () {

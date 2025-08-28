@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kravekart/features/business/services/business_service.dart';
-import 'package:kravekart/shared/models/business.dart';
-import 'package:kravekart/shared/models/business_result.dart';
+import 'package:grabeat/features/business/services/business_service.dart';
+import 'package:grabeat/shared/models/business.dart';
+import 'package:grabeat/shared/models/business_result.dart';
 
 @GenerateMocks([SupabaseClient, PostgrestQueryBuilder, PostgrestFilterBuilder])
 import 'business_service_test.mocks.dart';

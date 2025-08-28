@@ -74,7 +74,7 @@ class RestaurantOwnerCtaCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Grow your business with KraveKart! Reach thousands of hungry customers and increase your revenue.',
+                  'Grow your business with GraBeat! Reach thousands of hungry customers and increase your revenue.',
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: Colors.white.withOpacity(0.95),
                     height: 1.4,
