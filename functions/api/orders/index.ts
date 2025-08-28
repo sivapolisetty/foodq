@@ -2,7 +2,7 @@ import { validateAuth, handleCors, getCorsHeaders } from '../../utils/auth.js';
 import { getDBClient } from '../../utils/db-client.js';
 import { Env, createSuccessResponse, createErrorResponse } from '../../utils/supabase.js';
 
-// Fixed authentication issues - updated 2025-08-28
+// Fixed authentication issues - updated 2025-08-28 - v2
 
 export async function onRequestOptions(context: { request: Request; env: Env }) {
   return handleCors(context.request, context.env);
@@ -86,11 +86,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
 
   try {
+    console.log('Orders POST v2 - starting authentication');
     const auth = await validateAuth(request, env);
     
     if (!auth.isAuthenticated) {
+      console.log('Orders POST v2 - authentication failed');
       return createErrorResponse('Authentication required', 401, corsHeaders);
     }
+    console.log('Orders POST v2 - authentication successful, user:', auth.user.id);
 
     const supabase = getDBClient(env, 'Orders.POST');
     const userId = auth.user.id;
