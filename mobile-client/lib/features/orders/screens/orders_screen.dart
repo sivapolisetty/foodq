@@ -375,7 +375,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> with SingleTickerPr
           break;
         case 2:
           if (currentUser.isBusiness) {
-            context.go('/deals');
+            context.go('/qr-scanner');
           } else {
             context.go('/favorites');
           }

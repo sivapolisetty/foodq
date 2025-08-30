@@ -6,6 +6,7 @@ import '../screens/production_login_screen.dart';
 import '../screens/user_onboarding_screen.dart';
 import '../services/production_auth_service.dart';
 import '../services/auth_logger.dart';
+import '../providers/auth_provider.dart';
 import '../../business/screens/restaurant_onboarding_page.dart';
 import '../../business/screens/business_home_screen.dart';
 import '../../business/screens/business_waiting_list_screen.dart';
@@ -145,8 +146,16 @@ class ProductionAuthWrapper extends ConsumerWidget {
     print('🏠 _buildAuthenticatedApp called with user: $user');
     
     if (user == null) {
+      // Check if session still exists - if not, user has been logged out
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        print('🔐 User is null and no session - showing login screen');
+        AuthLogger.logAuthEvent('User logged out - showing login screen');
+        return const ProductionLoginScreen();
+      }
+      
       // User authenticated but no profile - show onboarding
-      print('👤 User is null - showing onboarding screen');
+      print('👤 User is null but session exists - showing onboarding screen');
       AuthLogger.logAuthEvent('Authenticated user has no profile - showing onboarding');
       return const UserOnboardingScreen();
     }
@@ -213,15 +222,15 @@ class ProductionAuthWrapper extends ConsumerWidget {
         AuthLogger.logAuthEvent('Routing to business waiting list screen');
         return BusinessWaitingListScreen(onboardingStatus: onboardingStatus);
       } else {
-        // Business user completed onboarding and approved - show dashboard
-        print('🏢 Routing to business home screen');
-        AuthLogger.logAuthEvent('Routing to business home screen');
-        return const BusinessHomeScreen();
+        // Business user completed onboarding and approved - show child or default to dashboard
+        print('🏢 Business user authorized - showing ${child != null ? 'child screen' : 'business home screen'}');
+        AuthLogger.logAuthEvent(child != null ? 'Showing child screen for business user' : 'Routing to business home screen');
+        return child ?? const BusinessHomeScreen();
       }
     } else {
-      // Customer user - show home screen
-      print('🛍️  Routing to customer home screen');
-      AuthLogger.logAuthEvent('Routing to customer home screen');
+      // Customer user - show child or default to home screen
+      print('🛍️  Customer user authorized - showing ${child != null ? 'child screen' : 'customer home screen'}');
+      AuthLogger.logAuthEvent(child != null ? 'Showing child screen for customer user' : 'Routing to customer home screen');
       return child ?? const CustomerHomeScreen();
     }
   }
@@ -365,3 +374,29 @@ final isCustomerUserProvider = Provider<bool>((ref) {
     orElse: () => false,
   );
 });
+
+/// Comprehensive logout utility that clears all cached data
+Future<void> performCompleteLogout(WidgetRef ref) async {
+  try {
+    print('🚪 Starting comprehensive logout...');
+    
+    // 1. Use production auth service for complete logout (clears Supabase + SharedPreferences)
+    final authService = ref.read(productionAuthServiceProvider);
+    await authService.signOut();
+    
+    // 2. Invalidate all auth-related providers
+    ref.invalidate(authenticatedUserProvider);
+    ref.invalidate(onboardingStatusProvider);
+    
+    // Also invalidate the currentAuthUserProvider from auth_provider.dart
+    ref.invalidate(currentAuthUserProvider);
+    
+    // 3. Clear any other cached providers
+    // Individual screens should handle their own provider invalidation if needed
+    
+    print('✅ Comprehensive logout completed');
+  } catch (e) {
+    print('💥 Error during comprehensive logout: $e');
+    rethrow;
+  }
+}

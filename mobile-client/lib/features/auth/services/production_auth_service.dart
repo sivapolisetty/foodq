@@ -232,6 +232,11 @@ class ProductionAuthService {
         final hasBusiness = data['has_business'] ?? false;
         final businessStatus = data['business_status'] as Map<String, dynamic>?;
         
+        print('🏢 Business status details:');
+        print('   businessStatus: $businessStatus');
+        print('   is_approved: ${businessStatus?['is_approved']}');
+        print('   onboarding_completed: ${businessStatus?['onboarding_completed']}');
+        
         print('✅ Onboarding status determined: needs_onboarding = $needsOnboarding');
         AuthLogger.logAuthEvent('Onboarding status retrieved', data: {
           'needs_onboarding': needsOnboarding,
@@ -295,9 +300,28 @@ class ProductionAuthService {
     }
   }
 
-  /// Sign out current user
+  /// Sign out current user and clear all local data
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
+    try {
+      print('🚪 Starting complete logout process...');
+      AuthLogger.logAuthEvent('Starting complete logout');
+      
+      // 1. Clear Supabase session
+      await _supabase.auth.signOut();
+      print('✅ Supabase session cleared');
+      
+      // 2. Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      print('✅ SharedPreferences cleared');
+      
+      AuthLogger.logAuthEvent('Complete logout successful');
+      print('🎉 Complete logout process finished');
+    } catch (e) {
+      print('💥 Error during logout: $e');
+      AuthLogger.logAuthError('signOut', e);
+      rethrow;
+    }
   }
 
   /// Update user profile

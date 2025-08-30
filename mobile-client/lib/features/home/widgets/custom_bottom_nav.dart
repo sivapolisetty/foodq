@@ -23,6 +23,7 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
   static const Duration _tapDebounceTime = Duration(milliseconds: 500);
 
   void _handleTap(int index) {
+    debugPrint('🔘 CustomBottomNav: Tap detected on index $index, currentIndex: ${widget.currentIndex}');
     final now = DateTime.now();
     
     // Debounce rapid taps
@@ -33,6 +34,7 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
     
     // Prevent tapping the same item
     if (index == widget.currentIndex) {
+      debugPrint('🚫 Navigation tap blocked - same index');
       return;
     }
     
@@ -40,10 +42,13 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
     
     if (mounted && context.mounted) {
       try {
+        debugPrint('🎯 CustomBottomNav: Calling onTap with index $index');
         widget.onTap?.call(index);
       } catch (e) {
         debugPrint('❌ Navigation tap error: $e');
       }
+    } else {
+      debugPrint('❌ CustomBottomNav: Not mounted or context not mounted');
     }
   }
 
@@ -171,11 +176,30 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
   }
 
   List<NavigationItem> _getNavigationItems() {
+    final items = widget.currentUser!.isBusiness ? [
+      NavigationItem(icon: Icons.analytics_rounded, label: 'Dashboard'),
+      NavigationItem(icon: Icons.local_offer_rounded, label: 'Deals'),
+      NavigationItem(icon: Icons.qr_code_scanner_rounded, label: 'Scanner'),
+      NavigationItem(icon: Icons.shopping_bag_rounded, label: 'Orders'),
+      NavigationItem(icon: Icons.account_circle_rounded, label: 'Profile'),
+    ] : [
+      NavigationItem(icon: Icons.home_rounded, label: 'Home'),
+      NavigationItem(icon: Icons.search_rounded, label: 'Search'),
+      NavigationItem(icon: Icons.favorite_rounded, label: 'Favorites'),
+      NavigationItem(icon: Icons.receipt_long_rounded, label: 'Orders'),
+      NavigationItem(icon: Icons.account_circle_rounded, label: 'Profile'),
+    ];
+    
+    debugPrint('🔘 Navigation items generated: ${items.map((e) => e.label).toList()}');
+    return items;
+  }
+
+  List<NavigationItem> _getNavigationItemsOld() {
     if (widget.currentUser!.isBusiness) {
       return [
         NavigationItem(icon: Icons.analytics_rounded, label: 'Dashboard'),
         NavigationItem(icon: Icons.local_offer_rounded, label: 'Deals'),
-        NavigationItem(icon: Icons.account_balance_wallet_rounded, label: 'Finances'),
+        NavigationItem(icon: Icons.qr_code_scanner_rounded, label: 'Scanner'),
         NavigationItem(icon: Icons.shopping_bag_rounded, label: 'Orders'),
         NavigationItem(icon: Icons.account_circle_rounded, label: 'Profile'),
       ];

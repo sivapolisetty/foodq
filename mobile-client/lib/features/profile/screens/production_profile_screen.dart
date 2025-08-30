@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
 import '../../../shared/widgets/overflow_safe_wrapper.dart';
-import '../../../shared/enums/user_type.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
-import '../../auth/services/production_auth_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../home/widgets/custom_bottom_nav.dart';
 
@@ -18,37 +15,42 @@ class ProductionProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserAsync = ref.watch(authenticatedUserProvider);
     
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        foregroundColor: AppColors.onSurface,
-      ),
-      body: OverflowSafeWrapper(
-        child: ref.watch(currentAuthUserProvider).when(
-          data: (user) => _buildProfileContent(context, ref, user),
-          loading: () => _buildLoadingState(),
-          error: (error, stackTrace) => _buildErrorState(error),
-        ),
-      ),
-      bottomNavigationBar: currentUserAsync.when(
-        data: (currentUser) => currentUser != null ? CustomBottomNav(
-          currentIndex: 4, // Profile is index 4
-          currentUser: currentUser,
-          onTap: (index) => _handleBottomNavTap(context, index),
-        ) : null,
-        loading: () => null,
-        error: (_, __) => null,
-      ),
+    return ref.watch(currentAuthUserProvider).when(
+      data: (user) {
+        // If user is null, redirect to auth wrapper instead of showing profile
+        if (user == null) {
+          return const ProductionAuthWrapper();
+        }
+        
+        return Scaffold(
+          backgroundColor: AppColors.surface,
+          appBar: AppBar(
+            title: const Text('Profile'),
+            backgroundColor: AppColors.surface,
+            elevation: 0,
+            foregroundColor: AppColors.onSurface,
+          ),
+          body: OverflowSafeWrapper(
+            child: _buildProfileContent(context, ref, user),
+          ),
+          bottomNavigationBar: currentUserAsync.when(
+            data: (currentUser) => currentUser != null ? CustomBottomNav(
+              currentIndex: 4, // Profile is index 4
+              currentUser: currentUser,
+              onTap: (index) => _handleBottomNavTap(context, index, ref),
+            ) : null,
+            loading: () => null,
+            error: (_, __) => null,
+          ),
+        );
+      },
+      loading: () => _buildLoadingState(),
+      error: (error, stackTrace) => _buildErrorState(error),
     );
   }
 
   Widget _buildProfileContent(BuildContext context, WidgetRef ref, user) {
-    if (user == null) {
-      return _buildNotAuthenticatedState();
-    }
+    // User should never be null here since we handle it in build method
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -85,6 +87,33 @@ class ProductionProfileScreen extends ConsumerWidget {
               value: user?.isBusiness == true ? 'Restaurant Partner' : 'Customer',
             ),
           ]),
+          const SizedBox(height: 32),
+
+          // Business Information Section (only for business users)
+          if (user.isBusiness) ...[
+            _buildSectionTitle('Business Information'),
+            const SizedBox(height: 16),
+            _buildInfoCard([
+              if (user.businessName?.isNotEmpty == true)
+                InfoItem(
+                  icon: Icons.store,
+                  title: 'Business Name',
+                  value: user.businessName!,
+                ),
+              if (user.businessId?.isNotEmpty == true)
+                InfoItem(
+                  icon: Icons.badge,
+                  title: 'Business ID',
+                  value: user.businessId!.substring(0, 8).toUpperCase(),
+                ),
+              if (user.address?.isNotEmpty == true)
+                InfoItem(
+                  icon: Icons.location_on,
+                  title: 'Address',
+                  value: user.address!,
+                ),
+            ]),
+          ],
           const SizedBox(height: 32),
 
           // Account Actions
@@ -284,31 +313,22 @@ class ProductionProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Role switching options
-          if (user.isCustomer) ...[
-            ListTile(
-              leading: Icon(Icons.business, color: AppColors.primary),
-              title: const Text('Become a Restaurant Partner'),
-              subtitle: const Text('Start selling on grabeat'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => _showRoleChangeDialog(context, ref, UserType.business),
-            ),
-          ] else if (user.isBusiness) ...[
-            ListTile(
-              leading: Icon(Icons.shopping_bag, color: AppColors.primary),
-              title: const Text('Switch to Customer Account'),
-              subtitle: const Text('Browse and order food'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => _showRoleChangeDialog(context, ref, UserType.customer),
-            ),
-          ],
           ListTile(
             leading: Icon(Icons.edit, color: AppColors.primary),
             title: const Text('Edit Profile'),
-            subtitle: const Text('Update your information'),
+            subtitle: const Text('Update your personal information'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () => _showEditProfileDialog(context, ref, user),
           ),
+          if (user.isBusiness) ...[
+            ListTile(
+              leading: Icon(Icons.business, color: AppColors.primary),
+              title: const Text('Edit Business Profile'),
+              subtitle: const Text('Update restaurant information'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _showEditBusinessProfileDialog(context, ref, user),
+            ),
+          ],
           ListTile(
             leading: Icon(Icons.help, color: AppColors.primary),
             title: const Text('Help & Support'),
@@ -321,82 +341,189 @@ class ProductionProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showRoleChangeDialog(BuildContext context, WidgetRef ref, UserType newRole) async {
-    final isBecomingBusiness = newRole == UserType.business;
+  void _showEditProfileDialog(BuildContext context, WidgetRef ref, user) {
+    final nameController = TextEditingController(text: user.name);
+    final phoneController = TextEditingController(text: user.phone ?? '');
     
-    final confirmed = await showDialog<bool>(
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isBecomingBusiness 
-          ? 'Become a Restaurant Partner?' 
-          : 'Switch to Customer Account?'),
-        content: Text(isBecomingBusiness 
-          ? 'This will change your account to a restaurant partner account. '
-            'You\'ll need to complete restaurant onboarding to start selling.'
-          : 'This will change your account to a customer account. '
-            'You can browse and order food from restaurants.'),
+        title: const Text('Edit Profile'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Email cannot be changed for security reasons.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Continue'),
+            onPressed: () async {
+              await _updateProfile(context, ref, {
+                'name': nameController.text.trim(),
+                'phone': phoneController.text.trim(),
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Save'),
           ),
         ],
       ),
     );
-
-    if (confirmed == true) {
-      await _updateUserRole(context, ref, newRole);
-    }
   }
 
-  Future<void> _updateUserRole(BuildContext context, WidgetRef ref, UserType newRole) async {
+  void _showEditBusinessProfileDialog(BuildContext context, WidgetRef ref, user) {
+    final businessNameController = TextEditingController(text: user.businessName ?? '');
+    final addressController = TextEditingController(text: user.address ?? '');
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Business Profile'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: businessNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Business Name',
+                    prefixIcon: Icon(Icons.business),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Business Address',
+                    prefixIcon: Icon(Icons.location_on),
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.infoContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Changes to business information may require approval.',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.onInfoContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _updateProfile(context, ref, {
+                'business_name': businessNameController.text.trim(),
+                'address': addressController.text.trim(),
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateProfile(BuildContext context, WidgetRef ref, Map<String, String> updates) async {
     try {
       final authNotifier = ref.read(currentAuthUserProvider.notifier);
-      await authNotifier.updateProfile({'user_type': newRole.name});
+      await authNotifier.updateProfile(updates);
       
       if (context.mounted) {
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 const Icon(Icons.check_circle, color: Colors.white),
                 const SizedBox(width: 8),
-                Text('Account switched to ${newRole.displayName}'),
+                const Text('Profile updated successfully!'),
               ],
             ),
             backgroundColor: AppColors.success,
           ),
         );
-
-        // Navigate based on new role
-        if (newRole == UserType.business) {
-          context.pushReplacementNamed('businessHome');
-        } else {
-          context.pushReplacementNamed('home');
-        }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error updating profile: ${e.toString()}'),
             backgroundColor: AppColors.error,
           ),
         );
       }
     }
-  }
-
-  void _showEditProfileDialog(BuildContext context, WidgetRef ref, user) {
-    // TODO: Implement edit profile dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit profile feature coming soon!')),
-    );
   }
 
   void _showHelpDialog(BuildContext context) {
@@ -420,32 +547,57 @@ class ProductionProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _handleBottomNavTap(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        context.go('/');
-        break;
-      case 1:
-        context.go('/search');
-        break;
-      case 2:
-        context.go('/favorites');
-        break;
-      case 3:
-        context.go('/orders');
-        break;
-      case 4:
-        // Already on profile, do nothing
-        break;
+  void _handleBottomNavTap(BuildContext context, int index, WidgetRef ref) {
+    final currentUserAsync = ref.read(authenticatedUserProvider);
+    final currentUser = currentUserAsync.valueOrNull;
+    
+    if (currentUser?.isBusiness == true) {
+      // Business navigation
+      switch (index) {
+        case 0:
+          context.go('/business-home');
+          break;
+        case 1:
+          context.go('/deals');
+          break;
+        case 2:
+          context.go('/qr-scanner');
+          break;
+        case 3:
+          context.go('/orders');
+          break;
+        case 4:
+          // Already on profile, do nothing
+          break;
+      }
+    } else {
+      // Customer navigation
+      switch (index) {
+        case 0:
+          context.go('/customer-home');
+          break;
+        case 1:
+          context.go('/search');
+          break;
+        case 2:
+          context.go('/favorites');
+          break;
+        case 3:
+          context.go('/orders');
+          break;
+        case 4:
+          // Already on profile, do nothing
+          break;
+      }
     }
   }
 
   Future<void> _signOut(WidgetRef ref) async {
     try {
-      await Supabase.instance.client.auth.signOut();
-      // The auth wrapper will handle navigation back to login
+      // Use the comprehensive logout utility
+      await performCompleteLogout(ref);
     } catch (e) {
-      print('Error signing out: $e');
+      print('💥 Error signing out: $e');
     }
   }
 
@@ -477,11 +629,6 @@ class ProductionProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotAuthenticatedState() {
-    return const Center(
-      child: Text('Not authenticated'),
-    );
-  }
 }
 
 class InfoItem {

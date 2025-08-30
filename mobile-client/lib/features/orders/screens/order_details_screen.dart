@@ -6,6 +6,7 @@ import '../../../shared/models/order.dart';
 import '../../../shared/models/app_user.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
 import '../providers/order_provider.dart';
+import '../widgets/order_verification_card.dart';
 
 class OrderDetailsScreen extends ConsumerWidget {
   final Order order;
@@ -98,6 +99,17 @@ class OrderDetailsScreen extends ConsumerWidget {
             children: [
               _buildOrderStatusCard(),
               const SizedBox(height: 16),
+              // Show verification card for confirmed orders (for customers)
+              if (!currentUser.isBusiness && order.status == OrderStatus.confirmed) ...[
+                OrderVerificationCard(
+                  order: order,
+                  onRefresh: () {
+                    // Refresh order data
+                    ref.invalidate(customerOrdersProvider(currentUser.id));
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
               _buildOrderInfoCard(),
               const SizedBox(height: 16),
               _buildPaymentInfoCard(),
@@ -154,80 +166,40 @@ class OrderDetailsScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _buildProgressIndicator(),
-            const SizedBox(height: 12),
-            Text(
-              order.statusDisplay,
-              style: TextStyle(
-                fontSize: 16,
-                color: _getStatusColor(),
-                fontWeight: FontWeight.w600,
+            // Simple status display for two-state flow
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getStatusColor().withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _getStatusColor().withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _getStatusIcon(),
+                    color: _getStatusColor(),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      order.statusDisplay,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _getStatusColor(),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildProgressIndicator() {
-    final progress = order.progressPercentage;
-    
-    return Column(
-      children: [
-        Container(
-          height: 8,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: progress,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _getStatusColor(),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildProgressStep('Ordered', progress >= 0.2),
-            _buildProgressStep('Confirmed', progress >= 0.4),
-            _buildProgressStep('Preparing', progress >= 0.6),
-            _buildProgressStep('Ready', progress >= 0.8),
-            _buildProgressStep('Complete', progress >= 1.0),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressStep(String label, bool isActive) {
-    return Column(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: isActive ? _getStatusColor() : Colors.grey[300],
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: isActive ? _getStatusColor() : Colors.grey[500],
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ],
     );
   }
 
@@ -481,12 +453,14 @@ class OrderDetailsScreen extends ConsumerWidget {
   List<Widget> _buildBusinessActionButtons(BuildContext context, WidgetRef ref, OrderNotifier orderNotifier) {
     final buttons = <Widget>[];
     
-    if (order.status == OrderStatus.pending) {
+    // In simplified flow, orders are immediately confirmed
+    // Business can only mark confirmed orders as completed
+    if (order.status == OrderStatus.confirmed) {
       buttons.add(
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => _confirmOrder(context, ref, orderNotifier),
+            onPressed: () => _completeOrder(context, ref, orderNotifier),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4CAF50),
               foregroundColor: Colors.white,
@@ -495,18 +469,18 @@ class OrderDetailsScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Confirm Order'),
+            child: const Text('Mark as Completed'),
           ),
         ),
       );
-    }
-    
-    if (order.status == OrderStatus.confirmed || order.status == OrderStatus.preparing) {
+      
+      buttons.add(const SizedBox(height: 12));
+      
       buttons.add(
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => _markOrderReady(context, ref, orderNotifier),
+          child: OutlinedButton(
+            onPressed: () => Navigator.pushNamed(context, '/orders/verify'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
@@ -521,7 +495,7 @@ class OrderDetailsScreen extends ConsumerWidget {
       );
     }
     
-    if (order.status == OrderStatus.ready) {
+    if (order.status == OrderStatus.completed) {
       buttons.add(
         SizedBox(
           width: double.infinity,
@@ -590,14 +564,9 @@ class OrderDetailsScreen extends ConsumerWidget {
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[];
           
-          if (order.status == OrderStatus.pending) {
-            items.add(const PopupMenuItem(value: 'confirm', child: Text('Confirm Order')));
-          }
-          if (order.status == OrderStatus.confirmed || order.status == OrderStatus.preparing) {
-            items.add(const PopupMenuItem(value: 'ready', child: Text('Mark Ready')));
-          }
-          if (order.status == OrderStatus.ready) {
-            items.add(const PopupMenuItem(value: 'complete', child: Text('Complete')));
+          // Simplified flow - only allow completing confirmed orders
+          if (order.status == OrderStatus.confirmed) {
+            items.add(const PopupMenuItem(value: 'complete', child: Text('Mark Complete')));
           }
           
           return items;
@@ -682,18 +651,23 @@ class OrderDetailsScreen extends ConsumerWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
-      case OrderStatus.pending:
-        return Colors.orange;
       case OrderStatus.confirmed:
-        return Colors.blue;
-      case OrderStatus.preparing:
-        return Colors.purple;
-      case OrderStatus.ready:
-        return const Color(0xFF4CAF50);
+        return Colors.orange; // Orange - action needed
       case OrderStatus.completed:
-        return Colors.green[700]!;
+        return const Color(0xFF4CAF50); // Green - completed
       case OrderStatus.cancelled:
-        return Colors.red;
+        return Colors.red; // Red - cancelled
+    }
+  }
+
+  IconData _getStatusIcon() {
+    switch (order.status) {
+      case OrderStatus.confirmed:
+        return Icons.qr_code; // QR code icon for verification
+      case OrderStatus.completed:
+        return Icons.check_circle; // Check circle for completed
+      case OrderStatus.cancelled:
+        return Icons.cancel; // Cancel icon
     }
   }
 

@@ -128,25 +128,29 @@ class EnhancedOrderCard extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              // Order ID and Date
+              // Order ID and Date - Fix overflow
               Text(
                 'Order #${order.id.substring(0, 8).toUpperCase()}',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Colors.grey[600],
                   fontWeight: FontWeight.w600,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
                 _formatOrderDate(),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Colors.grey[500],
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
         // Status Chip
-        _buildStatusChip(),
+        Flexible(child: _buildStatusChip()),
       ],
     );
   }
@@ -405,7 +409,7 @@ class EnhancedOrderCard extends ConsumerWidget {
     return Row(
       children: [
         Expanded(
-          child: _buildProgressBar(),
+          child: _buildSimpleStatus(),
         ),
         const SizedBox(width: 12),
         _buildPaymentStatus(),
@@ -413,43 +417,23 @@ class EnhancedOrderCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressBar() {
-    final progress = order.progressPercentage;
-    
+  Widget _buildSimpleStatus() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Order Progress',
+          'Status',
           style: AppTextStyles.bodySmall.copyWith(
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 4),
-        Container(
-          height: 6,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: progress,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _getStatusColor(),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
         Text(
           order.statusDisplay,
-          style: AppTextStyles.bodySmall.copyWith(
+          style: AppTextStyles.bodyMedium.copyWith(
             color: _getStatusColor(),
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
@@ -507,17 +491,20 @@ class EnhancedOrderCard extends ConsumerWidget {
   }
 
   Widget _buildStatusChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: _getStatusColor(),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        order.status.displayText,
-        style: AppTextStyles.labelSmall.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _getStatusColor(),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          order.status.displayText,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -525,18 +512,12 @@ class EnhancedOrderCard extends ConsumerWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
-      case OrderStatus.pending:
-        return Colors.orange;
       case OrderStatus.confirmed:
-        return Colors.blue;
-      case OrderStatus.preparing:
-        return Colors.purple;
-      case OrderStatus.ready:
-        return AppColors.primary;
+        return AppColors.primary; // Orange - action needed
       case OrderStatus.completed:
-        return Colors.green[700]!;
+        return Colors.green[700]!; // Green - completed
       case OrderStatus.cancelled:
-        return Colors.red;
+        return Colors.red; // Red - cancelled
     }
   }
 

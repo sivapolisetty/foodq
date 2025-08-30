@@ -65,6 +65,10 @@ dependencies:
   # Image handling
   image_picker: ^1.0.7
   share_plus: ^7.2.2
+  
+  # QR Code generation and scanning
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^3.5.6
 
   # Additional UI
   cupertino_icons: ^1.0.6

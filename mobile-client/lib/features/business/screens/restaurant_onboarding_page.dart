@@ -443,10 +443,14 @@ class _RestaurantOnboardingPageState extends ConsumerState<RestaurantOnboardingP
   }
 
   void _showOnboardingModal(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const RestaurantOnboardingModal(),
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const RestaurantOnboardingModal(),
+        transitionDuration: Duration.zero, // We handle animation inside the modal
+        reverseTransitionDuration: Duration.zero,
+        barrierDismissible: false,
+        opaque: false, // Make background transparent
+      ),
     ).then((_) {
       // Refresh application status after modal closes
       _loadApplicationStatus();

@@ -81,9 +81,13 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
   }
 
   Future<void> _selectImage() async {
+    // Show image source selection dialog
+    final ImageSource? source = await _showImageSourceDialog();
+    if (source == null) return;
+
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       maxWidth: 1200,
       maxHeight: 1200,
       imageQuality: 85,
@@ -94,6 +98,7 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
         // For web, read the file as bytes
         final bytes = await pickedFile.readAsBytes();
         print('🌐 Web image selected:');
+        print('   Source: ${source == ImageSource.camera ? "Camera" : "Gallery"}');
         print('   Name: ${pickedFile.name}');
         print('   Size: ${bytes.length} bytes');
         print('   Extension: ${pickedFile.name.split('.').last}');
@@ -104,6 +109,10 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
         });
       } else {
         // For mobile, use file
+        print('📱 Mobile image selected:');
+        print('   Source: ${source == ImageSource.camera ? "Camera" : "Gallery"}');
+        print('   Path: ${pickedFile.path}');
+        print('   Name: ${pickedFile.name}');
         setState(() {
           _selectedImage = File(pickedFile.path);
           _selectedImageBytes = null; // Clear bytes for mobile
@@ -111,6 +120,40 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
         });
       }
     }
+  }
+
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Image Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                title: const Text('Take Photo'),
+                subtitle: const Text('Use camera to take a new photo'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                title: const Text('Choose from Gallery'),
+                subtitle: const Text('Select from existing photos'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -389,7 +432,7 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Optional - helps customers see your food',
+          'Take a photo or choose from gallery',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.onSurfaceVariant.withOpacity(0.7),
           ),

@@ -18,9 +18,13 @@ class RestaurantOnboardingModal extends ConsumerStatefulWidget {
   ConsumerState<RestaurantOnboardingModal> createState() => _RestaurantOnboardingModalState();
 }
 
-class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboardingModal> {
+class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboardingModal>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
   
   // Restaurant Information
   final _restaurantNameController = TextEditingController();
@@ -51,6 +55,33 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
   
   bool _isSubmitting = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    ));
+    
+    _animationController.forward();
+  }
+
   // Cuisine type options as per requirements
   final List<String> _cuisineTypes = [
     'North Indian',
@@ -73,6 +104,7 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
 
   @override
   void dispose() {
+    _animationController.dispose();
     _restaurantNameController.dispose();
     _restaurantDescriptionController.dispose();
     _ownerNameController.dispose();
@@ -87,25 +119,59 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
     super.dispose();
   }
 
+  Future<void> _closeModal() async {
+    await _animationController.reverse();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      child: Container(
-        width: double.maxFinite,
-        height: MediaQuery.of(context).size.height * 0.9,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Stack(
+          children: [
+            // Background overlay
+            GestureDetector(
+              onTap: () {}, // Prevent closing by tapping outside
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+              ),
+            ),
+            // Sliding panel from top
+            SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
         child: Column(
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20), // Top padding for status bar
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.1),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
               ),
               child: Row(
                 children: [
@@ -131,8 +197,9 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _closeModal,
                     icon: const Icon(Icons.close),
+                    color: AppColors.primary,
                   ),
                 ],
               ),
@@ -210,6 +277,10 @@ class _RestaurantOnboardingModalState extends ConsumerState<RestaurantOnboarding
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
               ),
             ),
           ],

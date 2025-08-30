@@ -528,7 +528,7 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
           context.go('/business-home');
           break;
         case 2:
-          context.go('/finances');
+          context.go('/qr-scanner');
           break;
         case 3:
           context.go('/orders');

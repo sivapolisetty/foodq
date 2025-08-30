@@ -350,20 +350,26 @@ class _BusinessHomeScreenState extends ConsumerState<BusinessHomeScreen> {
   }
 
   void _handleBottomNavTap(int index) {
+    debugPrint('🔘 BusinessHome: Bottom nav tap index: $index');
     switch (index) {
       case 0:
         // Already on business home dashboard
+        debugPrint('🏠 BusinessHome: Staying on dashboard');
         break;
       case 1:
+        debugPrint('🎯 BusinessHome: Navigating to deals');
         context.go('/deals');
         break;
       case 2:
-        context.go('/finances');
+        debugPrint('📷 BusinessHome: Navigating to QR scanner');
+        context.go('/qr-scanner');
         break;
       case 3:
+        debugPrint('📋 BusinessHome: Navigating to orders');
         context.go('/orders');
         break;
       case 4:
+        debugPrint('👤 BusinessHome: Navigating to profile');
         context.go('/profile');
         break;
     }

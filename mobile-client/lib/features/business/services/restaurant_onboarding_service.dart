@@ -69,7 +69,7 @@ class RestaurantOnboardingService {
 
       print('Submit application response: ${response.statusCode} - ${response.body}');
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
         if (data['success']) {
           return RestaurantOnboardingRequest.fromJson(_convertDatesFromApi(data['data']));

@@ -442,18 +442,12 @@ class _OrderConfirmationScreenState extends ConsumerState<OrderConfirmationScree
 
   Color _getStatusColor() {
     switch (widget.order.status) {
-      case OrderStatus.pending:
-        return Colors.orange;
       case OrderStatus.confirmed:
-        return AppColors.success;
-      case OrderStatus.preparing:
-        return Colors.blue;
-      case OrderStatus.ready:
-        return AppColors.primary;
+        return AppColors.primary; // Orange - action needed
       case OrderStatus.completed:
-        return AppColors.success;
+        return AppColors.success; // Green - completed
       case OrderStatus.cancelled:
-        return AppColors.error;
+        return AppColors.error; // Red - cancelled
     }
   }
 

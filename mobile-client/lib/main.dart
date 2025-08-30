@@ -27,6 +27,7 @@ import 'features/business/screens/business_onboarding_status_screen.dart';
 import 'features/business/screens/restaurant_onboarding_page.dart';
 import 'features/business/screens/business_profile_screen.dart';
 import 'features/business/screens/finance_screen.dart';
+import 'features/business/screens/qr_scanner_screen.dart';
 
 // Deal management
 import 'features/deals/screens/deal_management_screen.dart';
@@ -208,6 +209,13 @@ class GrabeatApp extends ConsumerWidget {
           name: 'finances',
           builder: (context, state) => const ProductionAuthWrapper(
             child: FinanceScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/qr-scanner',
+          name: 'qrScanner',
+          builder: (context, state) => const ProductionAuthWrapper(
+            child: QRScannerScreen(),
           ),
         ),
         GoRoute(

@@ -294,18 +294,7 @@ class NotificationService {
       case OrderStatus.confirmed:
         type = NotificationType.orderConfirmed;
         title = 'Order Confirmed!';
-        message = 'Your order #${order.id} has been confirmed and is being prepared.';
-        break;
-      case OrderStatus.preparing:
-        type = NotificationType.orderPreparing;
-        title = 'Order Being Prepared';
-        message = 'Your order is now being prepared. Estimated pickup time: ${order.formattedPickupTime}';
-        break;
-      case OrderStatus.ready:
-        type = NotificationType.orderReady;
-        title = 'Order Ready for Pickup!';
-        message = 'Your order is ready for pickup! Please arrive at your scheduled time.';
-        priority = NotificationPriority.high;
+        message = 'Your order #${order.id} has been confirmed. Show QR code or pickup code: ${order.formattedVerificationCode}';
         break;
       case OrderStatus.completed:
         type = NotificationType.orderCompleted;

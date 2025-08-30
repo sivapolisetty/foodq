@@ -326,18 +326,12 @@ class OrderCardWidget extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
-      case OrderStatus.pending:
-        return Colors.orange;
       case OrderStatus.confirmed:
-        return Colors.blue;
-      case OrderStatus.preparing:
-        return Colors.purple;
-      case OrderStatus.ready:
-        return const Color(0xFF4CAF50);
+        return Colors.orange; // Orange - action needed
       case OrderStatus.completed:
-        return Colors.green[700]!;
+        return Colors.green[700]!; // Green - completed
       case OrderStatus.cancelled:
-        return Colors.red;
+        return Colors.red; // Red - cancelled
     }
   }
 

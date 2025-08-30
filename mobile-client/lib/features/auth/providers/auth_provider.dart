@@ -163,10 +163,14 @@ class AuthUserNotifier extends StateNotifier<AsyncValue<AppUser?>> {
     }
   }
 
-  /// Sign out current user
+  /// Sign out current user and clear all cached data
   Future<void> signOut() async {
     try {
-      await _authService.signOut();
+      // Use production auth service for comprehensive logout
+      await _productionAuthService.signOut();
+      
+      // Immediately clear the state
+      state = const AsyncValue.data(null);
     } catch (e) {
       rethrow;
     }

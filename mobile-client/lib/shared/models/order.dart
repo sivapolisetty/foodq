@@ -1,18 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
 
 part 'order.freezed.dart';
 part 'order.g.dart';
 
-/// Order status enum
+/// Simplified Order status enum - Only two states for streamlined flow
 enum OrderStatus {
-  @JsonValue('pending')
-  pending,
   @JsonValue('confirmed')
   confirmed,
-  @JsonValue('preparing')
-  preparing,
-  @JsonValue('ready')
-  ready,
   @JsonValue('completed')
   completed,
   @JsonValue('cancelled')
@@ -45,18 +40,36 @@ enum PaymentMethod {
 extension OrderStatusExtension on OrderStatus {
   String get displayText {
     switch (this) {
-      case OrderStatus.pending:
-        return 'Pending';
       case OrderStatus.confirmed:
         return 'Confirmed';
-      case OrderStatus.preparing:
-        return 'Preparing';
-      case OrderStatus.ready:
-        return 'Ready for Pickup';
       case OrderStatus.completed:
         return 'Completed';
       case OrderStatus.cancelled:
         return 'Cancelled';
+    }
+  }
+  
+  /// Get status description for customers
+  String get customerDescription {
+    switch (this) {
+      case OrderStatus.confirmed:
+        return 'Your order is confirmed! Show the QR code or 6-digit code to the restaurant for pickup.';
+      case OrderStatus.completed:
+        return 'Order completed. Thank you for your business!';
+      case OrderStatus.cancelled:
+        return 'This order has been cancelled.';
+    }
+  }
+  
+  /// Get status color for UI
+  String get statusColor {
+    switch (this) {
+      case OrderStatus.confirmed:
+        return '#FF9800'; // Orange - action needed
+      case OrderStatus.completed:
+        return '#4CAF50'; // Green - success
+      case OrderStatus.cancelled:
+        return '#F44336'; // Red - error
     }
   }
 }
@@ -141,7 +154,7 @@ class OrderItem with _$OrderItem {
   factory OrderItem.fromJson(Map<String, dynamic> json) => _$OrderItemFromJson(json);
 }
 
-/// Order model for pick-up orders
+/// Order model for pick-up orders with simplified flow
 @freezed
 class Order with _$Order {
   const factory Order({
@@ -157,6 +170,11 @@ class Order with _$Order {
     @JsonKey(name: 'payment_status') @Default(PaymentStatus.pending) PaymentStatus paymentStatus,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
+    // New verification fields for simplified flow
+    @JsonKey(name: 'verification_code') String? verificationCode,
+    @JsonKey(name: 'qr_data') String? qrData,
+    @JsonKey(name: 'confirmed_at') DateTime? confirmedAt,
+    @JsonKey(name: 'completed_at') DateTime? completedAt,
     // Nested data from API
     OrderBusiness? businesses,
     @JsonKey(name: 'order_items') @Default([]) List<OrderItem> orderItems,
@@ -166,7 +184,7 @@ class Order with _$Order {
 
   const Order._();
 
-  /// Create a new pick-up order
+  /// Create a new pick-up order (immediately confirmed in simplified flow)
   factory Order.createPickupOrder({
     required String userId,
     required String businessId,
@@ -180,28 +198,23 @@ class Order with _$Order {
       userId: userId,
       businessId: businessId,
       totalAmount: totalAmount,
-      status: OrderStatus.pending,
+      status: OrderStatus.confirmed, // Immediately confirmed in simplified flow
       pickupTime: pickupTime,
       deliveryInstructions: deliveryInstructions,
       paymentStatus: PaymentStatus.pending,
       paymentMethod: paymentMethod,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      confirmedAt: DateTime.now(), // Set confirmation time
       orderItems: [],
     );
   }
 
-  /// Get order status display text
+  /// Get order status display text for simplified flow
   String get statusDisplay {
     switch (status) {
-      case OrderStatus.pending:
-        return 'Pending Confirmation';
       case OrderStatus.confirmed:
         return 'Confirmed';
-      case OrderStatus.preparing:
-        return 'Being Prepared';
-      case OrderStatus.ready:
-        return 'Ready for Pickup';
       case OrderStatus.completed:
         return 'Completed';
       case OrderStatus.cancelled:
@@ -235,9 +248,9 @@ class Order with _$Order {
     }
   }
 
-  /// Check if order can be cancelled
+  /// Check if order can be cancelled (only confirmed orders can be cancelled in simplified flow)
   bool get canBeCancelled {
-    return status == OrderStatus.pending || status == OrderStatus.confirmed;
+    return status == OrderStatus.confirmed;
   }
 
   /// Check if order is active (not completed or cancelled)
@@ -295,21 +308,15 @@ class Order with _$Order {
     }
   }
 
-  /// Get order progress percentage
+  /// Get order progress percentage for simplified flow
   double get progressPercentage {
     switch (status) {
-      case OrderStatus.pending:
-        return 0.2;
       case OrderStatus.confirmed:
-        return 0.4;
-      case OrderStatus.preparing:
-        return 0.6;
-      case OrderStatus.ready:
-        return 0.8;
+        return 0.5; // 50% - Order confirmed, waiting for pickup
       case OrderStatus.completed:
-        return 1.0;
+        return 1.0; // 100% - Order completed
       case OrderStatus.cancelled:
-        return 0.0;
+        return 0.0; // 0% - Order cancelled
     }
   }
 
@@ -317,6 +324,62 @@ class Order with _$Order {
   int get estimatedPrepTime {
     // This could be enhanced to use deal-specific prep times
     return 15; // Default 15 minutes
+  }
+  
+  /// Get formatted verification code for display (e.g., "A1B2C3")
+  String get formattedVerificationCode {
+    if (verificationCode == null || verificationCode!.isEmpty) {
+      return 'No Code';
+    }
+    return verificationCode!.toUpperCase();
+  }
+  
+  /// Check if order has verification code
+  bool get hasVerificationCode {
+    return verificationCode != null && verificationCode!.isNotEmpty;
+  }
+  
+  /// Get QR code data as Map (parsed from JSON string)
+  Map<String, dynamic>? get qrCodeData {
+    if (qrData == null || qrData!.isEmpty) return null;
+    try {
+      return json.decode(qrData!) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  /// Check if order is ready for verification (has confirmation code)
+  bool get isReadyForVerification {
+    return status == OrderStatus.confirmed && hasVerificationCode;
+  }
+  
+  /// Get verification instructions for customer
+  String get verificationInstructions {
+    if (!isReadyForVerification) {
+      return 'Order not ready for verification';
+    }
+    return 'Show this QR code or tell the restaurant your pickup code: $formattedVerificationCode';
+  }
+  
+  /// Get time since order was confirmed
+  Duration? get timeSinceConfirmed {
+    if (confirmedAt == null) return null;
+    return DateTime.now().difference(confirmedAt!);
+  }
+  
+  /// Get formatted time since confirmed
+  String get timeSinceConfirmedFormatted {
+    final duration = timeSinceConfirmed;
+    if (duration == null) return 'Just now';
+    
+    if (duration.inMinutes < 1) {
+      return 'Just now';
+    } else if (duration.inMinutes < 60) {
+      return '${duration.inMinutes} min ago';
+    } else {
+      return '${duration.inHours}h ${duration.inMinutes % 60}m ago';
+    }
   }
 }
 

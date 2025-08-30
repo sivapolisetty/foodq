@@ -90,6 +90,14 @@ _$OrderImpl _$$OrderImplFromJson(Map<String, dynamic> json) => _$OrderImpl(
       updatedAt: json['updated_at'] == null
           ? null
           : DateTime.parse(json['updated_at'] as String),
+      verificationCode: json['verification_code'] as String?,
+      qrData: json['qr_data'] as String?,
+      confirmedAt: json['confirmed_at'] == null
+          ? null
+          : DateTime.parse(json['confirmed_at'] as String),
+      completedAt: json['completed_at'] == null
+          ? null
+          : DateTime.parse(json['completed_at'] as String),
       businesses: json['businesses'] == null
           ? null
           : OrderBusiness.fromJson(json['businesses'] as Map<String, dynamic>),
@@ -113,15 +121,16 @@ Map<String, dynamic> _$$OrderImplToJson(_$OrderImpl instance) =>
       'payment_status': _$PaymentStatusEnumMap[instance.paymentStatus]!,
       'created_at': instance.createdAt?.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
+      'verification_code': instance.verificationCode,
+      'qr_data': instance.qrData,
+      'confirmed_at': instance.confirmedAt?.toIso8601String(),
+      'completed_at': instance.completedAt?.toIso8601String(),
       'businesses': instance.businesses,
       'order_items': instance.orderItems,
     };
 
 const _$OrderStatusEnumMap = {
-  OrderStatus.pending: 'pending',
   OrderStatus.confirmed: 'confirmed',
-  OrderStatus.preparing: 'preparing',
-  OrderStatus.ready: 'ready',
   OrderStatus.completed: 'completed',
   OrderStatus.cancelled: 'cancelled',
 };

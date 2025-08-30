@@ -630,7 +630,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
         context.go('/deals');
         break;
       case 2:
-        context.go('/finances');
+        context.go('/qr-scanner');
         break;
       case 3:
         context.go('/orders');

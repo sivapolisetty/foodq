@@ -109,8 +109,11 @@ export async function onRequestGet(context: {
     if (userData.user_type === 'customer') {
       needsOnboarding = !userData.name || !userData.email;
     } else if (userData.user_type === 'business') {
-      // Business user needs onboarding only if they don't have a completed business setup
-      needsOnboarding = !(businessData && businessData.onboarding_completed);
+      // Business user needs onboarding only if they don't have an approved business OR completed onboarding
+      // Check if they have approved restaurant request OR business with onboarding completed
+      const hasApprovedRequest = isApproved && restaurantRequest;
+      const hasCompletedBusiness = businessData && businessData.onboarding_completed;
+      needsOnboarding = !(hasApprovedRequest || hasCompletedBusiness);
     } else if (userData.user_type === 'business_pending') {
       needsOnboarding = !restaurantRequest;
     }

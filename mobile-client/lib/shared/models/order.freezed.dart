@@ -822,6 +822,15 @@ mixin _$Order {
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'updated_at')
   DateTime? get updatedAt =>
+      throw _privateConstructorUsedError; // New verification fields for simplified flow
+  @JsonKey(name: 'verification_code')
+  String? get verificationCode => throw _privateConstructorUsedError;
+  @JsonKey(name: 'qr_data')
+  String? get qrData => throw _privateConstructorUsedError;
+  @JsonKey(name: 'confirmed_at')
+  DateTime? get confirmedAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'completed_at')
+  DateTime? get completedAt =>
       throw _privateConstructorUsedError; // Nested data from API
   OrderBusiness? get businesses => throw _privateConstructorUsedError;
   @JsonKey(name: 'order_items')
@@ -854,6 +863,10 @@ abstract class $OrderCopyWith<$Res> {
       @JsonKey(name: 'payment_status') PaymentStatus paymentStatus,
       @JsonKey(name: 'created_at') DateTime? createdAt,
       @JsonKey(name: 'updated_at') DateTime? updatedAt,
+      @JsonKey(name: 'verification_code') String? verificationCode,
+      @JsonKey(name: 'qr_data') String? qrData,
+      @JsonKey(name: 'confirmed_at') DateTime? confirmedAt,
+      @JsonKey(name: 'completed_at') DateTime? completedAt,
       OrderBusiness? businesses,
       @JsonKey(name: 'order_items') List<OrderItem> orderItems});
 
@@ -887,6 +900,10 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
     Object? paymentStatus = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? verificationCode = freezed,
+    Object? qrData = freezed,
+    Object? confirmedAt = freezed,
+    Object? completedAt = freezed,
     Object? businesses = freezed,
     Object? orderItems = null,
   }) {
@@ -939,6 +956,22 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      verificationCode: freezed == verificationCode
+          ? _value.verificationCode
+          : verificationCode // ignore: cast_nullable_to_non_nullable
+              as String?,
+      qrData: freezed == qrData
+          ? _value.qrData
+          : qrData // ignore: cast_nullable_to_non_nullable
+              as String?,
+      confirmedAt: freezed == confirmedAt
+          ? _value.confirmedAt
+          : confirmedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      completedAt: freezed == completedAt
+          ? _value.completedAt
+          : completedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       businesses: freezed == businesses
           ? _value.businesses
           : businesses // ignore: cast_nullable_to_non_nullable
@@ -985,6 +1018,10 @@ abstract class _$$OrderImplCopyWith<$Res> implements $OrderCopyWith<$Res> {
       @JsonKey(name: 'payment_status') PaymentStatus paymentStatus,
       @JsonKey(name: 'created_at') DateTime? createdAt,
       @JsonKey(name: 'updated_at') DateTime? updatedAt,
+      @JsonKey(name: 'verification_code') String? verificationCode,
+      @JsonKey(name: 'qr_data') String? qrData,
+      @JsonKey(name: 'confirmed_at') DateTime? confirmedAt,
+      @JsonKey(name: 'completed_at') DateTime? completedAt,
       OrderBusiness? businesses,
       @JsonKey(name: 'order_items') List<OrderItem> orderItems});
 
@@ -1017,6 +1054,10 @@ class __$$OrderImplCopyWithImpl<$Res>
     Object? paymentStatus = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? verificationCode = freezed,
+    Object? qrData = freezed,
+    Object? confirmedAt = freezed,
+    Object? completedAt = freezed,
     Object? businesses = freezed,
     Object? orderItems = null,
   }) {
@@ -1069,6 +1110,22 @@ class __$$OrderImplCopyWithImpl<$Res>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      verificationCode: freezed == verificationCode
+          ? _value.verificationCode
+          : verificationCode // ignore: cast_nullable_to_non_nullable
+              as String?,
+      qrData: freezed == qrData
+          ? _value.qrData
+          : qrData // ignore: cast_nullable_to_non_nullable
+              as String?,
+      confirmedAt: freezed == confirmedAt
+          ? _value.confirmedAt
+          : confirmedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      completedAt: freezed == completedAt
+          ? _value.completedAt
+          : completedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       businesses: freezed == businesses
           ? _value.businesses
           : businesses // ignore: cast_nullable_to_non_nullable
@@ -1098,6 +1155,10 @@ class _$OrderImpl extends _Order {
       this.paymentStatus = PaymentStatus.pending,
       @JsonKey(name: 'created_at') this.createdAt,
       @JsonKey(name: 'updated_at') this.updatedAt,
+      @JsonKey(name: 'verification_code') this.verificationCode,
+      @JsonKey(name: 'qr_data') this.qrData,
+      @JsonKey(name: 'confirmed_at') this.confirmedAt,
+      @JsonKey(name: 'completed_at') this.completedAt,
       this.businesses,
       @JsonKey(name: 'order_items')
       final List<OrderItem> orderItems = const []})
@@ -1141,6 +1202,19 @@ class _$OrderImpl extends _Order {
   @override
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
+// New verification fields for simplified flow
+  @override
+  @JsonKey(name: 'verification_code')
+  final String? verificationCode;
+  @override
+  @JsonKey(name: 'qr_data')
+  final String? qrData;
+  @override
+  @JsonKey(name: 'confirmed_at')
+  final DateTime? confirmedAt;
+  @override
+  @JsonKey(name: 'completed_at')
+  final DateTime? completedAt;
 // Nested data from API
   @override
   final OrderBusiness? businesses;
@@ -1155,7 +1229,7 @@ class _$OrderImpl extends _Order {
 
   @override
   String toString() {
-    return 'Order(id: $id, userId: $userId, businessId: $businessId, totalAmount: $totalAmount, status: $status, deliveryAddress: $deliveryAddress, deliveryInstructions: $deliveryInstructions, pickupTime: $pickupTime, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, createdAt: $createdAt, updatedAt: $updatedAt, businesses: $businesses, orderItems: $orderItems)';
+    return 'Order(id: $id, userId: $userId, businessId: $businessId, totalAmount: $totalAmount, status: $status, deliveryAddress: $deliveryAddress, deliveryInstructions: $deliveryInstructions, pickupTime: $pickupTime, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, createdAt: $createdAt, updatedAt: $updatedAt, verificationCode: $verificationCode, qrData: $qrData, confirmedAt: $confirmedAt, completedAt: $completedAt, businesses: $businesses, orderItems: $orderItems)';
   }
 
   @override
@@ -1184,6 +1258,13 @@ class _$OrderImpl extends _Order {
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
+            (identical(other.verificationCode, verificationCode) ||
+                other.verificationCode == verificationCode) &&
+            (identical(other.qrData, qrData) || other.qrData == qrData) &&
+            (identical(other.confirmedAt, confirmedAt) ||
+                other.confirmedAt == confirmedAt) &&
+            (identical(other.completedAt, completedAt) ||
+                other.completedAt == completedAt) &&
             (identical(other.businesses, businesses) ||
                 other.businesses == businesses) &&
             const DeepCollectionEquality()
@@ -1206,6 +1287,10 @@ class _$OrderImpl extends _Order {
       paymentStatus,
       createdAt,
       updatedAt,
+      verificationCode,
+      qrData,
+      confirmedAt,
+      completedAt,
       businesses,
       const DeepCollectionEquality().hash(_orderItems));
 
@@ -1241,6 +1326,10 @@ abstract class _Order extends Order {
           @JsonKey(name: 'payment_status') final PaymentStatus paymentStatus,
           @JsonKey(name: 'created_at') final DateTime? createdAt,
           @JsonKey(name: 'updated_at') final DateTime? updatedAt,
+          @JsonKey(name: 'verification_code') final String? verificationCode,
+          @JsonKey(name: 'qr_data') final String? qrData,
+          @JsonKey(name: 'confirmed_at') final DateTime? confirmedAt,
+          @JsonKey(name: 'completed_at') final DateTime? completedAt,
           final OrderBusiness? businesses,
           @JsonKey(name: 'order_items') final List<OrderItem> orderItems}) =
       _$OrderImpl;
@@ -1281,7 +1370,19 @@ abstract class _Order extends Order {
   DateTime? get createdAt;
   @override
   @JsonKey(name: 'updated_at')
-  DateTime? get updatedAt; // Nested data from API
+  DateTime? get updatedAt; // New verification fields for simplified flow
+  @override
+  @JsonKey(name: 'verification_code')
+  String? get verificationCode;
+  @override
+  @JsonKey(name: 'qr_data')
+  String? get qrData;
+  @override
+  @JsonKey(name: 'confirmed_at')
+  DateTime? get confirmedAt;
+  @override
+  @JsonKey(name: 'completed_at')
+  DateTime? get completedAt; // Nested data from API
   @override
   OrderBusiness? get businesses;
   @override

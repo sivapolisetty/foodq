@@ -488,7 +488,7 @@ class RecentOrdersSection extends ConsumerWidget {
   Future<void> _confirmOrder(BuildContext context, Order order, WidgetRef ref) async {
     try {
       final orderService = ref.read(orderServiceProvider);
-      await orderService.updateOrderStatus(order.id, OrderStatus.preparing);
+      await orderService.updateOrderStatus(order.id, OrderStatus.completed);
       
       // Refresh the orders list
       ref.invalidate(businessOrdersProvider(businessUser.businessId!));
@@ -516,7 +516,7 @@ class RecentOrdersSection extends ConsumerWidget {
   Future<void> _markOrderReady(BuildContext context, Order order, WidgetRef ref) async {
     try {
       final orderService = ref.read(orderServiceProvider);
-      await orderService.updateOrderStatus(order.id, OrderStatus.ready);
+      await orderService.updateOrderStatus(order.id, OrderStatus.completed);
       
       // Refresh the orders list
       ref.invalidate(businessOrdersProvider(businessUser.businessId!));
@@ -588,14 +588,8 @@ class RecentOrdersSection extends ConsumerWidget {
 
   String _getEstimatedReadyText(Order order) {
     switch (order.status) {
-      case OrderStatus.pending:
-        return 'Awaiting confirmation';
       case OrderStatus.confirmed:
-        return '15 min';
-      case OrderStatus.preparing:
-        return '10 min';
-      case OrderStatus.ready:
-        return 'Ready now';
+        return '15 min'; // Estimated prep time
       case OrderStatus.completed:
         return 'Completed';
       case OrderStatus.cancelled:

@@ -92,6 +92,24 @@ export async function onRequestPut(context: { request: Request; env: Env; params
       }
       
       businessId = newBusiness.id;
+    } else {
+      // Update existing business to mark as approved and onboarding completed
+      await supabase
+        .from('businesses')
+        .update({
+          name: onboardingRequest.restaurant_name,
+          description: onboardingRequest.restaurant_description || '',
+          address: onboardingRequest.address,
+          latitude: onboardingRequest.latitude || 0,
+          longitude: onboardingRequest.longitude || 0,
+          phone: onboardingRequest.owner_phone,
+          email: onboardingRequest.owner_email,
+          is_active: true,
+          is_approved: true,
+          onboarding_completed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', businessId);
     }
     
     // Update user's business_id and type

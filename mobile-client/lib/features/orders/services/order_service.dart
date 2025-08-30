@@ -297,7 +297,7 @@ class OrderService {
 
   /// Mark order as ready for pickup
   Future<Order> markOrderReady(String orderId) async {
-    return updateOrderStatus(orderId, OrderStatus.ready);
+    return updateOrderStatus(orderId, OrderStatus.completed);
   }
 
   /// Complete an order
@@ -419,7 +419,7 @@ class OrderService {
     
     // Ensure string fields are not null for required fields
     if (sanitized['status'] == null) {
-      sanitized['status'] = 'pending';
+      sanitized['status'] = 'confirmed'; // Default to confirmed in simplified flow
     }
     
     if (sanitized['payment_method'] == null) {
@@ -427,7 +427,7 @@ class OrderService {
     }
     
     if (sanitized['payment_status'] == null) {
-      sanitized['payment_status'] = 'pending';
+      sanitized['payment_status'] = 'paid'; // Default to paid for simplified flow
     }
     
     // Convert numeric fields that might be strings
@@ -496,5 +496,67 @@ class OrderService {
     }
     
     return sanitized;
+  }
+
+  /// Verify an order using verification code or QR data (for businesses)
+  Future<Order> verifyOrder({
+    String? verificationCode,
+    String? qrData,
+    String? orderId,
+  }) async {
+    try {
+      debugPrint('🔍 OrderService.verifyOrder: Starting verification');
+      debugPrint('🔍 Verification code: $verificationCode');
+      debugPrint('🔍 QR data: $qrData');
+      debugPrint('🔍 Order ID: $orderId');
+      
+      final requestBody = <String, dynamic>{};
+      
+      if (verificationCode != null) {
+        requestBody['verification_code'] = verificationCode.toUpperCase();
+      }
+      if (qrData != null) {
+        requestBody['qr_data'] = qrData;
+      }
+      if (orderId != null) {
+        requestBody['order_id'] = orderId;
+      }
+      
+      final response = await ApiService.post<Map<String, dynamic>>(
+        '/api/orders/verify',
+        body: requestBody,
+        fromJson: (data) => data as Map<String, dynamic>,
+      );
+
+      debugPrint('🔍 OrderService.verifyOrder: Response success=${response.success}');
+      debugPrint('🔍 OrderService.verifyOrder: Response data=${response.data}');
+
+      if (response.success && response.data != null) {
+        final responseData = response.data!;
+        
+        // The API returns { order: {...}, message: "...", verification_method: "..." }
+        if (responseData.containsKey('order')) {
+          final orderData = responseData['order'] as Map<String, dynamic>;
+          debugPrint('🔍 OrderService.verifyOrder: Creating Order from: $orderData');
+          return Order.fromJson(orderData);
+        }
+        
+        // Fallback: try using the response data directly
+        debugPrint('🔍 OrderService.verifyOrder: Using response data directly');
+        return Order.fromJson(responseData);
+      }
+      
+      debugPrint('🔍 OrderService.verifyOrder: Failed - ${response.error}');
+      throw Exception(response.error ?? 'Failed to verify order');
+    } catch (e) {
+      debugPrint('🔍 OrderService.verifyOrder: Exception - $e');
+      if (e.toString().contains('Order not found')) {
+        throw Exception('Order not found or already completed');
+      }
+      if (e.toString().contains('verification mismatch')) {
+        throw Exception('Invalid verification code');
+      }
+      throw Exception('Failed to verify order: $e');
+    }
   }
 }

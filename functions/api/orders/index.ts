@@ -139,13 +139,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return createErrorResponse('Invalid order format: must include either deal_id or items array', 400, corsHeaders);
     }
     
-    // Create the order
+    // Create the order with immediate confirmed status (simplified flow)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
         user_id: userId,
         business_id: businessId,
-        status: 'pending',
+        status: 'confirmed', // Immediate confirmation in simplified flow
         total_amount: totalAmount,
         delivery_address: orderData.delivery_address,
         delivery_instructions: orderData.delivery_instructions || orderData.pickup_instructions,
@@ -153,6 +153,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         pickup_time: orderData.pickup_time || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
+        // Note: confirmed_at will be set automatically by the database trigger once migration is applied
       }])
       .select()
       .single();
@@ -281,9 +282,11 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
     if (isBusinessOwner) {
       // Business can update status, pickup_time, delivery_instructions
       if (updateData.status) {
-        const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'];
+        const validStatuses = ['confirmed', 'completed', 'cancelled'];
         if (validStatuses.includes(updateData.status)) {
           allowedUpdates.status = updateData.status;
+          
+          // Note: completed_at will be set automatically by the database trigger once migration is applied
         }
       }
       if (updateData.pickup_time) {
@@ -293,8 +296,8 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         allowedUpdates.delivery_instructions = updateData.delivery_instructions;
       }
     } else if (isCustomer) {
-      // Customer can only cancel their own order if it's still pending
-      if (updateData.status === 'cancelled' && existingOrder.status === 'pending') {
+      // Customer can only cancel their own order if it's still confirmed (not completed)
+      if (updateData.status === 'cancelled' && existingOrder.status === 'confirmed') {
         allowedUpdates.status = 'cancelled';
       }
     }
