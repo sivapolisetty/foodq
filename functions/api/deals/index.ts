@@ -20,7 +20,112 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     const businessId = url.searchParams.get('business_id');
     const status = url.searchParams.get('status');
     const limit = url.searchParams.get('limit');
+    const filter = url.searchParams.get('filter');
+    const search = url.searchParams.get('search');
     
+    // Location-based query parameters
+    const lat = url.searchParams.get('lat');
+    const lng = url.searchParams.get('lng');
+    const radius = url.searchParams.get('radius');
+    
+    // Check if this is a location-based query
+    if (filter === 'nearby' && lat && lng) {
+      console.log(`🌍 Location-based deals query: lat=${lat}, lng=${lng}, radius=${radius || 10}km`);
+      
+      const userLat = parseFloat(lat);
+      const userLng = parseFloat(lng);
+      const radiusKm = radius ? parseFloat(radius) : 10.0;
+      const resultLimit = limit ? parseInt(limit) : 20;
+      
+      // Validate coordinates
+      if (isNaN(userLat) || isNaN(userLng) || userLat < -90 || userLat > 90 || userLng < -180 || userLng > 180) {
+        return errorResponse('Invalid coordinates provided', 400, request, env);
+      }
+      
+      // Create a custom query for location-based deals with current schema
+      let locationQuery = supabase
+        .from('deals')
+        .select(`
+          *,
+          businesses!inner (
+            id,
+            name,
+            description,
+            owner_id,
+            latitude,
+            longitude,
+            address,
+            phone
+          )
+        `)
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .not('businesses.latitude', 'is', null)
+        .not('businesses.longitude', 'is', null);
+      
+      // Filter by business_id if provided
+      if (businessId) {
+        locationQuery = locationQuery.eq('business_id', businessId);
+      }
+      
+      // Add search functionality
+      if (search && search.trim()) {
+        const searchTerm = search.trim();
+        locationQuery = locationQuery.or(`title.ilike.*${searchTerm}*,description.ilike.*${searchTerm}*`);
+      }
+      
+      locationQuery = locationQuery
+        .limit(resultLimit)
+        .order('created_at', { ascending: false });
+      
+      const { data: deals, error: dealsError } = await locationQuery;
+      
+      if (dealsError) {
+        console.error('Database error in nearby deals query:', dealsError);
+        return errorResponse(`Database error: ${dealsError.message}`, 500, request, env);
+      }
+      
+      console.log(`📊 Initial query returned ${deals?.length || 0} deals before distance filtering`);
+      
+      // Calculate distances and filter by radius
+      const dealsWithDistance = deals
+        .map((deal: any) => {
+          const business = deal.businesses;
+          if (!business.latitude || !business.longitude) return null;
+          
+          // Calculate distance using Haversine formula
+          const earthRadiusKm = 6371;
+          const dLat = toRadians(business.latitude - userLat);
+          const dLng = toRadians(business.longitude - userLng);
+          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                   Math.cos(toRadians(userLat)) * Math.cos(toRadians(business.latitude)) *
+                   Math.sin(dLng / 2) * Math.sin(dLng / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distanceKm = earthRadiusKm * c;
+          
+          // Convert to miles for mobile app compatibility
+          const distanceMiles = distanceKm * 0.621371;
+          
+          return {
+            ...deal,
+            distance_km: distanceKm,
+            distance_miles: distanceMiles,
+            businesses: {
+              ...business,
+              distance_km: distanceKm,
+              distance_miles: distanceMiles
+            }
+          };
+        })
+        .filter((deal: any) => deal && deal.distance_km <= radiusKm)
+        .sort((a: any, b: any) => a.distance_km - b.distance_km);
+      
+      console.log(`📍 Found ${dealsWithDistance.length} deals within ${radiusKm}km`);
+      
+      return jsonResponse(dealsWithDistance, 200, request, env);
+    }
+    
+    // Standard non-location query
     let query = supabase
       .from('deals')
       .select(`
@@ -29,7 +134,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
           id,
           name,
           description,
-          owner_id
+          owner_id,
+          latitude,
+          longitude,
+          address,
+          phone
         )
       `)
       .order('created_at', { ascending: false });
@@ -41,6 +150,12 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     
     if (status) {
       query = query.eq('status', status);
+    }
+    
+    // Add search functionality  
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      query = query.or(`title.ilike.*${searchTerm}*,description.ilike.*${searchTerm}*`);
     }
     
     if (limit) {
@@ -57,6 +172,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   } catch (error: any) {
     return errorResponse(`Failed to fetch deals: ${error.message}`, 500, request, env);
   }
+}
+
+// Helper function to convert degrees to radians
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
