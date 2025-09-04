@@ -118,102 +118,12 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
           
         if (sqlError) {
           console.error('PostgreSQL geospatial query error:', sqlError);
-          
-          // Fallback: try with regular query if geospatial functions fail
-          console.log('⚠️ Falling back to basic query without geospatial functions');
-          console.log('SQL Error details:', sqlError);
-          
-          const { data: basicResults, error: basicError } = await supabase
-            .from('deals')
-            .select(`
-              *,
-              businesses (
-                id,
-                name,
-                description,
-                owner_id,
-                latitude,
-                longitude,
-                address,
-                phone
-              )
-            `)
-            .eq('status', 'active')
-            .gt('expires_at', new Date().toISOString())
-            .not('businesses.latitude', 'is', null)
-            .not('businesses.longitude', 'is', null);
-            
-          if (basicError) {
-            return errorResponse(`Database error: ${basicError.message}`, 500, request, env);
-          }
-          
-          // Calculate distances in JavaScript as fallback
-          const dealsWithDistance = (basicResults || [])
-            .map((deal: any) => {
-              const business = deal.businesses;
-              if (!business.latitude || !business.longitude) return null;
-              
-              // Calculate distance using Haversine formula
-              const earthRadiusKm = 6371;
-              const dLat = toRadians(business.latitude - userLat);
-              const dLng = toRadians(business.longitude - userLng);
-              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                       Math.cos(toRadians(userLat)) * Math.cos(toRadians(business.latitude)) *
-                       Math.sin(dLng / 2) * Math.sin(dLng / 2);
-              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              const distanceKm = earthRadiusKm * c;
-              const distanceMiles = distanceKm * 0.621371;
-              
-              return {
-                ...deal,
-                distance_km: distanceKm,
-                distance_miles: distanceMiles,
-                businesses: {
-                  ...business,
-                  distance_km: distanceKm,
-                  distance_miles: distanceMiles
-                }
-              };
-            })
-            .filter((deal: any) => deal && deal.distance_km <= radiusKm)
-            .sort((a: any, b: any) => a.distance_km - b.distance_km)
-            .slice(0, resultLimit);
-            
-          console.log(`📍 Fallback: Found ${dealsWithDistance.length} deals within ${radiusKm}km`);
-          return jsonResponse(dealsWithDistance, 200, request, env);
+          console.error('SQL Error details:', sqlError);
+          return errorResponse(`Geospatial query failed: ${sqlError.message}. Please ensure PostgreSQL geospatial function is properly configured.`, 500, request, env);
         }
         
-        // Transform PostgreSQL results to match expected format
-        const deals = (rawResults || []).map((row: any) => ({
-          id: row.id,
-          business_id: row.business_id,
-          title: row.title,
-          description: row.description,
-          original_price: row.original_price,
-          discounted_price: row.discounted_price,
-          quantity_available: row.quantity_available,
-          quantity_sold: row.quantity_sold,
-          image_url: row.image_url,
-          allergen_info: row.allergen_info,
-          expires_at: row.expires_at,
-          status: row.status,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-          distance_km: parseFloat(row.distance_km),
-          distance_miles: parseFloat(row.distance_miles),
-          businesses: {
-            id: row.business_id,
-            name: row.business_name,
-            description: row.business_description,
-            owner_id: row.business_owner_id,
-            latitude: row.business_latitude,
-            longitude: row.business_longitude,
-            address: row.business_address,
-            phone: row.business_phone,
-            distance_km: parseFloat(row.distance_km),
-            distance_miles: parseFloat(row.distance_miles)
-          }
-        }));
+        // PostgreSQL function returns JSONB array, so we just return it directly
+        const deals = rawResults || [];
         
         console.log(`📍 PostgreSQL geospatial query found ${deals.length} deals within ${radiusKm}km`);
         return jsonResponse(deals, 200, request, env);
