@@ -121,6 +121,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
           
           // Fallback: try with regular query if geospatial functions fail
           console.log('⚠️ Falling back to basic query without geospatial functions');
+          console.log('SQL Error details:', sqlError);
+          
           const { data: basicResults, error: basicError } = await supabase
             .from('deals')
             .select(`
@@ -139,8 +141,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
             .eq('status', 'active')
             .gt('expires_at', new Date().toISOString())
             .not('businesses.latitude', 'is', null)
-            .not('businesses.longitude', 'is', null)
-            .limit(resultLimit);
+            .not('businesses.longitude', 'is', null);
             
           if (basicError) {
             return errorResponse(`Database error: ${basicError.message}`, 500, request, env);
@@ -175,7 +176,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
               };
             })
             .filter((deal: any) => deal && deal.distance_km <= radiusKm)
-            .sort((a: any, b: any) => a.distance_km - b.distance_km);
+            .sort((a: any, b: any) => a.distance_km - b.distance_km)
+            .slice(0, resultLimit);
             
           console.log(`📍 Fallback: Found ${dealsWithDistance.length} deals within ${radiusKm}km`);
           return jsonResponse(dealsWithDistance, 200, request, env);
