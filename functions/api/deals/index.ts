@@ -59,7 +59,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
           )
         `)
         .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
+        // Temporarily remove expiry filter for debugging
+        //.gt('expires_at', new Date().toISOString())
         .not('businesses.latitude', 'is', null)
         .not('businesses.longitude', 'is', null);
       
