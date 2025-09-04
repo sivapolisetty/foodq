@@ -87,6 +87,21 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       
       console.log(`📊 Initial query returned ${deals?.length || 0} deals before distance filtering`);
       
+      if (deals && deals.length > 0) {
+        console.log(`📍 First deal business location: lat=${deals[0].businesses?.latitude}, lng=${deals[0].businesses?.longitude}`);
+        console.log(`📍 User location: lat=${userLat}, lng=${userLng}`);
+      }
+      
+      // DEBUG: Return raw results if debug parameter is present
+      if (url.searchParams.get('debug') === 'raw') {
+        return jsonResponse({
+          debug: true,
+          query_params: { lat, lng, radius, filter },
+          raw_deals_count: deals?.length || 0,
+          raw_deals: deals || []
+        }, 200, request, env);
+      }
+      
       // Calculate distances and filter by radius
       const dealsWithDistance = deals
         .map((deal: any) => {
