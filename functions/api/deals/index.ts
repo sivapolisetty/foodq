@@ -58,10 +58,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
             phone
           )
         `)
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .not('businesses.latitude', 'is', null)
-        .not('businesses.longitude', 'is', null);
+        .eq('status', 'active');
+        // Temporarily removed other constraints for debugging
+        //.gt('expires_at', new Date().toISOString())
+        //.not('businesses.latitude', 'is', null)
+        //.not('businesses.longitude', 'is', null);
       
       // Filter by business_id if provided
       if (businessId) {
