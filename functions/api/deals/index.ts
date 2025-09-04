@@ -42,27 +42,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
         return errorResponse('Invalid coordinates provided', 400, request, env);
       }
       
-      // Create a custom query for location-based deals with current schema
+      // DEBUG: Minimal query - no joins
       let locationQuery = supabase
         .from('deals')
-        .select(`
-          *,
-          businesses (
-            id,
-            name,
-            description,
-            owner_id,
-            latitude,
-            longitude,
-            address,
-            phone
-          )
-        `)
+        .select('*')
         .eq('status', 'active');
-        // DEBUG: Remove all location constraints
-        //.gt('expires_at', new Date().toISOString())
-        //.not('businesses.latitude', 'is', null)
-        //.not('businesses.longitude', 'is', null);
       
       // Filter by business_id if provided
       if (businessId) {
