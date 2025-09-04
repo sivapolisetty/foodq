@@ -58,11 +58,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
             phone
           )
         `)
-        .eq('status', 'active')
-        // Temporarily remove expiry filter for debugging
+        .eq('status', 'active');
+        // DEBUG: Remove all location constraints
         //.gt('expires_at', new Date().toISOString())
-        .not('businesses.latitude', 'is', null)
-        .not('businesses.longitude', 'is', null);
+        //.not('businesses.latitude', 'is', null)
+        //.not('businesses.longitude', 'is', null);
       
       // Filter by business_id if provided
       if (businessId) {
