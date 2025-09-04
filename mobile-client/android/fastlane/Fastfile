@@ -1,5 +1,5 @@
 # Fastfile for NoenCircles Android Deployment Pattern
-# GraBeat - Firebase App Distribution
+# FoodQ - Firebase App Distribution
 
 default_platform(:android)
 

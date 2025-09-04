@@ -7,7 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
 import '../../../shared/widgets/overflow_safe_wrapper.dart';
-import '../widgets/grabeat_logo.dart';
+import '../widgets/foodq_logo.dart';
 import '../providers/auth_provider.dart';
 import '../services/production_auth_service.dart';
 
@@ -52,7 +52,7 @@ class _ProductionLoginScreenState extends ConsumerState<ProductionLoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Logo and welcome
-                    const GrabeatLogo(size: 100),
+                    const FoodQAppLogo(size: 100),
                     const SizedBox(height: 32),
                     
                     // Welcome text

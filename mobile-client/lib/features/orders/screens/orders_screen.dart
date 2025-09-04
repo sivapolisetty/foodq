@@ -8,6 +8,7 @@ import '../../home/widgets/custom_bottom_nav.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
 import '../providers/order_provider.dart';
 import '../widgets/enhanced_order_card.dart';
+import '../../cart/widgets/floating_cart_bar.dart';
 
 class OrdersScreen extends ConsumerStatefulWidget {
   const OrdersScreen({super.key});
@@ -114,12 +115,24 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> with SingleTickerPr
             ],
           ),
         ),
-        body: TabBarView(
-          controller: _tabController,
+        body: Stack(
           children: [
-            _buildOrdersList(currentUser, OrderFilter.active),
-            _buildOrdersList(currentUser, OrderFilter.completed),
-            _buildOrdersList(currentUser, OrderFilter.all),
+            TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOrdersList(currentUser, OrderFilter.active),
+                _buildOrdersList(currentUser, OrderFilter.completed),
+                _buildOrdersList(currentUser, OrderFilter.all),
+              ],
+            ),
+            // Only show cart bar for customer users
+            if (!currentUser.isBusiness)
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0, // Sit directly on top of bottom navigation
+                child: FloatingCartBar(),
+              ),
           ],
         ),
         bottomNavigationBar: _buildBottomNavigation(currentUser),

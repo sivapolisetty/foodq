@@ -6,9 +6,13 @@ class EnvironmentConfig {
   static Future<void> initialize() async {
     try {
       await dotenv.load(fileName: '.env');
+      print('✅ Loaded environment variables from .env file');
     } catch (e) {
       // If .env file doesn't exist, continue with default values
-      print('Warning: .env file not found, using default values');
+      print('Warning: .env file not found ($e), using default values');
+      
+      // Initialize dotenv with empty map to avoid NotInitializedError
+      dotenv.testLoad(fileInput: 'ENVIRONMENT=development\nAPP_NAME=foodqapp\n');
     }
   }
 
@@ -61,7 +65,7 @@ class EnvironmentConfig {
 
   /// App Configuration
   static String get appName => 
-      dotenv.env['APP_NAME'] ?? 'grabeat';
+      dotenv.env['APP_NAME'] ?? 'foodqapp';
   
   static String get appVersion => 
       dotenv.env['APP_VERSION'] ?? '1.0.0';
@@ -106,7 +110,7 @@ class EnvironmentConfig {
   static void printConfigStatus() {
     if (!isDevelopment) return;
     
-    print('🚀 grabeat Environment Configuration (NoenCircles Pattern):');
+    print('🚀 FoodQ Environment Configuration (NoenCircles Pattern):');
     print('   Environment: $environment');
     print('   Debug Mode: $debugMode');
     print('   API: ${hasValidApiConfig ? '✅ Configured' : '❌ Using defaults'}');

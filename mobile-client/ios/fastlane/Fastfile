@@ -1,5 +1,5 @@
 # Fastfile for NoenCircles iOS Deployment Pattern
-# GraBeat - iOS TestFlight Distribution
+# FoodQ - iOS TestFlight Distribution
 
 default_platform(:ios)
 

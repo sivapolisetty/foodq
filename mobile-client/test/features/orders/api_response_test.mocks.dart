@@ -362,4 +362,46 @@ class MockOrderService extends _i1.Mock implements _i3.OrderService {
         returnValue: <String, String>{},
         returnValueForMissingStub: <String, String>{},
       ) as Map<String, String>);
+
+  @override
+  _i4.Future<_i2.Order> verifyOrder({
+    String? verificationCode,
+    String? qrData,
+    String? orderId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #verifyOrder,
+          [],
+          {
+            #verificationCode: verificationCode,
+            #qrData: qrData,
+            #orderId: orderId,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Order>.value(_FakeOrder_0(
+          this,
+          Invocation.method(
+            #verifyOrder,
+            [],
+            {
+              #verificationCode: verificationCode,
+              #qrData: qrData,
+              #orderId: orderId,
+            },
+          ),
+        )),
+        returnValueForMissingStub: _i4.Future<_i2.Order>.value(_FakeOrder_0(
+          this,
+          Invocation.method(
+            #verifyOrder,
+            [],
+            {
+              #verificationCode: verificationCode,
+              #qrData: qrData,
+              #orderId: orderId,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Order>);
 }

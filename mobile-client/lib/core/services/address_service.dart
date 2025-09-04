@@ -73,17 +73,20 @@ class AddressService {
 
     try {
       print('🔍 PLACES: Fetching address suggestions for: $input');
+      print('🌐 PLACES: API Base URL: ${ApiConfig.baseUrl}');
       
       final url = Uri.parse('${ApiConfig.baseUrl}/api/places/autocomplete');
       final queryParams = {
         'input': input,
         'language': 'en',
-        'components': 'country:us',
+        // Removed country restriction to support international locations
+        // Testing both US and international locations
       };
       
       final uri = url.replace(queryParameters: queryParams);
       
       print('🌐 PLACES: Making request to: $uri');
+      print('📝 PLACES: Query parameters: $queryParams');
 
       final response = await http.get(
         uri,

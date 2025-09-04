@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:http/http.dart' as http;
-import 'package:grabeat/main.dart';
+import 'package:foodq/main.dart';
 
 // Mock classes for functional testing - simplified to avoid conflicts
 class MockFunctionalSupabaseClient extends Mock implements SupabaseClient {
@@ -217,7 +217,7 @@ class TestActions {
 // Test expectations
 class TestExpectations {
   static void expectLoginScreen(WidgetTester tester) {
-    expect(find.text('GraBeat'), findsOneWidget);
+    expect(find.text('FoodQ'), findsOneWidget);
     expect(find.byKey(Key('email_field')), findsOneWidget);
     expect(find.byKey(Key('password_field')), findsOneWidget);
     expect(find.byKey(Key('login_button')), findsOneWidget);

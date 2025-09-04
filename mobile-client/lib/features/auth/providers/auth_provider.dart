@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/auth_service.dart';
@@ -16,7 +17,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
 });
 
 /// Provider for current authenticated user
-final currentAuthUserProvider = StateNotifierProvider<AuthUserNotifier, AsyncValue<AppUser?>>((ref) {
+final currentAuthUserProvider = StateNotifierProvider.autoDispose<AuthUserNotifier, AsyncValue<AppUser?>>((ref) {
   final authService = ref.read(authServiceProvider);
   final productionAuthService = ref.read(productionAuthServiceProvider);
   return AuthUserNotifier(authService, productionAuthService);
@@ -30,10 +31,11 @@ class AuthUserNotifier extends StateNotifier<AsyncValue<AppUser?>> {
 
   final AuthService _authService;
   final ProductionAuthService _productionAuthService;
+  StreamSubscription<AuthState>? _authSubscription;
 
   void _init() {
     // Listen to auth state changes from AuthService
-    _authService.authStateChanges.listen((authState) {
+    _authSubscription = _authService.authStateChanges.listen((authState) {
       _handleAuthStateChange(authState);
     });
 
@@ -41,13 +43,24 @@ class AuthUserNotifier extends StateNotifier<AsyncValue<AppUser?>> {
     _loadCurrentUser();
   }
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   void _handleAuthStateChange(AuthState authState) {
+    // Only handle auth state changes if not disposed
+    if (!mounted) return;
+    
     switch (authState.event) {
       case AuthChangeEvent.signedIn:
         _loadCurrentUser();
         break;
       case AuthChangeEvent.signedOut:
-        state = const AsyncValue.data(null);
+        if (mounted) {
+          state = const AsyncValue.data(null);
+        }
         break;
       case AuthChangeEvent.userUpdated:
         _loadCurrentUser();
@@ -61,9 +74,16 @@ class AuthUserNotifier extends StateNotifier<AsyncValue<AppUser?>> {
     try {
       // Use ProductionAuthService for getting user data (via Workers API)
       final user = await _productionAuthService.getCurrentUser();
-      state = AsyncValue.data(user);
+      
+      // Only update state if not disposed
+      if (mounted) {
+        state = AsyncValue.data(user);
+      }
     } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+      // Only update state if not disposed
+      if (mounted) {
+        state = AsyncValue.error(e, StackTrace.current);
+      }
     }
   }
 

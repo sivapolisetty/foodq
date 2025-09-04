@@ -7,6 +7,9 @@ import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../home/widgets/custom_bottom_nav.dart';
+import '../../location/providers/location_preferences_provider.dart';
+import '../../location/models/location_preferences.dart';
+import '../../cart/widgets/floating_cart_bar.dart';
 
 class ProductionProfileScreen extends ConsumerWidget {
   const ProductionProfileScreen({super.key});
@@ -30,8 +33,20 @@ class ProductionProfileScreen extends ConsumerWidget {
             elevation: 0,
             foregroundColor: AppColors.onSurface,
           ),
-          body: OverflowSafeWrapper(
-            child: _buildProfileContent(context, ref, user),
+          body: Stack(
+            children: [
+              OverflowSafeWrapper(
+                child: _buildProfileContent(context, ref, user),
+              ),
+              // Only show cart bar for customer users
+              if (!user.isBusiness)
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0, // Sit directly on top of bottom navigation
+                  child: FloatingCartBar(),
+                ),
+            ],
           ),
           bottomNavigationBar: currentUserAsync.when(
             data: (currentUser) => currentUser != null ? CustomBottomNav(
@@ -113,8 +128,16 @@ class ProductionProfileScreen extends ConsumerWidget {
                   value: user.address!,
                 ),
             ]),
+            const SizedBox(height: 32),
           ],
-          const SizedBox(height: 32),
+
+          // Location Preferences Section (only for customers)
+          if (!user.isBusiness) ...[
+            _buildSectionTitle('Location Preferences'),
+            const SizedBox(height: 16),
+            _buildLocationPreferencesCard(context, ref),
+            const SizedBox(height: 32),
+          ],
 
           // Account Actions
           _buildSectionTitle('Account Actions'),
@@ -304,6 +327,86 @@ class ProductionProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildLocationPreferencesCard(BuildContext context, WidgetRef ref) {
+    final locationPrefs = ref.watch(locationPreferencesProvider);
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: [
+          // Search Radius Setting
+          ListTile(
+            leading: Icon(Icons.location_searching, color: AppColors.primary),
+            title: const Text('Search Radius'),
+            subtitle: Text('Find restaurants within ${ref.read(locationPreferencesProvider.notifier).radiusDisplayText}'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => _showSearchRadiusDialog(context, ref),
+          ),
+          
+          // Auto-detect Location Setting
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.gps_fixed, color: AppColors.primary),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Auto-detect Location',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'Automatically detect your current location',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: locationPrefs.autoDetectLocation,
+                  onChanged: (value) {
+                    ref.read(locationPreferencesProvider.notifier).updateAutoDetectLocation(value);
+                  },
+                  activeColor: AppColors.primary,
+                ),
+              ],
+            ),
+          ),
+          
+          // Last Known Location (if available)
+          if (locationPrefs.lastKnownAddress.isNotEmpty) ...[
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(Icons.location_history, color: AppColors.onSurfaceVariant),
+              title: const Text('Last Known Location'),
+              subtitle: Text(
+                locationPrefs.lastKnownAddress,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.clear, size: 20),
+                onPressed: () => _clearLastKnownLocation(context, ref),
+                tooltip: 'Clear last known location',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionCard(BuildContext context, WidgetRef ref, user) {
     return Container(
       decoration: BoxDecoration(
@@ -326,7 +429,7 @@ class ProductionProfileScreen extends ConsumerWidget {
               title: const Text('Edit Business Profile'),
               subtitle: const Text('Update restaurant information'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => _showEditBusinessProfileDialog(context, ref, user),
+              onTap: () => context.go('/business-profile'),
             ),
           ],
           ListTile(
@@ -335,6 +438,194 @@ class ProductionProfileScreen extends ConsumerWidget {
             subtitle: const Text('Get help with your account'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () => _showHelpDialog(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSearchRadiusDialog(BuildContext context, WidgetRef ref) {
+    final currentRadius = ref.read(locationPreferencesProvider).searchRadiusMiles;
+    double selectedRadius = currentRadius;
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.location_searching, color: AppColors.primary),
+              const SizedBox(width: 8),
+              const Text('Search Radius'),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Find restaurants within ${selectedRadius.toInt()} miles',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Slider
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppColors.primary,
+                    thumbColor: AppColors.primary,
+                    overlayColor: AppColors.primary.withOpacity(0.2),
+                    valueIndicatorColor: AppColors.primary,
+                    valueIndicatorTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  child: Slider(
+                    value: selectedRadius,
+                    min: 30.0,
+                    max: 50.0,
+                    divisions: 20,
+                    label: '${selectedRadius.toInt()} miles',
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedRadius = value;
+                      });
+                    },
+                  ),
+                ),
+                
+                // Range indicator
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '30 miles',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      '50 miles',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Info box
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.infoContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'This setting controls how far from your location restaurants will be shown in search results.',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.onInfoContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await ref.read(locationPreferencesProvider.notifier).updateSearchRadius(selectedRadius);
+                Navigator.of(context).pop();
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text('Search radius updated to ${selectedRadius.toInt()} miles'),
+                        ],
+                      ),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _clearLastKnownLocation(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Last Known Location'),
+        content: const Text(
+          'Are you sure you want to clear your last known location? '
+          'You will need to set your location again when using the app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await ref.read(locationPreferencesProvider.notifier).updateLastKnownLocation(
+                address: '',
+                latitude: null,
+                longitude: null,
+              );
+              Navigator.of(context).pop();
+              
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('Last known location cleared'),
+                      ],
+                    ),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Clear'),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../../shared/models/app_user.dart';
 import '../../home/widgets/custom_bottom_nav.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
+import '../../cart/widgets/floating_cart_bar.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
@@ -87,7 +88,19 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: _buildFavoritesBody(),
+        body: Stack(
+          children: [
+            _buildFavoritesBody(),
+            // Only show cart bar for customer users
+            if (!currentUser.isBusiness)
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0, // Sit directly on top of bottom navigation
+                child: FloatingCartBar(),
+              ),
+          ],
+        ),
         bottomNavigationBar: _buildBottomNavigation(currentUser),
       ),
     );

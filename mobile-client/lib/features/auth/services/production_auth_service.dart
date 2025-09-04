@@ -55,11 +55,23 @@ class ProductionAuthService {
 
       if (response.success && response.data != null) {
         print('✅ Profile found via API - mapping to AppUser');
+        print('📋 Raw profile data from API:');
+        print('   - id: ${response.data!['id']}');
+        print('   - email: ${response.data!['email']}');
+        print('   - full_name: ${response.data!['full_name']}');
+        print('   - user_type: ${response.data!['user_type']}');
+        print('   - business_id: ${response.data!['business_id']}');
+        print('   - business_name: ${response.data!['business_name']}');
+        
         AuthLogger.logAuthEvent('Profile found via API', data: {
           'profile_data': response.data,
         });
         final appUser = _mapToAppUser(response.data!, user);
-        print('👤 Mapped AppUser: ${appUser.id} (${appUser.userType})');
+        print('👤 Mapped AppUser details:');
+        print('   - ID: ${appUser.id}');
+        print('   - Email: ${appUser.email}');
+        print('   - Name: "${appUser.name}"');
+        print('   - Type: ${appUser.userType}');
         return appUser;
       } else {
         print('⚠️  Profile API call failed or no data');
@@ -194,15 +206,55 @@ class ProductionAuthService {
 
   /// Get comprehensive onboarding status information
   Future<OnboardingStatus> getOnboardingStatus(AppUser user) async {
-    print('🔍 getOnboardingStatus called for user: ${user.id} (${user.userType})');
-    print('🔍 Starting onboarding status check...');
+    print('🔍 ===== ONBOARDING STATUS CHECK =====');
+    print('🔍 User ID: ${user.id}');
+    print('🔍 User email: ${user.email}');
+    print('🔍 User type: ${user.userType}');
+    print('🔍 User name: ${user.name}');
     
     if (user.userType != UserType.business) {
-      print('🔍 User is not business type, returning no onboarding needed');
-      return OnboardingStatus.customerUser();
+      print('🔍 User is CUSTOMER type - checking if profile is complete');
+      
+      // For customers, check if they have complete profile data
+      bool hasCompleteName = user.name != null && user.name!.isNotEmpty && user.name != 'User';
+      bool hasCompleteEmail = user.email != null && user.email!.isNotEmpty;
+      
+      print('🔍 Customer profile check:');
+      print('   - Has complete name: $hasCompleteName (name: "${user.name}")');
+      print('   - Has complete email: $hasCompleteEmail (email: "${user.email}")');
+      
+      bool needsOnboarding = !hasCompleteName || !hasCompleteEmail;
+      
+      print('🔍 Customer needs onboarding: $needsOnboarding');
+      
+      return OnboardingStatus(
+        needsOnboarding: needsOnboarding,
+        hasBusiness: false,
+        isBusinessApproved: false,
+      );
     }
 
     try {
+      print('🌐 Business user - checking if they have business data in profile');
+      
+      // First check if we already have complete business data in the user profile
+      if (user.isBusiness && user.businessId != null && user.businessName != null) {
+        print('🏢 User already has business data in profile:');
+        print('   Business ID: ${user.businessId}');
+        print('   Business Name: ${user.businessName}');
+        print('   User Name: ${user.name}');
+        
+        // If user has business data, they've completed onboarding
+        print('✅ Business user has complete profile data - no onboarding needed');
+        return OnboardingStatus(
+          needsOnboarding: false,
+          hasBusiness: true,
+          businessName: user.businessName,
+          isBusinessApproved: true, // Assume approved if they have business data
+          businessCreatedAt: null,
+        );
+      }
+      
       print('🌐 Checking onboarding status via API: /api/users/${user.id}/onboarding-status');
       AuthLogger.logAuthEvent('Checking onboarding status via API', data: {
         'user_id': user.id,
@@ -237,22 +289,30 @@ class ProductionAuthService {
         print('   is_approved: ${businessStatus?['is_approved']}');
         print('   onboarding_completed: ${businessStatus?['onboarding_completed']}');
         
-        print('✅ Onboarding status determined: needs_onboarding = $needsOnboarding');
+        // Override needsOnboarding if business has onboarding_completed = true
+        bool finalNeedsOnboarding = needsOnboarding;
+        if (businessStatus != null && businessStatus['onboarding_completed'] == true) {
+          print('🎉 Business has onboarding_completed = true, overriding needs_onboarding to false');
+          finalNeedsOnboarding = false;
+        }
+        
+        print('✅ Final onboarding status: needs_onboarding = $finalNeedsOnboarding');
         AuthLogger.logAuthEvent('Onboarding status retrieved', data: {
-          'needs_onboarding': needsOnboarding,
+          'needs_onboarding': finalNeedsOnboarding,
           'has_business': hasBusiness,
           'business_status': businessStatus,
+          'onboarding_completed_override': businessStatus?['onboarding_completed'],
         });
         
         final onboardingStatus = OnboardingStatus(
-          needsOnboarding: needsOnboarding,
-          hasBusiness: hasBusiness,
+          needsOnboarding: finalNeedsOnboarding,
+          hasBusiness: hasBusiness || (businessStatus != null),
           businessName: businessStatus?['name'],
           isBusinessApproved: businessStatus?['is_approved'] ?? false,
           businessCreatedAt: businessStatus?['created_at'],
         );
         
-        print('🔍 OnboardingStatus created:');
+        print('🔍 Final OnboardingStatus:');
         print('   needsOnboarding: ${onboardingStatus.needsOnboarding}');
         print('   hasBusiness: ${onboardingStatus.hasBusiness}');
         print('   isBusinessApproved: ${onboardingStatus.isBusinessApproved}');
@@ -261,14 +321,40 @@ class ProductionAuthService {
         
         return onboardingStatus;
       } else {
-        print('⚠️  API call failed, assuming needs onboarding');
+        print('⚠️  API call failed, checking if we can determine from user data');
         print('⚠️  Response: success=${response.success}, statusCode=${response.statusCode}, error=${response.error}');
+        
+        // If API fails but user has business data, assume they're complete
+        if (user.isBusiness && user.businessName != null) {
+          print('🏢 API failed but user has business data - assuming complete');
+          return OnboardingStatus(
+            needsOnboarding: false,
+            hasBusiness: true,
+            businessName: user.businessName,
+            isBusinessApproved: true,
+            businessCreatedAt: null,
+          );
+        }
+        
         AuthLogger.logAuthError('getOnboardingStatus', 'API call failed: ${response.error}');
         return OnboardingStatus.needsOnboarding(); // Assume needs onboarding on error
       }
     } catch (e, stackTrace) {
       print('💥 Exception in getOnboardingStatus: $e');
       print('💥 Stack trace: $stackTrace');
+      
+      // If exception but user has business data, assume they're complete
+      if (user.isBusiness && user.businessName != null) {
+        print('🏢 Exception but user has business data - assuming complete');
+        return OnboardingStatus(
+          needsOnboarding: false,
+          hasBusiness: true,
+          businessName: user.businessName,
+          isBusinessApproved: true,
+          businessCreatedAt: null,
+        );
+      }
+      
       AuthLogger.logAuthError('getOnboardingStatus', e);
       return OnboardingStatus.needsOnboarding(); // Assume needs onboarding on error
     }

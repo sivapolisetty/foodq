@@ -103,7 +103,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
           Expanded(

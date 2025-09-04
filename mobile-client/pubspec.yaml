@@ -1,7 +1,7 @@
 name: foodq
 description: "FoodQ - Direct Food Items at Discount Prices"
 publish_to: 'none'
-version: 1.0.0+11
+version: 1.0.0+16
 
 environment:
   sdk: '>=3.4.3 <4.0.0'

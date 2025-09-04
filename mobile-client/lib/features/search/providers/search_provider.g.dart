@@ -244,7 +244,7 @@ class _NearbyDealsProviderElement
   double get radiusInKm => (origin as NearbyDealsProvider).radiusInKm;
 }
 
-String _$searchNotifierHash() => r'84fd93444b700a13cd830471c1ab3764bfacf916';
+String _$searchNotifierHash() => r'b33df4fbb69590a7d7a6bc982d9eb3d35b69575a';
 
 /// See also [SearchNotifier].
 @ProviderFor(SearchNotifier)

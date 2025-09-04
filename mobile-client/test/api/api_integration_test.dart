@@ -1,5 +1,5 @@
 /**
- * Comprehensive API Integration Tests for GraBeat
+ * Comprehensive API Integration Tests for FoodQ
  * 
  * Tests all API endpoints end-to-end:
  * - User CRUD operations
@@ -70,7 +70,7 @@ void main() {
   
   const testBusinessId = '550e8400-e29b-41d4-a716-446655440001';
 
-  group('GraBeat API Integration Tests', () {
+  group('FoodQ API Integration Tests', () {
     setUpAll(() async {
       print('🚀 Starting API Integration Tests');
       print('Base URL: $baseUrl');

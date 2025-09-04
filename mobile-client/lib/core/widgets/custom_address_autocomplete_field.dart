@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../services/address_service.dart';
 import '../../shared/theme/app_colors.dart';
 import 'dart:async';
@@ -53,11 +54,18 @@ class _CustomAddressAutocompleteFieldState extends State<CustomAddressAutocomple
     super.dispose();
   }
 
-  bool _isSelecting = false;
-
   void _onFocusChanged() {
-    if (!_focusNode.hasFocus && !_isSelecting) {
-      _hideSuggestions();
+    if (!_focusNode.hasFocus) {
+      // Add delay for web to allow tap events to complete
+      if (kIsWeb) {
+        Timer(const Duration(milliseconds: 200), () {
+          if (!_focusNode.hasFocus && mounted) {
+            _hideSuggestions();
+          }
+        });
+      } else {
+        _hideSuggestions();
+      }
     }
   }
 
@@ -117,52 +125,73 @@ class _CustomAddressAutocompleteFieldState extends State<CustomAddressAutocomple
     _overlayController.hide();
   }
 
-  void _onSuggestionSelected(PlacePrediction prediction) async {
-    print('🎯 [AUTOCOMPLETE] Suggestion selected: ${prediction.description}');
-    print('🆔 [AUTOCOMPLETE] Place ID: ${prediction.placeId}');
-    print('🔧 [AUTOCOMPLETE] onPlaceSelected callback available: ${widget.onPlaceSelected != null}');
+  void _handleSuggestionSelection(PlacePrediction prediction) {
+    print('🎯 TAP/SELECTION: Starting selection for "${prediction.description}"');
     
-    widget.controller.text = prediction.description ?? '';
-    widget.controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: widget.controller.text.length),
-    );
-
-    // Call the legacy callback for backwards compatibility
-    if (widget.onAddressSelected != null) {
-      print('📞 [AUTOCOMPLETE] Calling onAddressSelected callback');
-      widget.onAddressSelected!(prediction.description ?? '');
+    // For web, prevent focus loss during selection
+    if (kIsWeb) {
+      _focusNode.requestFocus();
     }
-
-    // Fetch detailed place information if callback is provided
-    if (widget.onPlaceSelected != null && prediction.placeId != null) {
-      print('🔍 [AUTOCOMPLETE] Fetching place details for: ${prediction.placeId}');
-      try {
-        final placeDetails = await AddressService.getPlaceDetails(prediction.placeId!);
-        if (placeDetails != null) {
-          print('✅ [AUTOCOMPLETE] Got place details, calling onPlaceSelected callback');
-          print('🏙️ [AUTOCOMPLETE] Details - City: ${placeDetails.city}, State: ${placeDetails.state}, ZIP: ${placeDetails.zipCode}');
-          widget.onPlaceSelected!(placeDetails);
-        } else {
-          print('❌ [AUTOCOMPLETE] Place details is null');
-        }
-      } catch (e) {
-        print('💥 [AUTOCOMPLETE] Error fetching place details: $e');
-      }
-    } else {
-      if (widget.onPlaceSelected == null) {
-        print('⚠️ [AUTOCOMPLETE] onPlaceSelected callback is null');
-      }
-      if (prediction.placeId == null) {
-        print('⚠️ [AUTOCOMPLETE] Place ID is null');
-      }
+    
+    // Call selection handler
+    _onSuggestionSelected(prediction);
+    
+    // Clean up UI with proper sequencing for web
+    if (mounted) {
+      setState(() {
+        _suggestions.clear();
+      });
     }
-
-    if (widget.onChanged != null) {
-      widget.onChanged!(widget.controller.text);
-    }
-
+    
     _hideSuggestions();
-    _focusNode.unfocus();
+    
+    // Unfocus with delay on web to ensure events complete
+    if (kIsWeb) {
+      Timer(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _focusNode.unfocus();
+        }
+      });
+    } else {
+      _focusNode.unfocus();
+    }
+  }
+
+  void _onSuggestionSelected(PlacePrediction prediction) async {
+    print('🎯 SELECTION: Starting selection for "${prediction.description}"');
+    
+    // Set text immediately
+    widget.controller.text = prediction.description ?? '';
+    
+    // Call onAddressSelected callback immediately (synchronous)
+    if (widget.onAddressSelected != null) {
+      print('📞 SELECTION: Calling onAddressSelected callback');
+      widget.onAddressSelected!(prediction.description ?? '');
+      print('✅ SELECTION: onAddressSelected callback completed');
+    }
+
+    // Call onChanged callback immediately (synchronous) 
+    if (widget.onChanged != null) {
+      print('📞 SELECTION: Calling onChanged callback');
+      widget.onChanged!(widget.controller.text);
+      print('✅ SELECTION: onChanged callback completed');
+    }
+
+    // Handle place details asynchronously (but don't wait)
+    if (widget.onPlaceSelected != null && prediction.placeId != null) {
+      print('🔍 SELECTION: Fetching place details in background');
+      AddressService.getPlaceDetails(prediction.placeId!).then((placeDetails) {
+        if (placeDetails != null) {
+          print('📞 SELECTION: Calling onPlaceSelected callback with details');
+          widget.onPlaceSelected!(placeDetails);
+          print('✅ SELECTION: onPlaceSelected callback completed');
+        }
+      }).catchError((e) {
+        print('❌ SELECTION: Place details fetch failed: $e');
+      });
+    }
+
+    print('🎯 SELECTION: Selection completed');
   }
 
   @override
@@ -219,17 +248,21 @@ class _CustomAddressAutocompleteFieldState extends State<CustomAddressAutocomple
   }
 
   Widget _buildSuggestionsOverlay() {
+    // Get the render box to calculate proper width
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    final double fieldWidth = renderBox?.size.width ?? (MediaQuery.of(context).size.width - 32);
+    
     return CompositedTransformFollower(
       link: _layerLink,
       targetAnchor: Alignment.bottomLeft,
       followerAnchor: Alignment.topLeft,
       offset: const Offset(0, 8),
       child: Material(
-        elevation: 8,
+        elevation: kIsWeb ? 16 : 8, // Higher elevation on web for better visibility
         borderRadius: BorderRadius.circular(8),
         child: Container(
           constraints: const BoxConstraints(maxHeight: 200),
-          width: MediaQuery.of(context).size.width - 32,
+          width: fieldWidth.clamp(200.0, MediaQuery.of(context).size.width - 32),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(8),
@@ -287,93 +320,21 @@ class _CustomAddressAutocompleteFieldState extends State<CustomAddressAutocomple
                       ),
                       child: Material(
                         color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            print('🎯 [AUTOCOMPLETE] TAP on suggestion ${index + 1}: "${suggestion.description}"');
-                            print('🆔 [AUTOCOMPLETE] Place ID: ${suggestion.placeId}');
-                            
-                            // Prevent focus listener from hiding suggestions
-                            _isSelecting = true;
-                            
-                            // Call selection immediately
-                            _onSuggestionSelected(suggestion);
-                            
-                            // Force hide suggestions
-                            setState(() {
-                              _suggestions.clear();
-                            });
-                            _hideSuggestions();
-                            
-                            // Re-enable focus listener
-                            Future.delayed(Duration(milliseconds: 100), () {
-                              _isSelecting = false;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue[100],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue[800],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Icon(
-                                  Icons.location_on,
-                                  color: Colors.grey,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        suggestion.mainText ?? suggestion.description ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (suggestion.secondaryText != null)
-                                        Text(
-                                          suggestion.secondaryText!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 12,
-                                  color: Colors.grey[400],
-                                ),
-                              ],
+                        child: kIsWeb 
+                          ? GestureDetector(
+                              onTap: () {
+                                print('🎯 WEB-TAP: User tapped suggestion "${suggestion.description}"');
+                                _handleSuggestionSelection(suggestion);
+                              },
+                              child: _buildSuggestionContent(suggestion, index),
+                            )
+                          : InkWell(
+                              onTap: () {
+                                print('🎯 MOBILE-TAP: User tapped suggestion "${suggestion.description}"');
+                                _handleSuggestionSelection(suggestion);
+                              },
+                              child: _buildSuggestionContent(suggestion, index),
                             ),
-                          ),
-                        ),
                       ),
                     );
                   },
@@ -382,6 +343,73 @@ class _CustomAddressAutocompleteFieldState extends State<CustomAddressAutocomple
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionContent(PlacePrediction suggestion, int index) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Colors.blue[100],
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[800],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Icon(
+            Icons.location_on,
+            color: Colors.grey,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  suggestion.mainText ?? suggestion.description ?? '',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (suggestion.secondaryText != null)
+                  Text(
+                    suggestion.secondaryText!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 12,
+            color: Colors.grey[400],
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service for handling location operations including
 /// current location detection and address geocoding
@@ -7,41 +8,92 @@ class LocationService {
   /// Get current position with proper permission handling
   static Future<Position?> getCurrentPosition() async {
     try {
-      print('🌍 LocationService: Checking location permissions');
+      print('🌍 LocationService: Starting getCurrentPosition()');
+      print('🌐 LocationService: Platform: ${kIsWeb ? 'WEB' : 'MOBILE'}');
+      
+      if (kIsWeb) {
+        print('⚠️ LocationService: WEB DETECTED - Location access requires HTTPS in production');
+        print('⚠️ LocationService: Development server (HTTP) may have limited location access');
+      }
+      
+      print('🔍 LocationService: Checking if location services are enabled...');
       
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      print('🔍 LocationService: Location services enabled = $serviceEnabled');
       if (!serviceEnabled) {
-        print('❌ Location services are disabled');
+        print('❌ LocationService: Location services are disabled');
+        if (kIsWeb) {
+          print('❌ LocationService: On web, this usually means browser blocked location or HTTPS required');
+        }
         return null;
       }
 
+      print('🔐 LocationService: Checking current permission status...');
       // Check and request location permissions
       LocationPermission permission = await Geolocator.checkPermission();
+      print('🔐 LocationService: Current permission = $permission');
+      
       if (permission == LocationPermission.denied) {
+        print('🔐 LocationService: Permission denied, requesting permission...');
+        if (kIsWeb) {
+          print('🔐 LocationService: WEB - Browser will show permission dialog');
+        }
         permission = await Geolocator.requestPermission();
+        print('🔐 LocationService: Permission after request = $permission');
         if (permission == LocationPermission.denied) {
-          print('❌ Location permissions are denied');
+          print('❌ LocationService: Location permissions are denied after request');
+          if (kIsWeb) {
+            print('❌ LocationService: WEB - User likely clicked "Block" or "Don\'t allow"');
+          }
           return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        print('❌ Location permissions are permanently denied');
+        print('❌ LocationService: Location permissions are permanently denied');
+        if (kIsWeb) {
+          print('❌ LocationService: WEB - User must manually enable location in browser settings');
+        }
         return null;
       }
 
-      print('✅ Getting current position...');
+      print('✅ LocationService: Permission granted, getting current position...');
+      print('📡 LocationService: Calling Geolocator.getCurrentPosition() with extended timeout...');
+      
+      // Use longer timeout for web and better error handling
+      final timeout = kIsWeb ? const Duration(seconds: 30) : const Duration(seconds: 15);
+      print('📡 LocationService: Timeout set to: ${timeout.inSeconds}s');
+      
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
+        desiredAccuracy: kIsWeb ? LocationAccuracy.best : LocationAccuracy.high,
+        timeLimit: timeout,
       );
       
-      print('📍 Current position: ${position.latitude}, ${position.longitude}');
+      print('📍 LocationService: SUCCESS - Current position: ${position.latitude}, ${position.longitude}');
+      print('⏰ LocationService: Position timestamp: ${position.timestamp}');
+      print('🎯 LocationService: Position accuracy: ${position.accuracy}m');
       return position;
       
-    } catch (e) {
-      print('💥 Error getting current position: $e');
+    } catch (e, stackTrace) {
+      print('💥 LocationService: ERROR getting current position: $e');
+      print('📚 LocationService: Stack trace: $stackTrace');
+      
+      if (kIsWeb) {
+        print('🌐 LocationService: WEB ERROR ANALYSIS:');
+        if (e.toString().contains('Network')) {
+          print('   - Network error: Check internet connection');
+        } else if (e.toString().contains('timeout') || e.toString().contains('TimeoutException')) {
+          print('   - Timeout: Location detection took too long');
+        } else if (e.toString().contains('denied') || e.toString().contains('permission')) {
+          print('   - Permission: Browser blocked location access');
+        } else if (e.toString().contains('unavailable')) {
+          print('   - Unavailable: Location services not available');
+        } else {
+          print('   - Unknown web error: $e');
+        }
+      }
+      
       return null;
     }
   }

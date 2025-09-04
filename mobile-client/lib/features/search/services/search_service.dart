@@ -41,6 +41,7 @@ class SearchService {
     required double longitude,
     double radiusInKm = 10.0,
     int limit = 50,
+    String? businessId,
   }) async {
     try {
       final response = await ApiService.get<dynamic>(
@@ -51,6 +52,7 @@ class SearchService {
           'lng': longitude.toString(),
           'radius': radiusInKm.toString(),
           'limit': limit.toString(),
+          if (businessId != null) 'business_id': businessId,
         },
       );
 
@@ -267,5 +269,363 @@ class SearchService {
 
   double _degreesToRadians(double degrees) {
     return degrees * pi / 180;
+  }
+
+  /// Search both deals and businesses with location support
+  Future<EnhancedSearchResult> searchAll({
+    required String query,
+    double? userLatitude,
+    double? userLongitude,
+    double radiusMiles = 50.0,
+    int limit = 20,
+  }) async {
+    try {
+      print('🔍 SearchService: Enhanced search for "$query"');
+      print('📍 User location: ${userLatitude ?? 'unknown'}, ${userLongitude ?? 'unknown'}');
+      
+      // Search deals and businesses in parallel
+      final results = await Future.wait([
+        _searchDealsWithDistance(
+          query: query,
+          userLatitude: userLatitude,
+          userLongitude: userLongitude,
+          radiusMiles: radiusMiles,
+          limit: limit,
+        ),
+        _searchBusinessesWithDistance(
+          query: query,
+          userLatitude: userLatitude,
+          userLongitude: userLongitude,
+          radiusMiles: radiusMiles,
+          limit: limit,
+        ),
+      ]);
+
+      final deals = results[0] as List<DealWithDistance>;
+      final businesses = results[1] as List<BusinessWithDistance>;
+
+      return EnhancedSearchResult(
+        deals: deals,
+        businesses: businesses,
+        query: query,
+      );
+
+    } catch (e) {
+      print('❌ Error in enhanced searchAll: $e');
+      return EnhancedSearchResult(deals: [], businesses: [], query: query);
+    }
+  }
+
+  /// Search deals with distance calculation
+  Future<List<DealWithDistance>> _searchDealsWithDistance({
+    required String query,
+    double? userLatitude,
+    double? userLongitude,
+    double radiusMiles = 50.0,
+    int limit = 20,
+  }) async {
+    try {
+      // Use existing search method
+      final deals = await searchDeals(query);
+      
+      // Convert to DealWithDistance and calculate distances
+      final dealsWithDistance = <DealWithDistance>[];
+      
+      for (final deal in deals.take(limit)) {
+        double? distance;
+        
+        // Calculate distance if we have both user location and business location
+        if (userLatitude != null && 
+            userLongitude != null && 
+            deal.restaurant?.latitude != null && 
+            deal.restaurant?.longitude != null) {
+          
+          distance = _calculateDistanceInMiles(
+            userLatitude,
+            userLongitude,
+            deal.restaurant!.latitude!,
+            deal.restaurant!.longitude!,
+          );
+          
+          // Filter by radius if distance is available
+          if (distance > radiusMiles) {
+            continue; // Skip deals outside radius
+          }
+        }
+        
+        dealsWithDistance.add(DealWithDistance(
+          deal: deal,
+          distanceInMiles: distance,
+        ));
+      }
+      
+      // Sort by distance (nearest first)
+      dealsWithDistance.sort((a, b) {
+        if (a.distanceInMiles == null && b.distanceInMiles == null) return 0;
+        if (a.distanceInMiles == null) return 1;
+        if (b.distanceInMiles == null) return -1;
+        return a.distanceInMiles!.compareTo(b.distanceInMiles!);
+      });
+      
+      return dealsWithDistance;
+      
+    } catch (e) {
+      print('❌ Error searching deals with distance: $e');
+      return [];
+    }
+  }
+
+  /// Search businesses with distance calculation
+  Future<List<BusinessWithDistance>> _searchBusinessesWithDistance({
+    required String query,
+    double? userLatitude,
+    double? userLongitude,
+    double radiusMiles = 50.0,
+    int limit = 20,
+  }) async {
+    try {
+      // Use existing search method
+      final businesses = await searchBusinesses(query);
+      
+      final businessesWithDistance = <BusinessWithDistance>[];
+      
+      for (final business in businesses.take(limit)) {
+        double? distance;
+        
+        // Calculate distance if we have coordinates
+        if (userLatitude != null && 
+            userLongitude != null && 
+            business.hasLocation) {
+          
+          distance = _calculateDistanceInMiles(
+            userLatitude,
+            userLongitude,
+            business.latitude!,
+            business.longitude!,
+          );
+          
+          // Filter by radius
+          if (distance > radiusMiles) {
+            continue;
+          }
+        }
+        
+        businessesWithDistance.add(BusinessWithDistance(
+          business: business,
+          distanceInMiles: distance,
+        ));
+      }
+      
+      // Sort by distance (nearest first)
+      businessesWithDistance.sort((a, b) {
+        if (a.distanceInMiles == null && b.distanceInMiles == null) return 0;
+        if (a.distanceInMiles == null) return 1;
+        if (b.distanceInMiles == null) return -1;
+        return a.distanceInMiles!.compareTo(b.distanceInMiles!);
+      });
+      
+      return businessesWithDistance.take(limit).toList();
+      
+    } catch (e) {
+      print('❌ Error searching businesses with distance: $e');
+      return [];
+    }
+  }
+
+  /// Get nearby deals without search query
+  Future<List<DealWithDistance>> getNearbyDealsWithDistance({
+    required double userLatitude,
+    required double userLongitude,
+    double radiusMiles = 50.0,
+    int limit = 20,
+    String? businessId,
+  }) async {
+    try {
+      print('📍 Getting nearby deals with distance for: $userLatitude, $userLongitude');
+      
+      // Convert radius from miles to km for API
+      final radiusKm = radiusMiles * 1.60934;
+      
+      final deals = await searchNearbyDeals(
+        latitude: userLatitude,
+        longitude: userLongitude,
+        radiusInKm: radiusKm,
+        limit: limit,
+        businessId: businessId,
+      );
+      
+      final dealsWithDistance = <DealWithDistance>[];
+      
+      for (final deal in deals) {
+        double? distance;
+        
+        if (deal.restaurant?.latitude != null && deal.restaurant?.longitude != null) {
+          distance = _calculateDistanceInMiles(
+            userLatitude,
+            userLongitude,
+            deal.restaurant!.latitude!,
+            deal.restaurant!.longitude!,
+          );
+        }
+        
+        dealsWithDistance.add(DealWithDistance(
+          deal: deal,
+          distanceInMiles: distance,
+        ));
+      }
+      
+      // Sort by distance
+      dealsWithDistance.sort((a, b) {
+        if (a.distanceInMiles == null && b.distanceInMiles == null) return 0;
+        if (a.distanceInMiles == null) return 1;
+        if (b.distanceInMiles == null) return -1;
+        return a.distanceInMiles!.compareTo(b.distanceInMiles!);
+      });
+      
+      return dealsWithDistance;
+      
+    } catch (e) {
+      print('❌ Error getting nearby deals with distance: $e');
+      return [];
+    }
+  }
+
+  /// Get nearby restaurants
+  Future<List<BusinessWithDistance>> getNearbyBusinessesWithDistance({
+    required double userLatitude,
+    required double userLongitude,
+    double radiusMiles = 50.0,
+    int limit = 20,
+  }) async {
+    try {
+      print('📍 Getting nearby businesses for: $userLatitude, $userLongitude');
+      
+      final queryParams = {
+        'filter': 'nearby',
+        'lat': userLatitude.toString(),
+        'lng': userLongitude.toString(),
+        'radius': (radiusMiles * 1.60934).toString(), // Convert to km
+        'limit': limit.toString(),
+      };
+
+      final response = await ApiService.get<dynamic>(
+        ApiConfig.businessesEndpoint,
+        queryParameters: queryParams,
+      );
+
+      if (response.success && response.data != null) {
+        final businessesData = response.data as List<dynamic>;
+        final businessesWithDistance = <BusinessWithDistance>[];
+        
+        for (final businessJson in businessesData) {
+          final business = Business.fromJson(businessJson as Map<String, dynamic>);
+          
+          double? distance;
+          if (business.hasLocation) {
+            distance = _calculateDistanceInMiles(
+              userLatitude,
+              userLongitude,
+              business.latitude!,
+              business.longitude!,
+            );
+          }
+          
+          businessesWithDistance.add(BusinessWithDistance(
+            business: business,
+            distanceInMiles: distance,
+          ));
+        }
+        
+        // Sort by distance
+        businessesWithDistance.sort((a, b) {
+          if (a.distanceInMiles == null && b.distanceInMiles == null) return 0;
+          if (a.distanceInMiles == null) return 1;
+          if (b.distanceInMiles == null) return -1;
+          return a.distanceInMiles!.compareTo(b.distanceInMiles!);
+        });
+        
+        return businessesWithDistance;
+      }
+      
+      return [];
+      
+    } catch (e) {
+      print('❌ Error getting nearby businesses: $e');
+      return [];
+    }
+  }
+
+  /// Calculate distance between two points in miles
+  double _calculateDistanceInMiles(
+    double lat1, double lng1, 
+    double lat2, double lng2
+  ) {
+    const double earthRadiusMiles = 3958.756;
+    
+    final dLat = _degreesToRadians(lat2 - lat1);
+    final dLng = _degreesToRadians(lng2 - lng1);
+    
+    final a = 
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) * cos(_degreesToRadians(lat2)) * 
+        sin(dLng / 2) * sin(dLng / 2);
+    
+    final c = 2 * asin(sqrt(a));
+    
+    return earthRadiusMiles * c;
+  }
+}
+
+/// Enhanced search result containing deals and businesses with distance
+class EnhancedSearchResult {
+  final List<DealWithDistance> deals;
+  final List<BusinessWithDistance> businesses;
+  final String query;
+
+  EnhancedSearchResult({
+    required this.deals,
+    required this.businesses,
+    required this.query,
+  });
+
+  bool get isEmpty => deals.isEmpty && businesses.isEmpty;
+  int get totalResults => deals.length + businesses.length;
+}
+
+/// Deal with calculated distance
+class DealWithDistance {
+  final Deal deal;
+  final double? distanceInMiles;
+
+  DealWithDistance({
+    required this.deal,
+    this.distanceInMiles,
+  });
+
+  String get formattedDistance {
+    if (distanceInMiles == null) return '';
+    if (distanceInMiles! < 1.0) {
+      return '${(distanceInMiles! * 5280).round()} ft away';
+    }
+    return '${distanceInMiles!.toStringAsFixed(1)} miles away';
+  }
+}
+
+/// Business with calculated distance
+class BusinessWithDistance {
+  final Business business;
+  final double? distanceInMiles;
+
+  BusinessWithDistance({
+    required this.business,
+    this.distanceInMiles,
+  });
+
+  String get formattedDistance {
+    if (distanceInMiles == null) return '';
+    if (distanceInMiles! < 1.0) {
+      return '${(distanceInMiles! * 5280).round()} ft away';
+    }
+    return '${distanceInMiles!.toStringAsFixed(1)} miles away';
   }
 }

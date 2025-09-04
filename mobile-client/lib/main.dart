@@ -14,6 +14,7 @@ import 'shared/widgets/overflow_safe_wrapper.dart';
 
 // Feature screens
 import 'features/search/screens/search_screen.dart';
+import 'features/search/screens/search_results_screen.dart';
 import 'features/favorites/screens/favorites_screen.dart';
 import 'features/orders/screens/cart_screen.dart';
 import 'features/orders/screens/checkout_screen.dart';
@@ -26,6 +27,7 @@ import 'features/business/screens/business_enrollment_screen.dart';
 import 'features/business/screens/business_onboarding_status_screen.dart';
 import 'features/business/screens/restaurant_onboarding_page.dart';
 import 'features/business/screens/business_profile_screen.dart';
+import 'features/business/screens/business_details_screen.dart';
 import 'features/business/screens/finance_screen.dart';
 import 'features/business/screens/qr_scanner_screen.dart';
 
@@ -47,10 +49,11 @@ import 'shared/models/deal.dart';
 import 'shared/models/order.dart';
 
 void main() async {
+  // Hot reload trigger - fixed compilation errors and onboarding logic
   try {
     WidgetsFlutterBinding.ensureInitialized();
     
-    print('🚀 Initializing grabeat...');
+    print('🚀 Initializing foodqapp...');
 
     // Initialize environment configuration
     await EnvironmentConfig.initialize();
@@ -70,7 +73,7 @@ void main() async {
 
     runApp(
       const ProviderScope(
-        child: GrabeatApp(),
+        child: FoodQApp(),
       ),
     );
   } catch (e, stackTrace) {
@@ -99,8 +102,8 @@ void main() async {
   }
 }
 
-class GrabeatApp extends ConsumerWidget {
-  const GrabeatApp({super.key});
+class FoodQApp extends ConsumerWidget {
+  const FoodQApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -108,7 +111,7 @@ class GrabeatApp extends ConsumerWidget {
 
     return OverflowSafeWrapper(
       child: MaterialApp.router(
-        title: 'grabeat',
+        title: 'FoodQ',
         theme: AppTheme.lightTheme,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
@@ -144,6 +147,14 @@ class GrabeatApp extends ConsumerWidget {
           path: '/search',
           name: 'search',
           builder: (context, state) => const SearchScreen(),
+        ),
+        GoRoute(
+          path: '/search-results',
+          name: 'searchResults',
+          builder: (context, state) {
+            final query = state.uri.queryParameters['q'];
+            return SearchResultsScreen(initialQuery: query);
+          },
         ),
         GoRoute(
           path: '/cart',
@@ -191,6 +202,16 @@ class GrabeatApp extends ConsumerWidget {
           ),
         ),
         GoRoute(
+          path: '/business/:id',
+          name: 'businessDetails',
+          builder: (context, state) {
+            final businessId = state.pathParameters['id'] ?? '';
+            return ProductionAuthWrapper(
+              child: BusinessDetailsScreen(businessId: businessId),
+            );
+          },
+        ),
+        GoRoute(
           path: '/customer-home',
           name: 'customerHome',
           builder: (context, state) => const ProductionAuthWrapper(
@@ -222,6 +243,16 @@ class GrabeatApp extends ConsumerWidget {
           path: '/favorites',
           name: 'favorites',
           builder: (context, state) => const FavoritesScreen(),
+        ),
+        GoRoute(
+          path: '/deal-details/:id',
+          name: 'dealDetailsWithId',
+          builder: (context, state) {
+            final dealId = state.pathParameters['id'] ?? '';
+            return ProductionAuthWrapper(
+              child: DealDetailsScreen(dealId: dealId),
+            );
+          },
         ),
         GoRoute(
           path: '/deal-details',

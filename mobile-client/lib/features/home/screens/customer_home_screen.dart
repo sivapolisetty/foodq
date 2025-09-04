@@ -1,131 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../deals/services/deal_service.dart';
-import '../../../shared/models/deal.dart';
 import '../../../shared/models/app_user.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../widgets/location_impact_cards.dart';
-import '../widgets/pickup_section.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../../auth/widgets/restaurant_owner_cta_card.dart';
+import '../providers/enhanced_home_provider.dart';
+import '../../location/providers/location_provider.dart';
+import '../../location/widgets/location_header.dart';
+import '../widgets/business_card_widget.dart';
+import '../widgets/enhanced_deal_card.dart';
+import '../../cart/widgets/floating_cart_bar.dart';
 
-// Simple state for home screen
-class HomeState {
-  final List<Deal> deals;
-  final bool isLoading;
-  final bool isLoadingMore;
-  final bool hasMore;
-  final String? error;
-
-  const HomeState({
-    this.deals = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
-    this.hasMore = true,
-    this.error,
-  });
-
-  HomeState copyWith({
-    List<Deal>? deals,
-    bool? isLoading,
-    bool? isLoadingMore,
-    bool? hasMore,
-    String? error,
-  }) {
-    return HomeState(
-      deals: deals ?? this.deals,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
-      error: error ?? this.error,
-    );
-  }
-}
-
-// Home provider
-class HomeNotifier extends StateNotifier<HomeState> {
-  final DealService _dealService;
-  static const int _pageSize = 20;
-  String? _currentFilter;
-
-  HomeNotifier(this._dealService) : super(const HomeState());
-
-  Future<void> loadDeals([String? filter]) async {
-    print('🏠 HOME_PROVIDER: loadDeals called with filter: $filter');
-    _currentFilter = filter;
-    state = state.copyWith(isLoading: true, error: null, hasMore: true);
-    print('🏠 HOME_PROVIDER: State set to loading');
-    
-    try {
-      print('🏠 HOME_PROVIDER: Calling _dealService.fetchCustomerDeals...');
-      final deals = await _dealService.fetchCustomerDeals(
-        filter: filter,
-        limit: _pageSize,
-        offset: 0,
-      );
-      print('🏠 HOME_PROVIDER: Received ${deals.length} deals from service');
-      print('🏠 HOME_PROVIDER: Deal titles: ${deals.map((d) => d.title).join(', ')}');
-      
-      state = state.copyWith(
-        deals: deals, 
-        isLoading: false,
-        hasMore: deals.length >= _pageSize,
-      );
-      print('🏠 HOME_PROVIDER: State updated - isLoading: false, deals.length: ${state.deals.length}');
-    } catch (e) {
-      print('🏠 HOME_PROVIDER: Error occurred: $e');
-      state = state.copyWith(error: e.toString(), isLoading: false);
-    }
-  }
-
-  Future<void> loadMoreDeals() async {
-    if (state.isLoadingMore || !state.hasMore) return;
-    
-    state = state.copyWith(isLoadingMore: true);
-    
-    try {
-      final moreDeals = await _dealService.fetchCustomerDeals(
-        filter: _currentFilter,
-        limit: _pageSize,
-        offset: state.deals.length,
-      );
-      
-      if (moreDeals.isEmpty) {
-        state = state.copyWith(isLoadingMore: false, hasMore: false);
-      } else {
-        state = state.copyWith(
-          deals: [...state.deals, ...moreDeals],
-          isLoadingMore: false,
-          hasMore: moreDeals.length >= _pageSize,
-        );
-      }
-    } catch (e) {
-      state = state.copyWith(isLoadingMore: false);
-    }
-  }
-
-  Future<void> searchDeals(String query) async {
-    _currentFilter = null;
-    state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final deals = await _dealService.searchDeals(query);
-      state = state.copyWith(
-        deals: deals, 
-        isLoading: false,
-        hasMore: false, // Search doesn't support pagination yet
-      );
-    } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
-    }
-  }
-}
-
-final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) {
-  final dealService = DealService();
-  return HomeNotifier(dealService);
-});
 
 class CustomerHomeScreen extends ConsumerStatefulWidget {
   const CustomerHomeScreen({Key? key}) : super(key: key);
@@ -155,14 +41,13 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   }
 
   void _loadInitialData() {
-    print('🔄 Loading initial data...');
-    ref.read(homeProvider.notifier).loadDeals();
+    print('🔄 Loading initial location-based data...');
+    ref.read(enhancedHomeProvider.notifier).loadNearbyContent();
   }
 
   void _onScroll() {
-    if (_isBottom) {
-      ref.read(homeProvider.notifier).loadMoreDeals();
-    }
+    // For now, we don't have pagination for location-based content
+    // This can be added later if needed
   }
 
   bool get _isBottom {
@@ -175,8 +60,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     print('🏗️  BUILD: CustomerHomeScreen.build() called');
-    final homeState = ref.watch(homeProvider);
-    print('🏗️  BUILD: homeState - isLoading: ${homeState.isLoading}, deals: ${homeState.deals.length}');
+    final enhancedHomeState = ref.watch(enhancedHomeProvider);
+    print('🏗️  BUILD: enhancedHomeState - isLoadingDeals: ${enhancedHomeState.isLoadingDeals}, deals: ${enhancedHomeState.nearbyDeals.length}');
     final currentUserAsync = ref.watch(currentAuthUserProvider);
     print('🏗️  BUILD: currentUserAsync state: ${currentUserAsync.runtimeType}');
     
@@ -192,7 +77,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           return _buildBusinessUserState();
         }
         print('🏗️  BUILD: Customer user - showing customer home content');
-        return _buildCustomerHomeContent(homeState, currentUser);
+        return _buildCustomerHomeContent(enhancedHomeState, currentUser);
       },
       loading: () {
         print('🏗️  BUILD: currentUserAsync.loading - showing auth loading');
@@ -211,71 +96,64 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     );
   }
 
-  Widget _buildCustomerHomeContent(HomeState homeState, AppUser currentUser) {
+  Widget _buildCustomerHomeContent(EnhancedHomeState enhancedHomeState, AppUser currentUser) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            _loadInitialData();
-          },
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                // Search bar (moved above carousel)
-                _buildStandaloneSearchBar(),
-                const SizedBox(height: 20),
-                // Main carousel banner (without search overlay)
-                _buildMainCarouselBanner(),
-                const SizedBox(height: 24),
-                // Category icons
-                _buildCategoryIcons(),
-                
-                const SizedBox(height: 24),
-                
-                // Location and Impact cards
-                const LocationImpactCards(),
-                
-                const SizedBox(height: 32),
-                
-                // Category sections
-                _buildCategorySections(homeState),
-                
-                // Loading more indicator
-                if (homeState.isLoadingMore)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-                      ),
-                    ),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(enhancedHomeProvider.notifier).refresh();
+            },
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Location header
+                  LocationHeader(
+                    onLocationChanged: () {
+                      // Refresh nearby content when location changes
+                      ref.read(enhancedHomeProvider.notifier).loadNearbyContent();
+                    },
                   ),
-                
-                // End of list indicator
-                if (!homeState.hasMore && homeState.deals.isNotEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: Text(
-                        'You\'ve reached the end',
-                        style: TextStyle(
-                          color: Color(0xFF9E9E9E),
-                          fontSize: 14,
+                  const SizedBox(height: 20),
+                  // Search bar
+                  _buildStandaloneSearchBar(),
+                  const SizedBox(height: 24),
+                  // Category icons
+                  _buildCategoryIcons(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Location-based sections
+                  _buildLocationBasedSections(enhancedHomeState),
+                  
+                  // Loading indicator
+                  if (enhancedHomeState.isLoadingDeals || enhancedHomeState.isLoadingBusinesses)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
                         ),
                       ),
                     ),
-                  ),
-                      
-                const SizedBox(height: 120), // Space for bottom nav
-              ],
+                        
+                  const SizedBox(height: 180), // Extra space for bottom nav and cart bar
+                ],
+              ),
             ),
           ),
-        ),
+          // Floating cart bar positioned directly above bottom navigation
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0, // Sit directly on top of bottom navigation
+            child: const FloatingCartBar(),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavigation(currentUser),
     );
@@ -447,11 +325,22 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             vertical: 16,
           ),
         ),
+        onTap: () {
+          // Navigate to search results screen when field is tapped
+          context.push('/search-results');
+        },
         onSubmitted: (query) {
+          // Navigate to search results screen with the search query
           if (query.isNotEmpty) {
-            ref.read(homeProvider.notifier).searchDeals(query);
+            context.push('/search-results?q=${Uri.encodeQueryComponent(query)}');
           } else {
-            ref.read(homeProvider.notifier).loadDeals();
+            context.push('/search-results');
+          }
+        },
+        onChanged: (query) {
+          // Real-time search as user types
+          if (query.isEmpty) {
+            ref.read(enhancedHomeProvider.notifier).clearSearch();
           }
         },
       ),
@@ -682,14 +571,24 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   }
 
 
-  Widget _buildCategorySections(HomeState homeState) {
-    print('🎨 UI_BUILD: _buildCategorySections called');
-    print('🎨 UI_BUILD: isLoading: ${homeState.isLoading}');
-    print('🎨 UI_BUILD: deals.length: ${homeState.deals.length}');
-    print('🎨 UI_BUILD: deals.isEmpty: ${homeState.deals.isEmpty}');
-    print('🎨 UI_BUILD: error: ${homeState.error}');
+  Widget _buildLocationBasedSections(EnhancedHomeState enhancedHomeState) {
+    print('🎨 UI_BUILD: _buildLocationBasedSections called');
+    print('🎨 UI_BUILD: isLoadingDeals: ${enhancedHomeState.isLoadingDeals}');
+    print('🎨 UI_BUILD: isLoadingBusinesses: ${enhancedHomeState.isLoadingBusinesses}');
+    print('🎨 UI_BUILD: nearbyDeals.length: ${enhancedHomeState.nearbyDeals.length}');
+    print('🎨 UI_BUILD: nearbyBusinesses.length: ${enhancedHomeState.nearbyBusinesses.length}');
     
-    if (homeState.isLoading && homeState.deals.isEmpty) {
+    final notifier = ref.read(enhancedHomeProvider.notifier);
+    
+    // Check if we're showing search results
+    if (notifier.isShowingSearchResults) {
+      return _buildSearchResults(enhancedHomeState);
+    }
+    
+    // Show loading state for initial load
+    if ((enhancedHomeState.isLoadingDeals || enhancedHomeState.isLoadingBusinesses) &&
+        enhancedHomeState.nearbyDeals.isEmpty && 
+        enhancedHomeState.nearbyBusinesses.isEmpty) {
       print('🎨 UI_BUILD: Showing loading spinner');
       return const Center(
         child: Padding(
@@ -700,39 +599,32 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
         ),
       );
     }
-
-    if (homeState.deals.isEmpty) {
-      print('🎨 UI_BUILD: Showing empty state');
-      if (homeState.error != null) {
-        print('🎨 UI_BUILD: Error state: ${homeState.error}');
-      }
-      return const Center(
+    
+    // Show error state
+    if (enhancedHomeState.error != null) {
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Column(
             children: [
-              Icon(
-                Icons.restaurant_menu,
+              const Icon(
+                Icons.error_outline,
                 size: 64,
-                color: Color(0xFFBDBDBD),
+                color: Color(0xFFE53935),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
-                'No deals available',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                enhancedHomeState.error!,
+                style: const TextStyle(
+                  fontSize: 16,
                   color: Color(0xFF757575),
                 ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Check back later for new deals!',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF9E9E9E),
-                ),
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.read(enhancedHomeProvider.notifier).refresh(),
+                child: const Text('Retry'),
               ),
             ],
           ),
@@ -740,41 +632,234 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
       );
     }
 
-    // Divide deals into three categories
-    final allDeals = homeState.deals.where((deal) => deal.isAvailable).toList();
-    final popularDeals = allDeals.take(5).toList();
-    final favoriteDeals = allDeals.skip(5).take(5).toList();
-    final newDeals = allDeals.skip(10).take(5).toList();
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Popular Near You section
-        if (popularDeals.isNotEmpty)
-          PickupSection(
-            title: 'Popular Near You',
-            deals: popularDeals,
-            onViewAll: () => _handleViewAll('popular'),
+        // Restaurants Near You section
+        if (enhancedHomeState.nearbyBusinesses.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Restaurants Near You',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF212121),
+              ),
+            ),
           ),
-        
-        const SizedBox(height: 32),
-        
-        // Your Favorites section
-        if (favoriteDeals.isNotEmpty) ...[
-          PickupSection(
-            title: 'Your Favorites',
-            deals: favoriteDeals,
-            onViewAll: () => _handleViewAll('favorites'),
+          const SizedBox(height: 16),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: enhancedHomeState.nearbyBusinesses.length,
+            itemBuilder: (context, index) {
+              final businessWithDistance = enhancedHomeState.nearbyBusinesses[index];
+              return BusinessCardWidget(
+                businessWithDistance: businessWithDistance,
+                onTap: () => _handleBusinessTap(businessWithDistance.business.id),
+              );
+            },
           ),
           const SizedBox(height: 32),
         ],
         
-        // New on GrabEat section
-        if (newDeals.isNotEmpty)
-          PickupSection(
-            title: 'New on GrabEat',
-            deals: newDeals,
-            onViewAll: () => _handleViewAll('new'),
+        // Deals Near You section
+        if (enhancedHomeState.nearbyDeals.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Deals Near You',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF212121),
+              ),
+            ),
           ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 380,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 20),
+              itemCount: enhancedHomeState.nearbyDeals.length,
+              itemBuilder: (context, index) {
+                final dealWithDistance = enhancedHomeState.nearbyDeals[index];
+                return EnhancedDealCard(
+                  dealWithDistance: dealWithDistance,
+                  onTap: () => _handleDealTap(dealWithDistance.deal.id),
+                );
+              },
+            ),
+          ),
+        ],
+        
+        // Empty state when no nearby content
+        if (enhancedHomeState.nearbyDeals.isEmpty && enhancedHomeState.nearbyBusinesses.isEmpty) ...[
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.location_off,
+                    size: 64,
+                    color: Color(0xFFBDBDBD),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No nearby businesses found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF757575),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Try expanding your search radius or check back later!',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSearchResults(EnhancedHomeState enhancedHomeState) {
+    final searchResults = enhancedHomeState.searchResults!;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Search results header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Search Results for "${enhancedHomeState.searchQuery}"',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF212121),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            '${searchResults.totalResults} results found',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF757575),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Restaurants in search results
+        if (searchResults.businesses.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Restaurants (${searchResults.businesses.length})',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: searchResults.businesses.length,
+            itemBuilder: (context, index) {
+              final businessWithDistance = searchResults.businesses[index];
+              return BusinessCardWidget(
+                businessWithDistance: businessWithDistance,
+                onTap: () => _handleBusinessTap(businessWithDistance.business.id),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+        ],
+        
+        // Deals in search results
+        if (searchResults.deals.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Deals (${searchResults.deals.length})',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 380,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 20),
+              itemCount: searchResults.deals.length,
+              itemBuilder: (context, index) {
+                final dealWithDistance = searchResults.deals[index];
+                return EnhancedDealCard(
+                  dealWithDistance: dealWithDistance,
+                  onTap: () => _handleDealTap(dealWithDistance.deal.id),
+                );
+              },
+            ),
+          ),
+        ],
+        
+        // No search results
+        if (searchResults.businesses.isEmpty && searchResults.deals.isEmpty) ...[
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 64,
+                    color: Color(0xFFBDBDBD),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No results found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF757575),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Try different keywords or check your spelling.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -784,36 +869,36 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   }
 
   void _handleCategoryTap(String category) {
-    // Handle category navigation
+    // Handle category navigation with location-aware search
+    final enhancedNotifier = ref.read(enhancedHomeProvider.notifier);
     switch (category) {
       case 'pickup_now':
-        // Filter for immediate pickup deals
-        ref.read(homeProvider.notifier).loadDeals('pickup_now');
+        enhancedNotifier.search('pickup');
         break;
       case 'near_me':
-        // Filter for nearby deals (would use location in real app)
-        ref.read(homeProvider.notifier).loadDeals('nearby');
+        // This will show nearby content without search query
+        enhancedNotifier.clearSearch();
         break;
       case 'top_deals':
-        // Filter for highest discount deals
-        ref.read(homeProvider.notifier).loadDeals('discount');
+        enhancedNotifier.search('discount deal');
         break;
       case 'best_reviews':
-        // Filter for highest rated deals
-        ref.read(homeProvider.notifier).loadDeals('rating');
+        enhancedNotifier.search('popular');
         break;
       case 'meals':
-        // Filter for meal deals
-        ref.read(homeProvider.notifier).loadDeals('meals');
+        enhancedNotifier.search('food meal');
         break;
     }
   }
 
-  void _handleViewAll(String section) {
-    // Navigate to full list view
-    print('View all $section deals');
-    // Could navigate to a filtered deals screen
-    // context.go('/deals?category=$section');
+  void _handleBusinessTap(String businessId) {
+    // Navigate to business details page
+    context.go('/business/$businessId');
+  }
+
+  void _handleDealTap(String dealId) {
+    // Navigate to deal details page
+    context.go('/deal-details/$dealId');
   }
 
   Widget _buildNoUserState() {
@@ -1006,7 +1091,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
         // Already on customer home
         break;
       case 1:
-        context.go('/search');
+        context.go('/search-results');
         break;
       case 2:
         context.go('/favorites');

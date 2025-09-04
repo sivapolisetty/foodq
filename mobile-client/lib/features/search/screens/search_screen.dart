@@ -14,6 +14,7 @@ import '../widgets/search_bar_widget.dart';
 import '../widgets/search_filters_widget.dart';
 import '../widgets/quick_filters_widget.dart';
 import '../widgets/search_results_widget.dart';
+import '../../cart/widgets/floating_cart_bar.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -33,7 +34,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,32 +89,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     }
   }
 
-  Future<void> _performNearbySearch() async {
-    // In a real app, you'd get location permission and coordinates
-    // For demo, using NYC coordinates
-    const latitude = 40.7128;
-    const longitude = -74.0060;
-
-    setState(() => _isSearching = true);
-
-    try {
-      await ref.read(searchNotifierProvider.notifier).searchNearbyDeals(
-        latitude: latitude,
-        longitude: longitude,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Nearby search failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      setState(() => _isSearching = false);
-    }
-  }
 
   void _toggleFilters() {
     setState(() => _showFilters = !_showFilters);
@@ -134,7 +109,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     return OverflowSafeWrapper(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Search Deals'),
+          title: const Text('Search'),
           backgroundColor: AppTheme.primaryGreen,
           foregroundColor: Colors.white,
           bottom: TabBar(
@@ -143,9 +118,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
             tabs: const [
-              Tab(text: 'Deals'),
               Tab(text: 'Restaurants'),
-              Tab(text: 'Nearby'),
+              Tab(text: 'Food'),
             ],
           ),
           actions: [
@@ -163,79 +137,87 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
               ),
           ],
         ),
-        body: Column(
+        body: Stack(
           children: [
-            // Search Bar
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [AppTheme.subtleShadow],
-              ),
-              child: SearchBarWidget(
-                controller: _searchController,
-                onSearch: _performSearch,
-                isLoading: _isSearching,
-                hintText: 'Search for deals, restaurants, cuisines...',
-              ),
-            ),
-
-            // Filters (collapsible)
-            if (_showFilters)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey[300]!),
+            Column(
+              children: [
+                // Search Bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [AppTheme.subtleShadow],
+                  ),
+                  child: SearchBarWidget(
+                    controller: _searchController,
+                    onSearch: _performSearch,
+                    isLoading: _isSearching,
+                    hintText: 'Search for deals, restaurants, cuisines...',
                   ),
                 ),
-                child: SearchFiltersWidget(
-                  filters: filters,
-                  onFiltersChanged: (newFilters) {
-                    ref.read(searchFiltersNotifierProvider.notifier)
-                        .updateFilters(newFilters);
-                    // Re-run search with new filters if there's a query
-                    if (_searchController.text.isNotEmpty) {
-                      _performSearch(_searchController.text);
-                    }
-                  },
-                ),
-              ),
 
-            // Quick Filters
-            if (!_showFilters)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: QuickFiltersWidget(
-                  onFilterSelected: (quickFilter) {
-                    ref.read(searchFiltersNotifierProvider.notifier)
-                        .updateFilters(quickFilter);
-                    if (_searchController.text.isNotEmpty) {
-                      _performSearch(_searchController.text);
-                    } else {
-                      // Load data based on quick filter
-                      _loadQuickFilterData(quickFilter);
-                    }
-                  },
-                ),
-              ),
+                // Filters (collapsible)
+                if (_showFilters)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey[300]!),
+                      ),
+                    ),
+                    child: SearchFiltersWidget(
+                      filters: filters,
+                      onFiltersChanged: (newFilters) {
+                        ref.read(searchFiltersNotifierProvider.notifier)
+                            .updateFilters(newFilters);
+                        // Re-run search with new filters if there's a query
+                        if (_searchController.text.isNotEmpty) {
+                          _performSearch(_searchController.text);
+                        }
+                      },
+                    ),
+                  ),
 
-            // Content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Deals Tab
-                  _buildDealsTab(searchResult),
-                  
-                  // Restaurants Tab
-                  _buildRestaurantsTab(searchResult),
-                  
-                  // Nearby Tab
-                  _buildNearbyTab(),
-                ],
-              ),
+                // Quick Filters
+                if (!_showFilters)
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: QuickFiltersWidget(
+                      onFilterSelected: (quickFilter) {
+                        ref.read(searchFiltersNotifierProvider.notifier)
+                            .updateFilters(quickFilter);
+                        if (_searchController.text.isNotEmpty) {
+                          _performSearch(_searchController.text);
+                        } else {
+                          // Load data based on quick filter
+                          _loadQuickFilterData(quickFilter);
+                        }
+                      },
+                    ),
+                  ),
+
+                // Content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Restaurants Tab
+                      _buildRestaurantsTab(searchResult),
+                      
+                      // Food Tab (Deals)
+                      _buildFoodTab(searchResult),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // Floating cart bar positioned directly above bottom navigation
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0, // Sit directly on top of bottom navigation
+              child: const FloatingCartBar(),
             ),
           ],
         ),
@@ -324,36 +306,96 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     }
   }
 
-  Widget _buildDealsTab(searchResult) {
-    if (_isSearching) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (searchResult.deals.isEmpty && searchResult.query != null) {
-      return _buildEmptyState('No deals found for "${searchResult.query}"');
-    }
-
-    if (searchResult.deals.isEmpty) {
-      return _buildTrendingDeals();
-    }
-
-    return SearchResultsWidget(
-      searchResult: searchResult,
-      onDealTap: (deal) => context.push('/deal/${deal.id}'),
-      onBusinessTap: (business) => context.push('/business/${business.id}'),
+  Widget _buildFoodTab(searchResult) {
+    return Column(
+      children: [
+        // Search bar for food/deals
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search food, deals, cuisines...',
+              prefixIcon: const Icon(Icons.restaurant_menu, color: Color(0xFF4CAF50)),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: _clearSearch,
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+            ),
+            onSubmitted: _performSearch,
+          ),
+        ),
+        
+        // Results
+        Expanded(
+          child: _isSearching 
+              ? const Center(child: CircularProgressIndicator())
+              : searchResult.deals.isEmpty && searchResult.query != null
+                  ? _buildEmptyState('No food deals found for "${searchResult.query}"', Icons.restaurant_menu)
+                  : searchResult.deals.isEmpty
+                      ? _buildTrendingDeals()
+                      : SearchResultsWidget(
+                          searchResult: searchResult,
+                          onDealTap: (deal) => context.push('/deal/${deal.id}'),
+                          onBusinessTap: (business) => context.push('/business/${business.id}'),
+                        ),
+        ),
+      ],
     );
   }
 
   Widget _buildRestaurantsTab(searchResult) {
     return Column(
       children: [
-        Padding(
+        // Search bar for restaurants
+        Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: TextField(
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Search restaurants...',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.restaurant, color: Color(0xFF4CAF50)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
             ),
             onSubmitted: (query) async {
               setState(() => _isSearching = true);
@@ -363,7 +405,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Search failed: $e')),
+                    SnackBar(
+                      content: Text('Search failed: $e'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               } finally {
@@ -372,20 +417,79 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             },
           ),
         ),
+        
+        // Results
         Expanded(
           child: _isSearching
               ? const Center(child: CircularProgressIndicator())
               : searchResult.businesses.isEmpty
-                  ? _buildEmptyState('Search for restaurants above')
+                  ? _buildEmptyState('Search for restaurants above', Icons.restaurant)
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: searchResult.businesses.length,
                       itemBuilder: (context, index) {
                         final business = searchResult.businesses[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: BusinessCard(
-                            business: business,
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: CircleAvatar(
+                              radius: 30,
+                              backgroundColor: const Color(0xFF4CAF50).withOpacity(0.1),
+                              child: const Icon(
+                                Icons.restaurant,
+                                color: Color(0xFF4CAF50),
+                                size: 24,
+                              ),
+                            ),
+                            title: Text(
+                              business.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (business.category?.isNotEmpty == true) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    business.category!,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                                if (business.activeDeals > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE91E63),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${business.activeDeals} active deal${business.activeDeals == 1 ? '' : 's'}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                             onTap: () => context.push('/business/${business.id}'),
                           ),
                         );
@@ -396,28 +500,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     );
   }
 
-  Widget _buildNearbyTab() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton.icon(
-            onPressed: _performNearbySearch,
-            icon: const Icon(Icons.location_on),
-            label: const Text('Find Deals Near Me'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryGreen,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-            ),
-          ),
-        ),
-        Expanded(
-          child: _buildDealsTab(ref.watch(searchNotifierProvider)),
-        ),
-      ],
-    );
-  }
 
   Widget _buildTrendingDeals() {
     return Consumer(
@@ -465,13 +547,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(String message, [IconData? icon]) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.search_off,
+            icon ?? Icons.search_off,
             size: 64,
             color: Colors.grey[400],
           ),

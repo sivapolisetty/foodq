@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
-import '../widgets/grabeat_logo.dart';
+import '../widgets/foodq_logo.dart';
 import '../services/production_auth_service.dart';
 import '../services/auth_logger.dart';
 
@@ -66,7 +66,7 @@ class _UserOnboardingScreenState extends ConsumerState<UserOnboardingScreen> {
           child: Column(
             children: [
               // Logo and welcome
-              const GrabeatLogo(size: 80),
+              const FoodQAppLogo(size: 80),
               const SizedBox(height: 32),
               
               // Welcome message

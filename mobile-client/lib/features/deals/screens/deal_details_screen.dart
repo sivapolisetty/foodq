@@ -6,38 +6,85 @@ import '../../../shared/models/business.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
+import '../../../core/utils/navigation_helper.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/services/order_service.dart';
 import '../widgets/order_placement_bottom_sheet.dart';
 import '../../../services/business_service.dart';
+import '../services/deal_service.dart';
+import '../../cart/services/cart_validation_service.dart';
+import '../../cart/providers/cart_provider.dart';
 
 class DealDetailsScreen extends ConsumerStatefulWidget {
-  final Deal deal;
+  final Deal? deal;
+  final String? dealId;
 
   const DealDetailsScreen({
     Key? key,
-    required this.deal,
-  }) : super(key: key);
+    this.deal,
+    this.dealId,
+  }) : assert(deal != null || dealId != null, 'Either deal or dealId must be provided'),
+       super(key: key);
 
   @override
   ConsumerState<DealDetailsScreen> createState() => _DealDetailsScreenState();
 }
 
 class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
+  Deal? currentDeal;
   Business? business;
+  bool isLoadingDeal = true;
   bool isLoadingBusiness = true;
+  String? dealError;
   String? businessError;
 
   @override
   void initState() {
     super.initState();
-    _loadBusinessDetails();
+    _loadDealData();
+  }
+
+  Future<void> _loadDealData() async {
+    try {
+      // If deal is provided, use it directly, otherwise fetch by ID
+      if (widget.deal != null) {
+        currentDeal = widget.deal;
+        setState(() {
+          isLoadingDeal = false;
+        });
+        _loadBusinessDetails();
+      } else if (widget.dealId != null) {
+        // Check if DealService exists, otherwise create a simple HTTP client approach
+        final dealService = DealService();
+        final dealData = await dealService.getDealById(widget.dealId!);
+        
+        if (dealData != null) {
+          setState(() {
+            currentDeal = dealData;
+            isLoadingDeal = false;
+          });
+          _loadBusinessDetails();
+        } else {
+          setState(() {
+            dealError = 'Deal not found';
+            isLoadingDeal = false;
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        dealError = 'Failed to load deal: $e';
+        isLoadingDeal = false;
+      });
+    }
   }
 
   Future<void> _loadBusinessDetails() async {
+    if (currentDeal == null) return;
+    
     try {
       final businessService = BusinessService();
-      final businessData = await businessService.getBusinessById(widget.deal.businessId);
+      final businessData = await businessService.getBusinessById(currentDeal!.businessId);
       setState(() {
         business = businessData;
         isLoadingBusiness = false;
@@ -52,6 +99,61 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading state while deal is being fetched
+    if (isLoadingDeal) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => NavigationHelper.safePopOrGoHome(context),
+          ),
+          title: const Text('Deal Details', style: TextStyle(color: Colors.black)),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+          ),
+        ),
+      );
+    }
+
+    // Show error state if deal loading failed
+    if (dealError != null || currentDeal == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => NavigationHelper.safePopOrGoHome(context),
+          ),
+          title: const Text('Deal Not Found', style: TextStyle(color: Colors.black)),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                dealError ?? 'Deal not found',
+                style: const TextStyle(fontSize: 18, color: Colors.red),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => NavigationHelper.safePopOrGoHome(context),
+                child: const Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
@@ -129,9 +231,9 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-            child: widget.deal.imageUrl != null && widget.deal.imageUrl!.isNotEmpty
+            child: currentDeal!.imageUrl != null && currentDeal!.imageUrl!.isNotEmpty
                 ? Image.network(
-                    widget.deal.imageUrl!,
+                    currentDeal!.imageUrl!,
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
@@ -151,7 +253,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                '${widget.deal.discountPercentage}% OFF',
+                '${currentDeal!.discountPercentage}% OFF',
                 style: AppTextStyles.labelMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -210,16 +312,16 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          widget.deal.title,
+          currentDeal!.title,
           style: AppTextStyles.headlineMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        if (widget.deal.description != null && widget.deal.description!.isNotEmpty)
+        if (currentDeal!.description != null && currentDeal!.description!.isNotEmpty)
           Text(
-            widget.deal.description!,
+            currentDeal!.description!,
             style: AppTextStyles.bodyLarge.copyWith(
               color: Colors.black54,
               height: 1.5,
@@ -374,7 +476,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
                     ),
                   ),
                   Text(
-                    '\$${widget.deal.originalPrice.toStringAsFixed(2)}',
+                    '\$${currentDeal!.originalPrice.toStringAsFixed(2)}',
                     style: AppTextStyles.titleMedium.copyWith(
                       decoration: TextDecoration.lineThrough,
                       color: Colors.grey[600],
@@ -392,7 +494,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
                     ),
                   ),
                   Text(
-                    '\$${widget.deal.discountedPrice.toStringAsFixed(2)}',
+                    '\$${currentDeal!.discountedPrice.toStringAsFixed(2)}',
                     style: AppTextStyles.headlineSmall.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
@@ -408,10 +510,10 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
               Expanded(
                 child: _buildInfoChip(
                   icon: Icons.inventory,
-                  label: '${widget.deal.quantityAvailable} available',
-                  color: widget.deal.quantityAvailable > 5 
+                  label: '${currentDeal!.quantityAvailable} available',
+                  color: currentDeal!.quantityAvailable > 5 
                       ? AppColors.success 
-                      : widget.deal.quantityAvailable > 0 
+                      : currentDeal!.quantityAvailable > 0 
                           ? Colors.orange 
                           : AppColors.error,
                 ),
@@ -464,7 +566,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
   }
 
   Widget _buildAllergenInfo() {
-    if (widget.deal.allergenInfo == null || widget.deal.allergenInfo!.isEmpty) {
+    if (currentDeal!.allergenInfo == null || currentDeal!.allergenInfo!.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -493,7 +595,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            widget.deal.allergenInfo!,
+            currentDeal!.allergenInfo!,
             style: AppTextStyles.bodyMedium.copyWith(
               color: Colors.orange[700],
             ),
@@ -505,9 +607,9 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
 
   Widget _buildOrderButton() {
     final currentUser = ref.watch(currentAuthUserProvider).value;
-    final canOrder = widget.deal.quantityAvailable > 0 && 
-                    widget.deal.status == DealStatus.active &&
-                    widget.deal.expiresAt.isAfter(DateTime.now());
+    final canOrder = currentDeal!.quantityAvailable > 0 && 
+                    currentDeal!.status == DealStatus.active &&
+                    currentDeal!.expiresAt.isAfter(DateTime.now());
 
     if (currentUser == null) {
       return Container(
@@ -567,82 +669,117 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
         ],
       ),
       child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: canOrder ? _showOrderBottomSheet : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: canOrder ? AppColors.primary : Colors.grey[400],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: canOrder ? 4 : 0,
-              shadowColor: canOrder ? AppColors.primary.withOpacity(0.3) : Colors.transparent,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (canOrder) ...[
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag,
-                      color: Colors.white,
-                      size: 20,
+        child: canOrder
+            ? Row(
+                children: [
+                  // Quick Order Button
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _handleQuickOrder(),
+                      icon: const Icon(Icons.flash_on, size: 20),
+                      label: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Quick Order',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '\$${currentDeal!.discountedPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Order for Pickup',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  const SizedBox(width: 16),
+                  // Add to Cart Button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _handleAddToCart(),
+                      icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+                      label: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Add to Cart',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '\$${currentDeal!.discountedPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 4,
+                        shadowColor: AppColors.primary.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : SizedBox(
+                width: double.infinity,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.cancel_outlined,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
-                        '\$${widget.deal.discountedPrice.toStringAsFixed(2)}',
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w600,
+                        'Deal Not Available',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                ] else ...[
-                  const Icon(
-                    Icons.cancel_outlined,
-                    color: Colors.white70,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Not Available',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+                ),
+              ),
       ),
     );
   }
 
   String _getTimeRemaining() {
     final now = DateTime.now();
-    final expiresAt = widget.deal.expiresAt;
+    final expiresAt = currentDeal!.expiresAt;
     
     if (expiresAt.isBefore(now)) {
       return 'Expired';
@@ -661,7 +798,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
 
   Color _getTimeRemainingColor() {
     final now = DateTime.now();
-    final expiresAt = widget.deal.expiresAt;
+    final expiresAt = currentDeal!.expiresAt;
     
     if (expiresAt.isBefore(now)) {
       return AppColors.error;
@@ -684,7 +821,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => OrderPlacementBottomSheet(
-        deal: widget.deal,
+        deal: currentDeal!,
         business: business,
         onOrderPlaced: _handleOrderPlaced,
       ),
@@ -740,5 +877,28 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
         });
       }
     });
+  }
+
+  void _handleQuickOrder() {
+    if (currentDeal == null || business == null) return;
+    
+    // Show the order placement bottom sheet for quick order
+    _showOrderBottomSheet();
+  }
+
+  void _handleAddToCart() async {
+    if (currentDeal == null || business == null) return;
+    
+    await CartValidationService.validateAndAddToCart(
+      context: context,
+      ref: ref,
+      dealId: currentDeal!.id,
+      restaurantId: business!.id,
+      restaurantName: business!.name,
+      dealName: currentDeal!.title,
+      dealDescription: currentDeal!.description ?? '',
+      price: currentDeal!.discountedPrice,
+      imageUrl: currentDeal!.imageUrl,
+    );
   }
 }

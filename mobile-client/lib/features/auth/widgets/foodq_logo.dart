@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_text_styles.dart';
 
-class GrabeatLogo extends StatelessWidget {
+class FoodQAppLogo extends StatelessWidget {
   final double size;
   final bool showText;
 
-  const GrabeatLogo({
+  const FoodQAppLogo({
     super.key,
     this.size = 80,
     this.showText = true,
@@ -81,7 +81,7 @@ class GrabeatLogo extends StatelessWidget {
           const SizedBox(height: 16),
           // App Name
           Text(
-            'grabeat',
+            'FoodQ',
             style: AppTextStyles.headlineMedium.copyWith(
               color: AppColors.primary,
               fontWeight: FontWeight.bold,

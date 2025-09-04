@@ -52,21 +52,20 @@ class SearchNotifier extends _$SearchNotifier {
         deals = await searchService.searchDeals(query);
       }
 
-      state = SearchResult(
+      state = state.copyWith(
         deals: deals,
-        businesses: const [],
-        totalCount: deals.length,
+        totalCount: deals.length + state.businesses.length,
         dealsCount: deals.length,
-        businessesCount: 0,
         query: query.isEmpty ? null : query,
         searchLatitude: userLatitude,
         searchLongitude: userLongitude,
       );
     } catch (e) {
       // Handle error - could emit error state or show snackbar
-      state = SearchResult(
+      state = state.copyWith(
         deals: const [],
-        businesses: const [],
+        dealsCount: 0,
+        totalCount: state.businesses.length,
         query: query.isEmpty ? null : query,
       );
       rethrow;
@@ -105,7 +104,7 @@ class SearchNotifier extends _$SearchNotifier {
   /// Search for businesses
   Future<void> searchBusinesses(String query) async {
     if (query.trim().isEmpty) {
-      state = const SearchResult(deals: [], businesses: []);
+      state = state.copyWith(businesses: []);
       return;
     }
 
@@ -113,17 +112,14 @@ class SearchNotifier extends _$SearchNotifier {
       final searchService = ref.read(searchServiceProvider);
       final businesses = await searchService.searchBusinesses(query);
 
-      state = SearchResult(
-        deals: const [],
+      state = state.copyWith(
         businesses: businesses,
-        totalCount: businesses.length,
-        dealsCount: 0,
+        totalCount: state.deals.length + businesses.length,
         businessesCount: businesses.length,
         query: query,
       );
     } catch (e) {
-      state = SearchResult(
-        deals: const [],
+      state = state.copyWith(
         businesses: const [],
         query: query,
       );

@@ -14,31 +14,90 @@ import '../../home/screens/customer_home_screen.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/enums/user_type.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../location/providers/customer_address_provider.dart';
 
 /// Provider for production auth service
 final productionAuthServiceProvider = Provider<ProductionAuthService>((ref) {
   return ProductionAuthService();
 });
 
-/// Provider for onboarding status - cached and only refetches when user changes
-final onboardingStatusProvider = FutureProvider.family<OnboardingStatus, AppUser>((ref, user) async {
+/// Provider for onboarding status - auto-dispose to prevent cross-user contamination
+final onboardingStatusProvider = FutureProvider.family.autoDispose<OnboardingStatus, AppUser>((ref, user) async {
+  print('🔍 onboardingStatusProvider called for user: ${user.id} (${user.userType})');
   final authService = ref.read(productionAuthServiceProvider);
-  return await authService.getOnboardingStatus(user);
+  final status = await authService.getOnboardingStatus(user);
+  print('🔍 onboardingStatusProvider result: needsOnboarding=${status.needsOnboarding}, hasBusiness=${status.hasBusiness}');
+  return status;
 });
 
-/// Provider for current user state with enhanced business ID mapping
-final authenticatedUserProvider = FutureProvider<AppUser?>((ref) async {
+/// Provider for current user state with enhanced business ID mapping and auto-retry
+final authenticatedUserProvider = FutureProvider.autoDispose<AppUser?>((ref) async {
   print('🔄 currentUserProvider called - fetching current user');
   final authService = ref.read(productionAuthServiceProvider);
-  var user = await authService.getCurrentUser();
-  print('🔄 currentUserProvider base result: $user');
+  
+  // Try up to 3 times with automatic token refresh on auth failures
+  for (int attempt = 1; attempt <= 3; attempt++) {
+    try {
+      var user = await authService.getCurrentUser();
+      print('🔄 currentUserProvider attempt $attempt result: $user');
+      
+      if (user != null) {
+        return await _enhanceBusinessUser(user, authService);
+      }
+      
+      // If user is null but we have a session, token might be expired
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null && attempt < 3) {
+        print('🔄 User null but session exists - attempting token refresh (attempt $attempt)');
+        await Supabase.instance.client.auth.refreshSession();
+        await Future.delayed(Duration(milliseconds: 500)); // Brief delay after refresh
+        continue; // Retry with refreshed token
+      }
+      
+      return null;
+      
+    } catch (e) {
+      print('🔄 currentUserProvider attempt $attempt failed: $e');
+      
+      // Check if it's an auth error that might be resolved with token refresh
+      if (e.toString().contains('Invalid token') || 
+          e.toString().contains('JWT') || 
+          e.toString().contains('Authentication') ||
+          e.toString().contains('token')) {
+        
+        if (attempt < 3) {
+          print('🔄 Authentication error detected - attempting token refresh (attempt $attempt)');
+          try {
+            await Supabase.instance.client.auth.refreshSession();
+            await Future.delayed(Duration(milliseconds: 500)); // Brief delay after refresh
+            continue; // Retry with refreshed token
+          } catch (refreshError) {
+            print('🔄 Token refresh failed: $refreshError');
+            if (attempt == 3) rethrow; // Final attempt failed
+          }
+        } else {
+          rethrow; // Final attempt failed
+        }
+      } else {
+        rethrow; // Non-auth error, don't retry
+      }
+    }
+  }
+  
+  return null;
+});
+
+/// Helper function to enhance business user data
+Future<AppUser?> _enhanceBusinessUser(AppUser user, authService) async {
+  var enhancedUser = user;
+  print('🔄 currentUserProvider base result: $enhancedUser');
   
   // For business users, get the correct business ID and business name from onboarding status
-  if (user != null && user.isBusiness) {
-    print('🔄 Attempting to enhance business user with ID: ${user.id}');
+  if (enhancedUser.isBusiness) {
+    print('🔄 Attempting to enhance business user with ID: ${enhancedUser.id}');
     try {
       print('🔄 Calling getOnboardingStatusRaw...');
-      final response = await authService.getOnboardingStatusRaw(user.id);
+      final response = await authService.getOnboardingStatusRaw(enhancedUser.id);
       print('🔄 getOnboardingStatusRaw response: $response');
       if (response['success'] == true && response['data'] != null) {
         final data = response['data'] as Map<String, dynamic>;
@@ -59,15 +118,15 @@ final authenticatedUserProvider = FutureProvider<AppUser?>((ref) async {
           print('   Business Address: $businessAddress');
           
           // Create updated user with correct business information
-          user = user.copyWith(
-            businessId: actualBusinessId ?? user.businessId,
+          enhancedUser = enhancedUser.copyWith(
+            businessId: actualBusinessId ?? enhancedUser.businessId,
             businessName: businessName,
-            name: businessName ?? user.name, // Use business name as display name
-            phone: businessPhone ?? user.phone,
+            name: businessName ?? enhancedUser.name, // Use business name as display name
+            phone: businessPhone ?? enhancedUser.phone,
             // Note: Don't override user email with business email, keep user email
-            address: businessAddress ?? user.address,
+            address: businessAddress ?? enhancedUser.address,
           );
-          print('🔄 currentUserProvider enhanced result: ${user.name} (businessName: ${user.businessName})');
+          print('🔄 currentUserProvider enhanced result: ${enhancedUser.name} (businessName: ${enhancedUser.businessName})');
         }
       }
     } catch (e) {
@@ -76,9 +135,9 @@ final authenticatedUserProvider = FutureProvider<AppUser?>((ref) async {
     }
   }
   
-  print('🔄 currentUserProvider final result: $user');
-  return user;
-});
+  print('🔄 currentUserProvider final result: $enhancedUser');
+  return enhancedUser;
+}
 
 /// Production auth wrapper with role-based routing
 class ProductionAuthWrapper extends ConsumerWidget {
@@ -185,23 +244,27 @@ class ProductionAuthWrapper extends ConsumerWidget {
             AuthLogger.logAuthError('onboardingStatusProvider', error, stackTrace: stackTrace);
             // On error, assume needs onboarding to be safe
             final onboardingStatus = OnboardingStatus.needsOnboarding();
-            return _buildForOnboardingStatus(context, user, onboardingStatus);
+            return _buildForOnboardingStatus(context, ref, user, onboardingStatus);
           },
           data: (onboardingStatus) {
             print('✅ Onboarding status loaded successfully');
-            return _buildForOnboardingStatus(context, user, onboardingStatus);
+            return _buildForOnboardingStatus(context, ref, user, onboardingStatus);
           },
         );
       },
     );
   }
 
-  Widget _buildForOnboardingStatus(BuildContext context, AppUser user, OnboardingStatus onboardingStatus) {
-    print('📋 Onboarding decision:');
+  Widget _buildForOnboardingStatus(BuildContext context, WidgetRef ref, AppUser user, OnboardingStatus onboardingStatus) {
+    print('📋 Onboarding decision for user ${user.id}:');
     print('   User type: ${user.userType}');
+    print('   User email: ${user.email}');
     print('   Needs onboarding: ${onboardingStatus.needsOnboarding}');
     print('   Is waiting for approval: ${onboardingStatus.isWaitingForApproval}');
     print('   Is business active: ${onboardingStatus.isBusinessActive}');
+
+    // Load saved addresses for authenticated users
+    _loadUserAddresses(context, ref, user);
     
     AuthLogger.logAuthEvent('Onboarding check complete', data: {
       'user_type': user.userType,
@@ -235,6 +298,20 @@ class ProductionAuthWrapper extends ConsumerWidget {
     }
   }
 
+  /// Load user's saved addresses when authenticated
+  void _loadUserAddresses(BuildContext context, WidgetRef ref, AppUser user) {
+    // Use post-frame callback to ensure providers are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        print('📍 AUTH WRAPPER: Loading saved addresses for user: ${user.id}');
+        // Load addresses in the background - don't await to avoid blocking UI
+        ref.read(customerAddressProvider.notifier).loadAddresses(user.id).catchError((e) {
+          print('📍 AUTH WRAPPER: Error loading addresses: $e');
+          // Don't show error to user - addresses are optional
+        });
+      }
+    });
+  }
 
   Widget _buildLoadingScreen() {
     return Scaffold(
@@ -384,17 +461,15 @@ Future<void> performCompleteLogout(WidgetRef ref) async {
     final authService = ref.read(productionAuthServiceProvider);
     await authService.signOut();
     
-    // 2. Invalidate all auth-related providers
+    // 2. Invalidate auth-related providers to prevent cross-user contamination
+    print('🧹 Invalidating auth providers to ensure clean state...');
     ref.invalidate(authenticatedUserProvider);
     ref.invalidate(onboardingStatusProvider);
     
     // Also invalidate the currentAuthUserProvider from auth_provider.dart
     ref.invalidate(currentAuthUserProvider);
     
-    // 3. Clear any other cached providers
-    // Individual screens should handle their own provider invalidation if needed
-    
-    print('✅ Comprehensive logout completed');
+    print('✅ Comprehensive logout completed - auth providers cleared');
   } catch (e) {
     print('💥 Error during comprehensive logout: $e');
     rethrow;
