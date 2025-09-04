@@ -1,14 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'environment_config.dart';
 
-/// API Configuration for GrabEat
+/// API Configuration for FoodQ
 /// 
 /// Centralized configuration for Cloudflare Worker API endpoints
 /// and related constants.
 
 class ApiConfig {
   // Base URLs for different environments
-  static const String _prodApiUrl = 'https://grabeat.pages.dev';
+  static const String _prodApiUrl = 'https://117c5f95.foodq.pages.dev';
   static const String _devApiUrl = 'http://localhost:8788';
 
   // Current environment API URL (loaded from .env file)
