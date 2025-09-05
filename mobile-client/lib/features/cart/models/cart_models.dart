@@ -7,6 +7,7 @@ class CartItem {
   final double price;
   final int quantity;
   final String? imageUrl;
+  final String cartItemId;  // Unique identifier for each cart addition
 
   CartItem({
     required this.dealId,
@@ -17,7 +18,8 @@ class CartItem {
     required this.price,
     this.quantity = 1,
     this.imageUrl,
-  });
+    String? cartItemId,
+  }) : cartItemId = cartItemId ?? '${dealId}_${DateTime.now().millisecondsSinceEpoch}_${(price * 1000).toInt()}';
 
   double get totalPrice => price * quantity;
 
@@ -30,6 +32,7 @@ class CartItem {
     double? price,
     int? quantity,
     String? imageUrl,
+    String? cartItemId,
   }) {
     return CartItem(
       dealId: dealId ?? this.dealId,
@@ -40,6 +43,7 @@ class CartItem {
       price: price ?? this.price,
       quantity: quantity ?? this.quantity,
       imageUrl: imageUrl ?? this.imageUrl,
+      cartItemId: cartItemId ?? this.cartItemId,
     );
   }
 
@@ -47,12 +51,11 @@ class CartItem {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is CartItem &&
-        other.dealId == dealId &&
-        other.restaurantId == restaurantId;
+        other.cartItemId == cartItemId;  // Each cart addition is unique
   }
 
   @override
-  int get hashCode => dealId.hashCode ^ restaurantId.hashCode;
+  int get hashCode => cartItemId.hashCode;
 
   @override
   String toString() {
@@ -90,6 +93,18 @@ class CartState {
     } catch (e) {
       return null;
     }
+  }
+
+  CartItem? findItemById(String cartItemId) {
+    try {
+      return items.firstWhere((item) => item.cartItemId == cartItemId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  List<CartItem> getItemsForDeal(String dealId) {
+    return items.where((item) => item.dealId == dealId).toList();
   }
 
   CartState copyWith({

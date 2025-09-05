@@ -31,8 +31,21 @@ class BusinessService {
     throw UnimplementedError('Not yet implemented with ApiService');
   }
 
-  Future<Business> updateBusiness(Business business) async {
-    throw UnimplementedError('Not yet implemented with ApiService');
+  Future<Business?> updateBusiness(Business business) async {
+    try {
+      final response = await ApiService.put<dynamic>(
+        '/api/businesses/${business.id}',
+        body: business.toJson(),
+      );
+
+      if (response.success && response.data != null) {
+        return Business.fromJson(response.data as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      print('Error updating business: $e');
+      return null;
+    }
   }
 
   Future<bool> deleteBusiness(String businessId) async {
@@ -63,8 +76,45 @@ class BusinessService {
     };
   }
 
+  /// Upload banner image for business and return the public URL
+  Future<String?> uploadBusinessBanner(String filePath) async {
+    try {
+      final response = await ApiService.uploadFile<dynamic>(
+        '/api/upload',
+        filePath,
+        'file',
+        fromJson: (data) => data,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        return data['url'] as String?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Update business banner URL after upload
+  Future<Business?> updateBusinessBanner(String businessId, String bannerUrl) async {
+    try {
+      final response = await ApiService.put<dynamic>(
+        '/api/businesses/$businessId',
+        body: {'cover_image_url': bannerUrl},
+      );
+
+      if (response.success && response.data != null) {
+        return Business.fromJson(response.data as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<String?> uploadBusinessImage(String businessId, String filePath) async {
-    return null;
+    return uploadBusinessBanner(filePath);
   }
 
   Future<bool> deleteBusinessImage(String imageUrl) async {

@@ -230,6 +230,45 @@ class ApiService {
     }
   }
 
+  /// Upload multipart file (for image uploads)
+  static Future<ApiResponse<T>> uploadFile<T>(
+    String endpoint,
+    String filePath,
+    String fieldName, {
+    Map<String, String>? additionalFields,
+    T Function(dynamic)? fromJson,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+      final request = http.MultipartRequest('POST', uri);
+      
+      // Add headers (excluding Content-Type as it's set by MultipartRequest)
+      final headers = Map<String, String>.from(ApiConfig.headersWithOptionalAuth);
+      headers.remove('Content-Type');
+      request.headers.addAll(headers);
+      
+      // Add file
+      final file = await http.MultipartFile.fromPath(fieldName, filePath);
+      request.files.add(file);
+      
+      // Add additional fields if provided
+      if (additionalFields != null) {
+        request.fields.addAll(additionalFields);
+      }
+      
+      final streamedResponse = await request.send().timeout(ApiConfig.defaultTimeout);
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      return _handleResponse<T>(response, fromJson);
+    } catch (e) {
+      return ApiResponse<T>(
+        success: false,
+        error: 'File upload error: ${e.toString()}',
+        code: 'UPLOAD_ERROR',
+      );
+    }
+  }
+
   /// Dispose of the HTTP client
   static void dispose() {
     _client.close();

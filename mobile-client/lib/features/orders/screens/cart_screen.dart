@@ -216,8 +216,8 @@ class CartScreen extends ConsumerWidget {
                             children: [
                               IconButton(
                                 onPressed: () {
-                                  ref.read(cartProvider.notifier).updateQuantity(
-                                    item.dealId, 
+                                  ref.read(cartProvider.notifier).updateCartItemQuantity(
+                                    item.cartItemId, 
                                     item.quantity - 1,
                                   );
                                 },
@@ -233,8 +233,8 @@ class CartScreen extends ConsumerWidget {
                               ),
                               IconButton(
                                 onPressed: () {
-                                  ref.read(cartProvider.notifier).updateQuantity(
-                                    item.dealId, 
+                                  ref.read(cartProvider.notifier).updateCartItemQuantity(
+                                    item.cartItemId, 
                                     item.quantity + 1,
                                   );
                                 },
@@ -285,7 +285,7 @@ class CartScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Total (${cart.itemCount} items)',
+                    'Total (${cart.items.length} line items, ${cart.itemCount} quantity)',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

@@ -14,33 +14,28 @@ class CartNotifier extends StateNotifier<CartState> {
     String? imageUrl,
     int quantity = 1,
   }) {
-    final existingItem = state.findItem(dealId);
+    // ALWAYS add as a new separate line item - never consolidate
+    final newItem = CartItem(
+      dealId: dealId,
+      restaurantId: restaurantId,
+      restaurantName: restaurantName,
+      dealName: dealName,
+      dealDescription: dealDescription,
+      price: price,
+      quantity: quantity,
+      imageUrl: imageUrl,
+    );
+
+    final updatedItems = [...state.items, newItem];
     
-    if (existingItem != null) {
-      updateQuantity(dealId, existingItem.quantity + quantity);
-    } else {
-      final newItem = CartItem(
-        dealId: dealId,
-        restaurantId: restaurantId,
-        restaurantName: restaurantName,
-        dealName: dealName,
-        dealDescription: dealDescription,
-        price: price,
-        quantity: quantity,
-        imageUrl: imageUrl,
-      );
+    state = state.copyWith(
+      items: updatedItems,
+      currentRestaurantId: restaurantId,
+      currentRestaurantName: restaurantName,
+    );
 
-      final updatedItems = [...state.items, newItem];
-      
-      state = state.copyWith(
-        items: updatedItems,
-        currentRestaurantId: restaurantId,
-        currentRestaurantName: restaurantName,
-      );
-    }
-
-    print('🛒 CART: Added item - $dealName x$quantity from $restaurantName');
-    print('🛒 CART: Total items: ${state.itemCount}, Total: \$${state.totalAmount.toStringAsFixed(2)}');
+    print('🛒 CART: Added separate line item - $dealName x$quantity (\$${price.toStringAsFixed(2)}) from $restaurantName [${newItem.cartItemId}]');
+    print('🛒 CART: Total line items: ${state.items.length}, Total quantity: ${state.itemCount}, Total: \$${state.totalAmount.toStringAsFixed(2)}');
   }
 
   void removeItem(String dealId) {
@@ -52,6 +47,18 @@ class CartNotifier extends StateNotifier<CartState> {
     } else {
       state = state.copyWith(items: updatedItems);
       print('🛒 CART: Removed item $dealId');
+    }
+  }
+
+  void removeCartItem(String cartItemId) {
+    final updatedItems = state.items.where((item) => item.cartItemId != cartItemId).toList();
+    
+    if (updatedItems.isEmpty) {
+      state = CartState();
+      print('🛒 CART: Cleared - no items remaining');
+    } else {
+      state = state.copyWith(items: updatedItems);
+      print('🛒 CART: Removed cart item $cartItemId');
     }
   }
 
@@ -70,6 +77,23 @@ class CartNotifier extends StateNotifier<CartState> {
 
     state = state.copyWith(items: updatedItems);
     print('🛒 CART: Updated quantity for $dealId to $newQuantity');
+  }
+
+  void updateCartItemQuantity(String cartItemId, int newQuantity) {
+    if (newQuantity <= 0) {
+      removeCartItem(cartItemId);
+      return;
+    }
+
+    final updatedItems = state.items.map((item) {
+      if (item.cartItemId == cartItemId) {
+        return item.copyWith(quantity: newQuantity);
+      }
+      return item;
+    }).toList();
+
+    state = state.copyWith(items: updatedItems);
+    print('🛒 CART: Updated quantity for cart item $cartItemId to $newQuantity');
   }
 
   void clearCart() {
@@ -112,6 +136,16 @@ class CartNotifier extends StateNotifier<CartState> {
   int getItemQuantity(String dealId) {
     final item = state.findItem(dealId);
     return item?.quantity ?? 0;
+  }
+
+  int getCartItemQuantity(String cartItemId) {
+    final item = state.findItemById(cartItemId);
+    return item?.quantity ?? 0;
+  }
+
+  // Get total quantity for a specific deal (across all line items)
+  int getDealTotalQuantity(String dealId) {
+    return state.getItemsForDeal(dealId).fold(0, (sum, item) => sum + item.quantity);
   }
 }
 
