@@ -181,10 +181,10 @@ export function getCorsHeaders(origin?: string) {
     'http://localhost:8080', 
     'http://localhost:8081',
     'http://localhost:8788',
-    'https://grabeat.pages.dev',
-    'https://grabeat-admin.pages.dev',
-    'https://grabeat-api.pages.dev',
-    'https://grabeat.app'
+    'https://foodq.pages.dev',
+    'https://foodq-admin.pages.dev',
+    'https://foodq-api.pages.dev',
+    'https://foodq.app'
   ];
   
   const corsOrigin = origin && allowedOrigins.includes(origin) ? origin : '*';

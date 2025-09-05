@@ -19,21 +19,10 @@ export async function onRequestGet(context: {
   try {
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     
-    // Get business data with related deals
+    // Get business data (no need for deals data for profile editing)
     const { data: businessData, error: businessError } = await supabase
       .from('businesses')
-      .select(`
-        *,
-        deals (
-          id,
-          title,
-          description,
-          price,
-          status,
-          created_at,
-          updated_at
-        )
-      `)
+      .select('*')
       .eq('id', businessId)
       .single();
     
@@ -68,8 +57,19 @@ export async function onRequestPut(context: {
 
     const updates = await request.json();
     updates.updated_at = new Date().toISOString();
+    
+    // Debug logging to check if city, state, zip_code are being received
+    console.log(`📍 Location fields received:`, {
+      city: updates.city,
+      state: updates.state,
+      zip_code: updates.zip_code,
+      address: updates.address,
+      latitude: updates.latitude,
+      longitude: updates.longitude
+    });
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    // Use service role client for business updates to bypass RLS
+    const supabase = createServiceRoleClient(env);
     
     // Check if user owns the business (unless using API key)
     if (!auth.isApiKeyAuth) {
@@ -84,6 +84,25 @@ export async function onRequestPut(context: {
       }
     }
 
+    // First check if business exists
+    const { data: existingBusiness, error: checkError } = await supabase
+      .from('businesses')
+      .select('id, name, owner_id')
+      .eq('id', businessId)
+      .single();
+    
+    if (checkError) {
+      console.log(`Business check error for ID ${businessId}:`, checkError);
+      return createErrorResponse(`Business not found: ${checkError.message}`, 404, corsHeaders);
+    }
+
+    if (!existingBusiness) {
+      console.log(`No business found with ID: ${businessId}`);
+      return createErrorResponse('Business not found', 404, corsHeaders);
+    }
+
+    console.log(`Updating business ${businessId} (${existingBusiness.name}) with:`, updates);
+
     const { data, error } = await supabase
       .from('businesses')
       .update(updates)
@@ -92,11 +111,12 @@ export async function onRequestPut(context: {
       .single();
     
     if (error) {
+      console.log(`Update error for business ${businessId}:`, error);
       return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
     }
 
     if (!data) {
-      return createErrorResponse('Business not found', 404, corsHeaders);
+      return createErrorResponse('Failed to update business', 500, corsHeaders);
     }
 
     return createSuccessResponse(data, corsHeaders);

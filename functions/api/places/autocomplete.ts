@@ -17,7 +17,7 @@ export async function onRequestGet(context: {
   try {
     const input = url.searchParams.get('input');
     const language = url.searchParams.get('language') || 'en';
-    const components = url.searchParams.get('components') || 'country:us';
+    const components = url.searchParams.get('components'); // No default country restriction
     
     if (!input) {
       return createErrorResponse('Input parameter is required', 400, corsHeaders);
@@ -33,7 +33,12 @@ export async function onRequestGet(context: {
     placesUrl.searchParams.set('input', input);
     placesUrl.searchParams.set('key', apiKey);
     placesUrl.searchParams.set('language', language);
-    placesUrl.searchParams.set('components', components);
+    
+    // Only add components parameter if it was provided (no default country restriction)
+    if (components) {
+      placesUrl.searchParams.set('components', components);
+    }
+    
     placesUrl.searchParams.set('types', 'address');
 
     console.log('Calling Google Places API:', placesUrl.toString().replace(apiKey, 'REDACTED'));

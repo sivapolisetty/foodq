@@ -34,8 +34,8 @@ export async function onRequestGet(context: {
           description,
           owner_id,
           location,
-          contact_email,
-          contact_phone
+          email,
+          phone
         )
       `)
       .eq('id', dealId)
