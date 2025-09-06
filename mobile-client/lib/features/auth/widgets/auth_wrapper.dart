@@ -45,7 +45,7 @@ class AuthLoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // GraBeat logo
+            // FoodQ logo
             Container(
               width: 120,
               height: 120,

@@ -71,7 +71,7 @@ class _UserOnboardingScreenState extends ConsumerState<UserOnboardingScreen> {
               
               // Welcome message
               Text(
-                'Welcome to grabeat!',
+                'Welcome to FoodQ!',
                 style: AppTextStyles.headlineMedium.copyWith(
                   color: AppColors.onSurface,
                   fontWeight: FontWeight.bold,
@@ -147,7 +147,7 @@ class _UserOnboardingScreenState extends ConsumerState<UserOnboardingScreen> {
                   children: [
                     // Role selection
                     Text(
-                      'I want to use grabeat as:',
+                      'I want to use FoodQ as:',
                       style: AppTextStyles.titleMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -308,7 +308,7 @@ class _UserOnboardingScreenState extends ConsumerState<UserOnboardingScreen> {
   Future<void> _completeProfile() async {
     if (!_formKey.currentState!.validate() || _selectedRole == null || _currentUser == null) {
       if (_selectedRole == null) {
-        _showError('Please select how you want to use grabeat');
+        _showError('Please select how you want to use FoodQ');
       }
       return;
     }

@@ -24,6 +24,22 @@ Map<String, dynamic> _$$OrderBusinessImplToJson(_$OrderBusinessImpl instance) =>
       'image_url': instance.imageUrl,
     };
 
+_$OrderCustomerImpl _$$OrderCustomerImplFromJson(Map<String, dynamic> json) =>
+    _$OrderCustomerImpl(
+      id: json['id'] as String,
+      email: json['email'] as String?,
+      displayName: json['name'] as String?,
+      fullName: json['full_name'] as String?,
+    );
+
+Map<String, dynamic> _$$OrderCustomerImplToJson(_$OrderCustomerImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'email': instance.email,
+      'name': instance.displayName,
+      'full_name': instance.fullName,
+    };
+
 _$OrderDealImpl _$$OrderDealImplFromJson(Map<String, dynamic> json) =>
     _$OrderDealImpl(
       id: json['id'] as String,
@@ -101,6 +117,9 @@ _$OrderImpl _$$OrderImplFromJson(Map<String, dynamic> json) => _$OrderImpl(
       businesses: json['businesses'] == null
           ? null
           : OrderBusiness.fromJson(json['businesses'] as Map<String, dynamic>),
+      customer: json['app_users'] == null
+          ? null
+          : OrderCustomer.fromJson(json['app_users'] as Map<String, dynamic>),
       orderItems: (json['order_items'] as List<dynamic>?)
               ?.map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -126,6 +145,7 @@ Map<String, dynamic> _$$OrderImplToJson(_$OrderImpl instance) =>
       'confirmed_at': instance.confirmedAt?.toIso8601String(),
       'completed_at': instance.completedAt?.toIso8601String(),
       'businesses': instance.businesses,
+      'app_users': instance.customer,
       'order_items': instance.orderItems,
     };
 

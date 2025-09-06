@@ -8,7 +8,7 @@ import 'environment_config.dart';
 
 class ApiConfig {
   // Base URLs for different environments
-  static const String _prodApiUrl = 'https://117c5f95.foodq.pages.dev';
+  static const String _prodApiUrl = 'https://foodq.pages.dev';
   static const String _devApiUrl = 'http://localhost:8788';
 
   // Current environment API URL (loaded from .env file)

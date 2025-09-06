@@ -124,6 +124,19 @@ class OrderBusiness with _$OrderBusiness {
   factory OrderBusiness.fromJson(Map<String, dynamic> json) => _$OrderBusinessFromJson(json);
 }
 
+/// Customer info for order
+@freezed
+class OrderCustomer with _$OrderCustomer {
+  const factory OrderCustomer({
+    required String id,
+    String? email,
+    @JsonKey(name: 'name') String? displayName,
+    @JsonKey(name: 'full_name') String? fullName,
+  }) = _OrderCustomer;
+
+  factory OrderCustomer.fromJson(Map<String, dynamic> json) => _$OrderCustomerFromJson(json);
+}
+
 /// Deal info for order item
 @freezed
 class OrderDeal with _$OrderDeal {
@@ -177,6 +190,7 @@ class Order with _$Order {
     @JsonKey(name: 'completed_at') DateTime? completedAt,
     // Nested data from API
     OrderBusiness? businesses,
+    @JsonKey(name: 'app_users') OrderCustomer? customer,
     @JsonKey(name: 'order_items') @Default([]) List<OrderItem> orderItems,
   }) = _Order;
 
@@ -282,6 +296,14 @@ class Order with _$Order {
   /// Get business name
   String get businessName {
     return businesses?.name ?? 'Unknown Business';
+  }
+
+  /// Get customer name
+  String get customerName {
+    return customer?.displayName ?? 
+           customer?.fullName ?? 
+           customer?.email ?? 
+           'Unknown Customer';
   }
 
   /// Get total quantity from all order items

@@ -79,6 +79,38 @@ class CartNotifier extends StateNotifier<CartState> {
     print('🛒 CART: Updated quantity for $dealId to $newQuantity');
   }
 
+  void incrementDealQuantity(String dealId) {
+    final currentTotal = state.getTotalQuantityForDeal(dealId);
+    if (currentTotal == 0) return; // No items to increment
+    
+    // Find the first item for this deal and increment it
+    final items = state.getItemsForDeal(dealId);
+    if (items.isNotEmpty) {
+      final firstItem = items.first;
+      updateCartItemQuantity(firstItem.cartItemId, firstItem.quantity + 1);
+    }
+  }
+
+  void decrementDealQuantity(String dealId) {
+    final currentTotal = state.getTotalQuantityForDeal(dealId);
+    if (currentTotal <= 1) {
+      removeItem(dealId);
+      return;
+    }
+    
+    // Find the last item for this deal and decrement it
+    final items = state.getItemsForDeal(dealId);
+    if (items.isNotEmpty) {
+      final lastItem = items.last;
+      if (lastItem.quantity > 1) {
+        updateCartItemQuantity(lastItem.cartItemId, lastItem.quantity - 1);
+      } else {
+        // Remove this item and decrement the previous one
+        removeCartItem(lastItem.cartItemId);
+      }
+    }
+  }
+
   void updateCartItemQuantity(String cartItemId, int newQuantity) {
     if (newQuantity <= 0) {
       removeCartItem(cartItemId);

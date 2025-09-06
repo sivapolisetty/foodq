@@ -824,7 +824,7 @@ class ProductionProfileScreen extends ConsumerWidget {
         title: const Text('Help & Support'),
         content: const Text(
           'For support, please contact us at:\n\n'
-          'Email: support@grabeat.com\n'
+          'Email: support@foodq.com\n'
           'Phone: +1 (555) 123-4567\n\n'
           'We\'re here to help!',
         ),

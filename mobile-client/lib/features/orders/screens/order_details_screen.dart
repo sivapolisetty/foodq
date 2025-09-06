@@ -219,9 +219,20 @@ class OrderDetailsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Quantity', '${order.totalQuantity}x'),
+            
+            // Individual line items
+            Text(
+              'Order Items (${order.orderItems.length})',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
             const SizedBox(height: 12),
-            _buildInfoRow('Deal', order.dealTitle),
+            
+            ...order.orderItems.map((item) => _buildOrderLineItem(item)).toList(),
+            
             const SizedBox(height: 12),
             Divider(color: Colors.grey[300]),
             const SizedBox(height: 12),
@@ -230,6 +241,130 @@ class OrderDetailsScreen extends ConsumerWidget {
             _buildInfoRow('Order Type', 'Pickup'),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOrderLineItem(OrderItem item) {
+    final dealTitle = item.deals?.title ?? 'Unknown Deal';
+    final unitPrice = '\$${item.price.toStringAsFixed(2)}';
+    final lineTotal = '\$${(item.price * item.quantity).toStringAsFixed(2)}';
+    final dealImageUrl = item.deals?.imageUrl;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            // Quantity badge
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Text(
+                  '${item.quantity}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            
+            // Deal image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: _buildLineItemImage(dealImageUrl),
+            ),
+            const SizedBox(width: 12),
+            
+            // Deal title and price
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dealTitle,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$unitPrice each',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Line total
+            Text(
+              lineTotal,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4CAF50),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLineItemImage(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF4CAF50).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.restaurant, 
+            color: Color(0xFF4CAF50), 
+            size: 20
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: const Color(0xFF4CAF50).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(
+        Icons.restaurant, 
+        color: Color(0xFF4CAF50), 
+        size: 20
       ),
     );
   }

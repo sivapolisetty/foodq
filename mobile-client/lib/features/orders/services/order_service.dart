@@ -192,18 +192,24 @@ class OrderService {
         for (int i = 0; i < orders.length; i++) {
           try {
             final orderData = orders[i];
+            debugPrint('🛒 OrderService: Raw business order $i data: $orderData');
+            
             if (orderData is Map<String, dynamic>) {
+              // Check if customer data is present
+              debugPrint('🛒 OrderService: Business order $i app_users field: ${orderData['app_users']}');
+              
               // Sanitize the order data to handle type mismatches
               final sanitizedData = _sanitizeOrderData(orderData);
               
               final order = Order.fromJson(sanitizedData);
               parsedOrders.add(order);
-              debugPrint('🛒 OrderService: Successfully parsed business order $i: ${order.id}');
+              debugPrint('🛒 OrderService: Successfully parsed business order $i: ${order.id}, customer: ${order.customerName}');
             } else {
               debugPrint('🛒 OrderService: Business order $i is not a Map, skipping');
             }
           } catch (e, stackTrace) {
             debugPrint('🛒 OrderService: Failed to parse business order $i: $e');
+            debugPrint('🛒 OrderService: Stack trace for business order $i: $stackTrace');
             continue;
           }
         }
@@ -454,6 +460,18 @@ class OrderService {
       // Ensure required business fields
       business['id'] = business['id'] ?? '';
       business['name'] = business['name'] ?? 'Unknown Business';
+    }
+    
+    // Sanitize nested customer data
+    if (sanitized['app_users'] != null && sanitized['app_users'] is Map) {
+      final customer = sanitized['app_users'] as Map<String, dynamic>;
+      
+      // Ensure required customer fields
+      customer['id'] = customer['id'] ?? '';
+      // Keep existing customer data as-is, just ensure id exists
+      debugPrint('🛒 OrderService: Found customer data: $customer');
+    } else {
+      debugPrint('🛒 OrderService: No customer data found in order');
     }
     
     // Sanitize nested order_items data

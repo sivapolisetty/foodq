@@ -253,6 +253,229 @@ abstract class _OrderBusiness implements OrderBusiness {
       throw _privateConstructorUsedError;
 }
 
+OrderCustomer _$OrderCustomerFromJson(Map<String, dynamic> json) {
+  return _OrderCustomer.fromJson(json);
+}
+
+/// @nodoc
+mixin _$OrderCustomer {
+  String get id => throw _privateConstructorUsedError;
+  String? get email => throw _privateConstructorUsedError;
+  @JsonKey(name: 'name')
+  String? get displayName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'full_name')
+  String? get fullName => throw _privateConstructorUsedError;
+
+  /// Serializes this OrderCustomer to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of OrderCustomer
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $OrderCustomerCopyWith<OrderCustomer> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $OrderCustomerCopyWith<$Res> {
+  factory $OrderCustomerCopyWith(
+          OrderCustomer value, $Res Function(OrderCustomer) then) =
+      _$OrderCustomerCopyWithImpl<$Res, OrderCustomer>;
+  @useResult
+  $Res call(
+      {String id,
+      String? email,
+      @JsonKey(name: 'name') String? displayName,
+      @JsonKey(name: 'full_name') String? fullName});
+}
+
+/// @nodoc
+class _$OrderCustomerCopyWithImpl<$Res, $Val extends OrderCustomer>
+    implements $OrderCustomerCopyWith<$Res> {
+  _$OrderCustomerCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of OrderCustomer
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? email = freezed,
+    Object? displayName = freezed,
+    Object? fullName = freezed,
+  }) {
+    return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      email: freezed == email
+          ? _value.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String?,
+      displayName: freezed == displayName
+          ? _value.displayName
+          : displayName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullName: freezed == fullName
+          ? _value.fullName
+          : fullName // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$OrderCustomerImplCopyWith<$Res>
+    implements $OrderCustomerCopyWith<$Res> {
+  factory _$$OrderCustomerImplCopyWith(
+          _$OrderCustomerImpl value, $Res Function(_$OrderCustomerImpl) then) =
+      __$$OrderCustomerImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String id,
+      String? email,
+      @JsonKey(name: 'name') String? displayName,
+      @JsonKey(name: 'full_name') String? fullName});
+}
+
+/// @nodoc
+class __$$OrderCustomerImplCopyWithImpl<$Res>
+    extends _$OrderCustomerCopyWithImpl<$Res, _$OrderCustomerImpl>
+    implements _$$OrderCustomerImplCopyWith<$Res> {
+  __$$OrderCustomerImplCopyWithImpl(
+      _$OrderCustomerImpl _value, $Res Function(_$OrderCustomerImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of OrderCustomer
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? email = freezed,
+    Object? displayName = freezed,
+    Object? fullName = freezed,
+  }) {
+    return _then(_$OrderCustomerImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      email: freezed == email
+          ? _value.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String?,
+      displayName: freezed == displayName
+          ? _value.displayName
+          : displayName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullName: freezed == fullName
+          ? _value.fullName
+          : fullName // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$OrderCustomerImpl implements _OrderCustomer {
+  const _$OrderCustomerImpl(
+      {required this.id,
+      this.email,
+      @JsonKey(name: 'name') this.displayName,
+      @JsonKey(name: 'full_name') this.fullName});
+
+  factory _$OrderCustomerImpl.fromJson(Map<String, dynamic> json) =>
+      _$$OrderCustomerImplFromJson(json);
+
+  @override
+  final String id;
+  @override
+  final String? email;
+  @override
+  @JsonKey(name: 'name')
+  final String? displayName;
+  @override
+  @JsonKey(name: 'full_name')
+  final String? fullName;
+
+  @override
+  String toString() {
+    return 'OrderCustomer(id: $id, email: $email, displayName: $displayName, fullName: $fullName)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$OrderCustomerImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.email, email) || other.email == email) &&
+            (identical(other.displayName, displayName) ||
+                other.displayName == displayName) &&
+            (identical(other.fullName, fullName) ||
+                other.fullName == fullName));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, id, email, displayName, fullName);
+
+  /// Create a copy of OrderCustomer
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$OrderCustomerImplCopyWith<_$OrderCustomerImpl> get copyWith =>
+      __$$OrderCustomerImplCopyWithImpl<_$OrderCustomerImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$OrderCustomerImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _OrderCustomer implements OrderCustomer {
+  const factory _OrderCustomer(
+          {required final String id,
+          final String? email,
+          @JsonKey(name: 'name') final String? displayName,
+          @JsonKey(name: 'full_name') final String? fullName}) =
+      _$OrderCustomerImpl;
+
+  factory _OrderCustomer.fromJson(Map<String, dynamic> json) =
+      _$OrderCustomerImpl.fromJson;
+
+  @override
+  String get id;
+  @override
+  String? get email;
+  @override
+  @JsonKey(name: 'name')
+  String? get displayName;
+  @override
+  @JsonKey(name: 'full_name')
+  String? get fullName;
+
+  /// Create a copy of OrderCustomer
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$OrderCustomerImplCopyWith<_$OrderCustomerImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 OrderDeal _$OrderDealFromJson(Map<String, dynamic> json) {
   return _OrderDeal.fromJson(json);
 }
@@ -833,6 +1056,8 @@ mixin _$Order {
   DateTime? get completedAt =>
       throw _privateConstructorUsedError; // Nested data from API
   OrderBusiness? get businesses => throw _privateConstructorUsedError;
+  @JsonKey(name: 'app_users')
+  OrderCustomer? get customer => throw _privateConstructorUsedError;
   @JsonKey(name: 'order_items')
   List<OrderItem> get orderItems => throw _privateConstructorUsedError;
 
@@ -868,9 +1093,11 @@ abstract class $OrderCopyWith<$Res> {
       @JsonKey(name: 'confirmed_at') DateTime? confirmedAt,
       @JsonKey(name: 'completed_at') DateTime? completedAt,
       OrderBusiness? businesses,
+      @JsonKey(name: 'app_users') OrderCustomer? customer,
       @JsonKey(name: 'order_items') List<OrderItem> orderItems});
 
   $OrderBusinessCopyWith<$Res>? get businesses;
+  $OrderCustomerCopyWith<$Res>? get customer;
 }
 
 /// @nodoc
@@ -905,6 +1132,7 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
     Object? confirmedAt = freezed,
     Object? completedAt = freezed,
     Object? businesses = freezed,
+    Object? customer = freezed,
     Object? orderItems = null,
   }) {
     return _then(_value.copyWith(
@@ -976,6 +1204,10 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
           ? _value.businesses
           : businesses // ignore: cast_nullable_to_non_nullable
               as OrderBusiness?,
+      customer: freezed == customer
+          ? _value.customer
+          : customer // ignore: cast_nullable_to_non_nullable
+              as OrderCustomer?,
       orderItems: null == orderItems
           ? _value.orderItems
           : orderItems // ignore: cast_nullable_to_non_nullable
@@ -994,6 +1226,20 @@ class _$OrderCopyWithImpl<$Res, $Val extends Order>
 
     return $OrderBusinessCopyWith<$Res>(_value.businesses!, (value) {
       return _then(_value.copyWith(businesses: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Order
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $OrderCustomerCopyWith<$Res>? get customer {
+    if (_value.customer == null) {
+      return null;
+    }
+
+    return $OrderCustomerCopyWith<$Res>(_value.customer!, (value) {
+      return _then(_value.copyWith(customer: value) as $Val);
     });
   }
 }
@@ -1023,10 +1269,13 @@ abstract class _$$OrderImplCopyWith<$Res> implements $OrderCopyWith<$Res> {
       @JsonKey(name: 'confirmed_at') DateTime? confirmedAt,
       @JsonKey(name: 'completed_at') DateTime? completedAt,
       OrderBusiness? businesses,
+      @JsonKey(name: 'app_users') OrderCustomer? customer,
       @JsonKey(name: 'order_items') List<OrderItem> orderItems});
 
   @override
   $OrderBusinessCopyWith<$Res>? get businesses;
+  @override
+  $OrderCustomerCopyWith<$Res>? get customer;
 }
 
 /// @nodoc
@@ -1059,6 +1308,7 @@ class __$$OrderImplCopyWithImpl<$Res>
     Object? confirmedAt = freezed,
     Object? completedAt = freezed,
     Object? businesses = freezed,
+    Object? customer = freezed,
     Object? orderItems = null,
   }) {
     return _then(_$OrderImpl(
@@ -1130,6 +1380,10 @@ class __$$OrderImplCopyWithImpl<$Res>
           ? _value.businesses
           : businesses // ignore: cast_nullable_to_non_nullable
               as OrderBusiness?,
+      customer: freezed == customer
+          ? _value.customer
+          : customer // ignore: cast_nullable_to_non_nullable
+              as OrderCustomer?,
       orderItems: null == orderItems
           ? _value._orderItems
           : orderItems // ignore: cast_nullable_to_non_nullable
@@ -1160,6 +1414,7 @@ class _$OrderImpl extends _Order {
       @JsonKey(name: 'confirmed_at') this.confirmedAt,
       @JsonKey(name: 'completed_at') this.completedAt,
       this.businesses,
+      @JsonKey(name: 'app_users') this.customer,
       @JsonKey(name: 'order_items')
       final List<OrderItem> orderItems = const []})
       : _orderItems = orderItems,
@@ -1218,6 +1473,9 @@ class _$OrderImpl extends _Order {
 // Nested data from API
   @override
   final OrderBusiness? businesses;
+  @override
+  @JsonKey(name: 'app_users')
+  final OrderCustomer? customer;
   final List<OrderItem> _orderItems;
   @override
   @JsonKey(name: 'order_items')
@@ -1229,7 +1487,7 @@ class _$OrderImpl extends _Order {
 
   @override
   String toString() {
-    return 'Order(id: $id, userId: $userId, businessId: $businessId, totalAmount: $totalAmount, status: $status, deliveryAddress: $deliveryAddress, deliveryInstructions: $deliveryInstructions, pickupTime: $pickupTime, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, createdAt: $createdAt, updatedAt: $updatedAt, verificationCode: $verificationCode, qrData: $qrData, confirmedAt: $confirmedAt, completedAt: $completedAt, businesses: $businesses, orderItems: $orderItems)';
+    return 'Order(id: $id, userId: $userId, businessId: $businessId, totalAmount: $totalAmount, status: $status, deliveryAddress: $deliveryAddress, deliveryInstructions: $deliveryInstructions, pickupTime: $pickupTime, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, createdAt: $createdAt, updatedAt: $updatedAt, verificationCode: $verificationCode, qrData: $qrData, confirmedAt: $confirmedAt, completedAt: $completedAt, businesses: $businesses, customer: $customer, orderItems: $orderItems)';
   }
 
   @override
@@ -1267,32 +1525,36 @@ class _$OrderImpl extends _Order {
                 other.completedAt == completedAt) &&
             (identical(other.businesses, businesses) ||
                 other.businesses == businesses) &&
+            (identical(other.customer, customer) ||
+                other.customer == customer) &&
             const DeepCollectionEquality()
                 .equals(other._orderItems, _orderItems));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      userId,
-      businessId,
-      totalAmount,
-      status,
-      deliveryAddress,
-      deliveryInstructions,
-      pickupTime,
-      paymentMethod,
-      paymentStatus,
-      createdAt,
-      updatedAt,
-      verificationCode,
-      qrData,
-      confirmedAt,
-      completedAt,
-      businesses,
-      const DeepCollectionEquality().hash(_orderItems));
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        userId,
+        businessId,
+        totalAmount,
+        status,
+        deliveryAddress,
+        deliveryInstructions,
+        pickupTime,
+        paymentMethod,
+        paymentStatus,
+        createdAt,
+        updatedAt,
+        verificationCode,
+        qrData,
+        confirmedAt,
+        completedAt,
+        businesses,
+        customer,
+        const DeepCollectionEquality().hash(_orderItems)
+      ]);
 
   /// Create a copy of Order
   /// with the given fields replaced by the non-null parameter values.
@@ -1331,6 +1593,7 @@ abstract class _Order extends Order {
           @JsonKey(name: 'confirmed_at') final DateTime? confirmedAt,
           @JsonKey(name: 'completed_at') final DateTime? completedAt,
           final OrderBusiness? businesses,
+          @JsonKey(name: 'app_users') final OrderCustomer? customer,
           @JsonKey(name: 'order_items') final List<OrderItem> orderItems}) =
       _$OrderImpl;
   const _Order._() : super._();
@@ -1385,6 +1648,9 @@ abstract class _Order extends Order {
   DateTime? get completedAt; // Nested data from API
   @override
   OrderBusiness? get businesses;
+  @override
+  @JsonKey(name: 'app_users')
+  OrderCustomer? get customer;
   @override
   @JsonKey(name: 'order_items')
   List<OrderItem> get orderItems;

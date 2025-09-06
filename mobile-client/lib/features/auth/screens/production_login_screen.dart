@@ -33,7 +33,7 @@ class _ProductionLoginScreenState extends ConsumerState<ProductionLoginScreen> {
       title: 'Restaurant Partner',
       subtitle: 'List your surplus food and reduce waste',
       icon: Icons.store,
-      description: 'Join grabeat to reach more customers and minimize food waste',
+      description: 'Join FoodQ to reach more customers and minimize food waste',
     ),
   };
 
@@ -57,7 +57,7 @@ class _ProductionLoginScreenState extends ConsumerState<ProductionLoginScreen> {
                     
                     // Welcome text
                     Text(
-                      'Welcome to grabeat',
+                      'Welcome to FoodQ',
                       style: AppTextStyles.headlineMedium.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.bold,
@@ -66,7 +66,7 @@ class _ProductionLoginScreenState extends ConsumerState<ProductionLoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Choose how you\'d like to use grabeat',
+                      'Choose how you\'d like to use FoodQ',
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),

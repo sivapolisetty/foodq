@@ -70,7 +70,28 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
     }
 
-    return createSuccessResponse(data || [], corsHeaders);
+    // Manually fetch user data for each order
+    const ordersWithUsers = [];
+    if (data) {
+      for (const order of data) {
+        const { data: userData, error: userError } = await supabase
+          .from('app_users')
+          .select('id, email, name')
+          .eq('id', order.user_id)
+          .single();
+        
+        if (userError) {
+          console.log(`User not found for order ${order.id}, user_id: ${order.user_id}`);
+        }
+        
+        ordersWithUsers.push({
+          ...order,
+          app_users: userData || null
+        });
+      }
+    }
+
+    return createSuccessResponse(ordersWithUsers || [], corsHeaders);
   } catch (error: any) {
     return createErrorResponse(`Failed to fetch orders: ${error.message}`, 500, corsHeaders);
   }
@@ -210,7 +231,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return createErrorResponse('Failed to fetch complete order data', 500, corsHeaders);
     }
 
-    return createSuccessResponse(completeOrder, corsHeaders);
+    // Manually fetch user data
+    const { data: userData } = await supabase
+      .from('app_users')
+      .select('id, email, name')
+      .eq('id', completeOrder.user_id)
+      .single();
+
+    const orderWithUser = {
+      ...completeOrder,
+      app_users: userData || null
+    };
+
+    return createSuccessResponse(orderWithUser, corsHeaders);
   } catch (error: any) {
     return createErrorResponse(`Failed to create order: ${error.message}`, 500, corsHeaders);
   }
@@ -331,7 +364,19 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       return createErrorResponse(`Failed to update order: ${updateError.message}`, 500, corsHeaders);
     }
 
-    return createSuccessResponse(updatedOrder, corsHeaders);
+    // Manually fetch user data for update
+    const { data: updateUserData } = await supabase
+      .from('app_users')
+      .select('id, email, name')
+      .eq('id', updatedOrder.user_id)
+      .single();
+
+    const orderWithUser = {
+      ...updatedOrder,
+      app_users: updateUserData || null
+    };
+
+    return createSuccessResponse(orderWithUser, corsHeaders);
   } catch (error: any) {
     return createErrorResponse(`Failed to update order: ${error.message}`, 500, corsHeaders);
   }

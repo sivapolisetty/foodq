@@ -1,0 +1,13 @@
+{
+  "name": "foodqapp-test-data-loader",
+  "version": "1.0.0",
+  "description": "Script to load test data into FoodQ Supabase database",
+  "main": "load_test_data.js",
+  "scripts": {
+    "load-data": "node load_test_data.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "type": "commonjs"
+}

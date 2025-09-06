@@ -23,7 +23,8 @@ class DealCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final itemQuantityInCart = ref.read(cartProvider.notifier).getItemQuantity(deal.id);
+    final cartState = ref.watch(cartProvider);
+    final itemQuantityInCart = cartState.getTotalQuantityForDeal(deal.id);
     return GestureDetector(
       onTap: onTap,
       child: Card(
@@ -269,7 +270,7 @@ class DealCard extends ConsumerWidget {
       children: [
         IconButton(
           onPressed: () {
-            ref.read(cartProvider.notifier).updateQuantity(deal.id, itemQuantityInCart - 1);
+            ref.read(cartProvider.notifier).decrementDealQuantity(deal.id);
           },
           icon: const Icon(Icons.remove_circle_outline),
           color: Colors.grey.shade600,
@@ -293,7 +294,7 @@ class DealCard extends ConsumerWidget {
         ),
         IconButton(
           onPressed: () {
-            ref.read(cartProvider.notifier).updateQuantity(deal.id, itemQuantityInCart + 1);
+            ref.read(cartProvider.notifier).incrementDealQuantity(deal.id);
           },
           icon: const Icon(Icons.add_circle_outline),
           color: AppTheme.primaryGreen,

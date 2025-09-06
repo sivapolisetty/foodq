@@ -107,6 +107,12 @@ class CartState {
     return items.where((item) => item.dealId == dealId).toList();
   }
 
+  int getTotalQuantityForDeal(String dealId) {
+    return items
+        .where((item) => item.dealId == dealId)
+        .fold(0, (sum, item) => sum + item.quantity);
+  }
+
   CartState copyWith({
     List<CartItem>? items,
     String? currentRestaurantId,

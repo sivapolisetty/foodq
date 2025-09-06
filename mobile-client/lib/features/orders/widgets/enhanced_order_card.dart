@@ -51,9 +51,7 @@ class EnhancedOrderCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildOrderHeader(),
-          const SizedBox(height: 12),
-          _buildDealInfo(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildOrderDetails(),
           const SizedBox(height: 12),
           _buildStatusSection(),
@@ -103,23 +101,18 @@ class EnhancedOrderCard extends ConsumerWidget {
   }
 
   Widget _buildOrderHeader() {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Deal Image
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: _buildDealImage(),
-        ),
-        const SizedBox(width: 12),
-        // Order Info
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Deal Title
-              Text(
-                order.dealTitle,
+        // Header row with name and status
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                isBusinessView 
+                    ? (order.customer?.displayName ?? order.customer?.fullName ?? 'Customer')
+                    : (order.businesses?.name ?? 'Restaurant'),
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -127,31 +120,94 @@ class EnhancedOrderCard extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
-              // Order ID and Date - Fix overflow
-              Text(
-                'Order #${order.id.substring(0, 8).toUpperCase()}',
+            ),
+            _buildStatusChip(),
+          ],
+        ),
+        const SizedBox(height: 8),
+        
+        // Compact order details row
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Order #${order.id.substring(0, 8).toUpperCase()} • ${_formatOrderDate()}',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Colors.grey[600],
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              Text(
-                _formatOrderDate(),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.grey[500],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        // Status Chip
-        Flexible(child: _buildStatusChip()),
+        const SizedBox(height: 8),
+        
+        // Deal total row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isBusinessView ? 'Deal Total' : 'Deal Price',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              order.formattedTotal,
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildHeaderOrderImage() {
+    // Use business logo if available, otherwise use generic order icon
+    final businessImageUrl = order.businesses?.imageUrl;
+    
+    if (businessImageUrl != null && businessImageUrl.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: businessImageUrl,
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.restaurant_menu, color: Colors.grey, size: 32),
+        ),
+        errorWidget: (context, url, error) => Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(Icons.restaurant_menu, color: AppColors.primary, size: 32),
+        ),
+      );
+    }
+
+    // Generic order icon
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(Icons.restaurant_menu, color: AppColors.primary, size: 32),
     );
   }
 
@@ -224,61 +280,6 @@ class EnhancedOrderCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDealInfo() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Deal Price',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  order.formattedTotal,
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Business info column
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Business',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                order.businessName,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildDealLoadingPlaceholder() {
     return Container(
@@ -336,72 +337,299 @@ class EnhancedOrderCard extends ConsumerWidget {
 
   Widget _buildOrderDetails() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // Header with total
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Quantity',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                '${order.totalQuantity}x',
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Unit Price',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+                'Order Items (${order.orderItems.length})',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 order.formattedTotal,
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Total',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                order.formattedTotal,
-                style: AppTextStyles.titleMedium.copyWith(
+                style: AppTextStyles.titleLarge.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
+          
+          if (order.orderItems.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              height: 1,
+              color: Colors.grey[200],
+            ),
+            const SizedBox(height: 12),
+            
+            // Individual line items
+            ...order.orderItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              return Column(
+                children: [
+                  _buildCompactOrderLineItem(item),
+                  if (index < order.orderItems.length - 1) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 1,
+                      color: Colors.grey[100],
+                      margin: const EdgeInsets.symmetric(horizontal: 40),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              );
+            }).toList(),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildCompactOrderLineItem(OrderItem item) {
+    final dealTitle = item.deals?.title ?? 'Unknown Deal';
+    final unitPrice = '\$${item.price.toStringAsFixed(2)}';
+    final lineTotal = '\$${(item.price * item.quantity).toStringAsFixed(2)}';
+    final dealImageUrl = item.deals?.imageUrl;
+    
+    return Row(
+      children: [
+        // Quantity badge
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              '${item.quantity}',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        
+        // Deal image
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: _buildCompactLineItemImage(dealImageUrl),
+        ),
+        const SizedBox(width: 12),
+        
+        // Deal title and price info
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                dealTitle,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$unitPrice each',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Line total
+        Text(
+          lineTotal,
+          style: AppTextStyles.titleSmall.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactLineItemImage(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: 36,
+        height: 36,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.restaurant, color: Colors.grey, size: 18),
+        ),
+        errorWidget: (context, url, error) => Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.restaurant, color: AppColors.primary, size: 18),
+        ),
+      );
+    }
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(Icons.restaurant, color: AppColors.primary, size: 18),
+    );
+  }
+
+  Widget _buildOrderLineItem(OrderItem item) {
+    final dealTitle = item.deals?.title ?? 'Unknown Deal';
+    final unitPrice = '\$${item.price.toStringAsFixed(2)}';
+    final lineTotal = '\$${(item.price * item.quantity).toStringAsFixed(2)}';
+    final dealImageUrl = item.deals?.imageUrl;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          // Quantity badge
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                '${item.quantity}',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          
+          // Deal image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: _buildLineItemImage(dealImageUrl),
+          ),
+          const SizedBox(width: 8),
+          
+          // Deal title and price
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  dealTitle,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '$unitPrice each',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Colors.grey[600],
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Line total
+          Text(
+            lineTotal,
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineItemImage(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: 32,
+        height: 32,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.restaurant, color: Colors.grey, size: 16),
+        ),
+        errorWidget: (context, url, error) => Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.restaurant, color: AppColors.primary, size: 16),
+        ),
+      );
+    }
+
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(Icons.restaurant, color: AppColors.primary, size: 16),
     );
   }
 

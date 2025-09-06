@@ -7,7 +7,7 @@ import '../../../shared/theme/app_text_styles.dart';
 import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../../shared/models/deal.dart';
 import '../../../shared/models/app_user.dart';
-import '../widgets/lean_deal_card.dart';
+import '../../../shared/widgets/deal_card.dart';
 import '../widgets/create_deal_bottom_sheet.dart';
 import '../providers/deal_provider.dart';
 import '../../home/widgets/custom_bottom_nav.dart';
@@ -255,14 +255,66 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
+        physics: const ClampingScrollPhysics(),
+        shrinkWrap: true,
         itemCount: activeDeals.length,
         itemBuilder: (context, index) {
           final deal = activeDeals[index];
-          return LeanDealCard(
-            key: Key('deal_card_${deal.id}'),
-            deal: deal,
-            onEdit: () => _showEditDealBottomSheet(context, deal),
-            onDeactivate: () => _showDeactivateDealDialog(context, deal),
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: IntrinsicHeight(
+              child: Stack(
+                children: [
+                  DealCard(
+                    deal: deal,
+                    onTap: () => _showEditDealBottomSheet(context, deal),
+                    showCartControls: false,
+                  ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showEditDealBottomSheet(context, deal);
+                        } else if (value == 'deactivate') {
+                          _showDeactivateDealDialog(context, deal);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 16),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'deactivate',
+                          child: Row(
+                            children: [
+                              Icon(Icons.remove_circle, size: 16),
+                              SizedBox(width: 8),
+                              Text('Deactivate'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           ).animate().fadeIn(
             delay: Duration(milliseconds: 100 * index),
           ).slideX(begin: 0.3, end: 0);
@@ -291,14 +343,66 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
+      physics: const ClampingScrollPhysics(),
+      shrinkWrap: true,
       itemCount: expiringDeals.length,
       itemBuilder: (context, index) {
         final deal = expiringDeals[index];
-        return LeanDealCard(
-          key: Key('expiring_deal_card_${deal.id}'),
-          deal: deal,
-          onEdit: () => _showEditDealBottomSheet(context, deal),
-          onDeactivate: () => _showDeactivateDealDialog(context, deal),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: IntrinsicHeight(
+            child: Stack(
+              children: [
+                DealCard(
+                  deal: deal,
+                  onTap: () => _showEditDealBottomSheet(context, deal),
+                  showCartControls: false,
+                ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: PopupMenuButton<String>(
+                    icon: const Icon(Icons.warning, color: Colors.white, size: 20),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditDealBottomSheet(context, deal);
+                      } else if (value == 'deactivate') {
+                        _showDeactivateDealDialog(context, deal);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 16),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'deactivate',
+                        child: Row(
+                          children: [
+                            Icon(Icons.remove_circle, size: 16),
+                            SizedBox(width: 8),
+                            Text('Deactivate'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         ).animate().fadeIn(
           delay: Duration(milliseconds: 100 * index),
         ).slideX(begin: 0.3, end: 0);
@@ -325,13 +429,18 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
+      physics: const ClampingScrollPhysics(),
+      shrinkWrap: true,
       itemCount: expiredDeals.length,
       itemBuilder: (context, index) {
         final deal = expiredDeals[index];
-        return LeanDealCard(
-          key: Key('expired_deal_card_${deal.id}'),
-          deal: deal,
-          isReadOnly: true,
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: DealCard(
+            deal: deal,
+            onTap: () {},
+            showCartControls: false,
+          ),
         ).animate().fadeIn(
           delay: Duration(milliseconds: 100 * index),
         ).slideX(begin: 0.3, end: 0);

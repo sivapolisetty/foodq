@@ -214,7 +214,7 @@ class RecentOrdersSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Customer Order',
+                      order.customer?.displayName ?? order.customer?.fullName ?? 'Customer Order',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF757575),

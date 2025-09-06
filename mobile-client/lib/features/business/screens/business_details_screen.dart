@@ -6,7 +6,8 @@ import '../../../services/business_service.dart';
 import '../../../core/utils/navigation_helper.dart';
 import '../../search/services/search_service.dart';
 import '../../location/providers/location_provider.dart';
-import '../../home/widgets/enhanced_deal_card.dart';
+import '../../../shared/widgets/deal_card.dart';
+import '../../cart/widgets/floating_cart_bar.dart';
 
 class BusinessDetailsScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -93,15 +94,26 @@ class _BusinessDetailsScreenState extends ConsumerState<BusinessDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-              ),
-            )
-          : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+      body: Stack(
+        children: [
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                  ),
+                )
+              : _error != null
+                  ? _buildErrorState()
+                  : _buildContent(),
+          // Floating cart bar
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: FloatingCartBar(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -345,19 +357,17 @@ class _BusinessDetailsScreenState extends ConsumerState<BusinessDetailsScreen> {
         if (_deals.isNotEmpty)
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 1,
-                childAspectRatio: 2.3,
-                mainAxisSpacing: 16,
-              ),
+            sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  return SizedBox(
-                    width: 280,
-                    child: EnhancedDealCard(
-                      dealWithDistance: _deals[index],
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: DealCard(
+                      deal: _deals[index].deal,
                       onTap: () => context.go('/deal-details?id=${_deals[index].deal.id}'),
+                      showDistance: true,
+                      distance: _deals[index].distanceInMiles,
+                      showCartControls: true,
                     ),
                   );
                 },

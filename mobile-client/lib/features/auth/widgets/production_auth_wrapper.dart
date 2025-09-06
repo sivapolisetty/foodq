@@ -335,7 +335,7 @@ class ProductionAuthWrapper extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             const Text(
-              'grabeat',
+              'foodq',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

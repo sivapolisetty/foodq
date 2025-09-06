@@ -924,7 +924,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'grabeat',
+              'foodq',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
