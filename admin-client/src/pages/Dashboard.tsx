@@ -10,7 +10,8 @@ import {
   Bell,
   Menu,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  ChefHat
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useDashboardStats, useRecentActivities } from '../hooks/useDashboardData';
@@ -45,6 +46,7 @@ const Dashboard: React.FC = () => {
 
   const menuItems = [
     { label: 'Dashboard', icon: TrendingUp, path: '/dashboard' },
+    { label: 'Food Library', icon: ChefHat, path: '/food-library' },
     { label: 'Business Onboarding', icon: Store, path: '/onboarding' },
     { label: 'Users', icon: Users },
     { label: 'Businesses', icon: Store },

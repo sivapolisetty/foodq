@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import BusinessOnboarding from './pages/BusinessOnboarding';
 import OAuthCallback from './pages/OAuthCallback';
+import FoodLibrary from './pages/FoodLibrary';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -25,6 +26,14 @@ function App() {
           element={
             <ProtectedRoute>
               <BusinessOnboarding />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/food-library" 
+          element={
+            <ProtectedRoute>
+              <FoodLibrary />
             </ProtectedRoute>
           } 
         />

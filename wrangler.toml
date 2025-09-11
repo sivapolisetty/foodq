@@ -6,6 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 # Pages Functions configuration
 pages_build_output_dir = "dist"
 
+# R2 Storage for Food Images
+[[r2_buckets]]
+binding = "FOOD_IMAGES"
+bucket_name = "foodq-images"
+
 # Default environment variables for Functions (development) - NOENCIRCLES PATTERN: Production Auth + Local API
 [vars]
 NODE_ENV = "development"
@@ -22,6 +27,11 @@ API_KEY = "test-api-key-2024"
 GOOGLE_PLACES_API_KEY ="AIzaSyDWZXwJ2DaQMkWlVuBjk6WzAFh6Dqqa8cY"
 
 # Production environment
+[env.production]
+[[env.production.r2_buckets]]
+binding = "FOOD_IMAGES"
+bucket_name = "foodq-images"
+
 [env.production.vars]
 NODE_ENV = "production"
 ENVIRONMENT = "production"
