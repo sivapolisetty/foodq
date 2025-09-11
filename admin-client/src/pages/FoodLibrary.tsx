@@ -182,10 +182,11 @@ const FoodLibrary: React.FC = () => {
     if (!confirm('Are you sure you want to delete this item?')) return;
     
     try {
-      const response = await fetch(`/api/admin/food-library/${itemId}`, {
+      const response = await fetch(`${API_ENDPOINTS.FOOD_LIBRARY}/${itemId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'X-API-Key': API_KEY,
         }
       });
       

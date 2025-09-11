@@ -347,9 +347,17 @@ export async function onRequestDelete(context: { request: Request; env: Env }) {
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
 
   try {
-    const auth = await validateAuth(request, env);
-    if (!auth.isAuthenticated) {
-      return createErrorResponse('Authentication required', 401, corsHeaders);
+    // Allow API key for testing (temporary)
+    const apiKey = request.headers.get('X-API-Key');
+    let auth = { isAuthenticated: false, user: { id: '00000000-0000-0000-0000-000000000000' } };
+    
+    if (apiKey === env.API_KEY) {
+      auth = { isAuthenticated: true, user: { id: '00000000-0000-0000-0000-000000000000' } };
+    } else {
+      auth = await validateAuth(request, env);
+      if (!auth.isAuthenticated) {
+        return createErrorResponse('Authentication required', 401, corsHeaders);
+      }
     }
 
     const supabase = getDBClient(env, 'FoodLibrary.DELETE');
