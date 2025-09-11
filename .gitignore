@@ -56,3 +56,5 @@ coverage/
 *.ipa
 *.aab
 *.app
+# iOS build files
+mobile-client/ios/build/

@@ -40,3 +40,5 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYmhvcnNzenp0aHlsanJpaWltIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mzk4MjM3NiwiZXhwIjoyMDY5NTU4Mzc2fQ.bH-ROAAkSODqVzjoofUmEfV3WrYQqJcsg68Ad4fbvRU"
 GOOGLE_PLACES_API_KEY ="AIzaSyDWZXwJ2DaQMkWlVuBjk6WzAFh6Dqqa8cY"
 API_KEY = "test-api-key-2024"
+# OPENAI_API_KEY should be set as a Cloudflare secret, not in this file
+# Run: npx wrangler secret put OPENAI_API_KEY
