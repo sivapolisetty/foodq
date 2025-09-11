@@ -233,7 +233,7 @@ const FoodLibrary: React.FC = () => {
         },
         body: JSON.stringify({
           ...editForm,
-          id: editingItem.id
+          itemId: editingItem.id
         })
       });
       

@@ -231,12 +231,11 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
     }
 
     const supabase = getDBClient(env, 'FoodLibrary.PUT');
-    const url = new URL(request.url);
-    const itemId = url.pathname.split('/').pop();
     const body = await request.json();
+    const itemId = body.itemId;
 
     if (!itemId) {
-      return createErrorResponse('Item ID required', 400, corsHeaders);
+      return createErrorResponse('Item ID required in request body', 400, corsHeaders);
     }
 
     // Manual update (no AI)
