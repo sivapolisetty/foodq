@@ -5,8 +5,8 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:8080';
   }
   
-  // Production API endpoint - use your custom domain
-  return 'https://api.foodqapp.com';
+  // Production API endpoint - Cloudflare Pages deployment
+  return 'https://foodq.pages.dev';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
