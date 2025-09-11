@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, RefreshCw, Download, Trash2, 
   ChefHat, Clock, Users, DollarSign, Image,
-  Loader2, CheckCircle
+  Loader2, CheckCircle, Edit
 } from 'lucide-react';
 import { API_ENDPOINTS, API_KEY } from '../config/api';
 
@@ -34,6 +34,9 @@ const FoodLibrary: React.FC = () => {
   const [batchMode, setBatchMode] = useState(false);
   const [batchCount, setBatchCount] = useState(10);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [editingItem, setEditingItem] = useState<FoodLibraryItem | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<FoodLibraryItem>>({});
 
   // Fetch food library items
   const fetchItems = async () => {
@@ -197,6 +200,55 @@ const FoodLibrary: React.FC = () => {
     } catch (error) {
       console.error('Failed to delete item:', error);
     }
+  };
+
+  // Edit item
+  const editItem = (item: FoodLibraryItem) => {
+    setEditingItem(item);
+    setEditForm({
+      name: item.name,
+      description: item.description,
+      image_prompt: item.image_prompt || '',
+      prep_time_minutes: item.prep_time_minutes,
+      serving_size: item.serving_size,
+      base_price_range: item.base_price_range,
+      tags: item.tags
+    });
+    setShowEditModal(true);
+  };
+
+  // Update item
+  const updateItem = async () => {
+    if (!editingItem || !editForm.name?.trim()) return;
+    
+    try {
+      const response = await fetch(`${API_ENDPOINTS.FOOD_LIBRARY}/${editingItem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'X-API-Key': API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm)
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setItems(items.map(i => i.id === editingItem.id ? data.item : i));
+        setShowEditModal(false);
+        setEditingItem(null);
+        setEditForm({});
+      }
+    } catch (error) {
+      console.error('Failed to update item:', error);
+    }
+  };
+
+  // Cancel edit
+  const cancelEdit = () => {
+    setShowEditModal(false);
+    setEditingItem(null);
+    setEditForm({});
   };
 
   // Tag color helper
@@ -395,6 +447,118 @@ const FoodLibrary: React.FC = () => {
         </div>
       )}
 
+      {/* Edit Modal */}
+      {showEditModal && editingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Edit Food Item</h2>
+            
+            {/* Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Name *</label>
+              <input
+                type="text"
+                value={editForm.name || ''}
+                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
+
+            {/* Description */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Description</label>
+              <textarea
+                value={editForm.description || ''}
+                onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                rows={3}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            {/* Image Prompt */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                Image Prompt 
+                <span className="text-xs text-gray-500">(for image generation/regeneration)</span>
+              </label>
+              <textarea
+                value={editForm.image_prompt || ''}
+                onChange={(e) => setEditForm({...editForm, image_prompt: e.target.value})}
+                rows={2}
+                placeholder="e.g., Traditional butter chicken served in a restaurant style with garnish"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            {/* Prep Time and Serving Size */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Prep Time (minutes)</label>
+                <input
+                  type="number"
+                  value={editForm.prep_time_minutes || ''}
+                  onChange={(e) => setEditForm({...editForm, prep_time_minutes: parseInt(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Serving Size</label>
+                <input
+                  type="text"
+                  value={editForm.serving_size || ''}
+                  onChange={(e) => setEditForm({...editForm, serving_size: e.target.value})}
+                  placeholder="e.g., 2-3 people"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+
+            {/* Price Range */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Price Range</label>
+              <input
+                type="text"
+                value={editForm.base_price_range || ''}
+                onChange={(e) => setEditForm({...editForm, base_price_range: e.target.value})}
+                placeholder="e.g., ₹200-400"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            {/* Tags */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+              <input
+                type="text"
+                value={editForm.tags?.join(', ') || ''}
+                onChange={(e) => setEditForm({...editForm, tags: e.target.value.split(',').map(t => t.trim()).filter(t => t)})}
+                placeholder="e.g., vegetarian, north-indian, spicy"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={updateItem}
+                disabled={!editForm.name?.trim()}
+                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="h-5 w-5" />
+                Update Item
+              </button>
+              <button
+                onClick={cancelEdit}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Items Grid */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -482,6 +646,13 @@ const FoodLibrary: React.FC = () => {
                       Regenerate Image
                     </button>
                   )}
+                  <button
+                    onClick={() => editItem(item)}
+                    className="px-3 py-1 border rounded hover:bg-gray-50 text-sm flex items-center justify-center gap-1"
+                  >
+                    <Edit className="h-3 w-3" />
+                    Edit
+                  </button>
                   <button
                     onClick={() => deleteItem(item.id)}
                     className="px-3 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50 text-sm"
