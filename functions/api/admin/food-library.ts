@@ -386,7 +386,7 @@ export async function onRequestDelete(context: { request: Request; env: Env }) {
   }
 }
 
-// PUT - Update food library item
+// PUT - Update food library item (v2)
 export async function onRequestPut(context: { request: Request; env: Env }) {
   const { request, env } = context;
   const corsResponse = handleCors(request, env);
