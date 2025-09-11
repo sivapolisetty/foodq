@@ -185,12 +185,14 @@ const FoodLibrary: React.FC = () => {
     if (!confirm('Are you sure you want to delete this item?')) return;
     
     try {
-      const response = await fetch(`${API_ENDPOINTS.FOOD_LIBRARY}/${itemId}`, {
+      const response = await fetch(API_ENDPOINTS.FOOD_LIBRARY, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'X-API-Key': API_KEY,
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: itemId })
       });
       
       const data = await response.json();
@@ -222,14 +224,17 @@ const FoodLibrary: React.FC = () => {
     if (!editingItem || !editForm.name?.trim()) return;
     
     try {
-      const response = await fetch(`${API_ENDPOINTS.FOOD_LIBRARY}/${editingItem.id}`, {
+      const response = await fetch(API_ENDPOINTS.FOOD_LIBRARY, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'X-API-Key': API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify({
+          ...editForm,
+          id: editingItem.id
+        })
       });
       
       const data = await response.json();

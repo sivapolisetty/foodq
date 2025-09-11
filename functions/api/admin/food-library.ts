@@ -360,15 +360,12 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       }
     }
 
-    // Extract item ID from URL path
-    const url = new URL(request.url);
-    const itemId = url.pathname.split('/').pop();
-
-    if (!itemId || itemId === 'food-library') {
-      return createErrorResponse('Item ID required in URL path', 400, corsHeaders);
-    }
-
     const body = await request.json();
+    const itemId = body.id;
+
+    if (!itemId) {
+      return createErrorResponse('Item ID required in request body', 400, corsHeaders);
+    }
 
     // Extract updateable fields
     const {
@@ -438,12 +435,11 @@ export async function onRequestDelete(context: { request: Request; env: Env }) {
       }
     }
 
-    // Extract item ID from URL path
-    const url = new URL(request.url);
-    const itemId = url.pathname.split('/').pop();
+    const body = await request.json();
+    const itemId = body.id;
 
-    if (!itemId || itemId === 'food-library') {
-      return createErrorResponse('Item ID required in URL path', 400, corsHeaders);
+    if (!itemId) {
+      return createErrorResponse('Item ID required in request body', 400, corsHeaders);
     }
 
     const supabase = getDBClient(env, 'FoodLibrary.DELETE');
