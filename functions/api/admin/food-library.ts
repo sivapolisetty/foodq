@@ -101,6 +101,54 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const supabase = getDBClient(env, 'FoodLibrary.POST');
     const body = await request.json();
     
+    // Handle updates when itemId is provided (workaround for Cloudflare routing)
+    if (body.itemId) {
+      const itemId = body.itemId;
+      
+      // Handle delete requests
+      if (body.delete) {
+        const { data, error } = await supabase
+          .from('food_library_items')
+          .update({ is_active: false })
+          .eq('id', itemId)
+          .select()
+          .single();
+
+        if (error) {
+          return createErrorResponse(`Delete failed: ${error.message}`, 500, corsHeaders);
+        }
+
+        return createSuccessResponse({ message: 'Item deleted successfully', item: data }, corsHeaders);
+      }
+      
+      // Handle regular updates
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      // Only update fields that are provided
+      if (body.name !== undefined) updateData.name = body.name;
+      if (body.description !== undefined) updateData.description = body.description;
+      if (body.image_prompt !== undefined) updateData.image_prompt = body.image_prompt;
+      if (body.prep_time_minutes !== undefined) updateData.prep_time_minutes = body.prep_time_minutes;
+      if (body.serving_size !== undefined) updateData.serving_size = body.serving_size;
+      if (body.base_price_range !== undefined) updateData.base_price_range = body.base_price_range;
+      if (body.tags !== undefined) updateData.tags = body.tags;
+
+      const { data, error } = await supabase
+        .from('food_library_items')
+        .update(updateData)
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (error) {
+        return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
+      }
+
+      return createSuccessResponse({ message: 'Item updated successfully', item: data }, corsHeaders);
+    }
+    
     // Get OpenAI API key from environment
     const openaiApiKey = env.OPENAI_API_KEY;
     if (!openaiApiKey) {
@@ -238,8 +286,25 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       return createErrorResponse('Item ID required in request body', 400, corsHeaders);
     }
 
+    // Handle delete requests
+    if (itemId && body.delete) {
+      // Soft delete
+      const { data, error } = await supabase
+        .from('food_library_items')
+        .update({ is_active: false })
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (error) {
+        return createErrorResponse(`Delete failed: ${error.message}`, 500, corsHeaders);
+      }
+
+      return createSuccessResponse({ message: 'Item deleted successfully', item: data }, corsHeaders);
+    }
+
     // Handle regular updates when itemId is present (for PUT requests routed to POST)
-    if (itemId && !body.regenerate) {
+    if (itemId && !body.regenerate && !body.delete) {
       const updateData: any = {
         updated_at: new Date().toISOString()
       };
@@ -367,80 +432,6 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
   }
 }
 
-// PUT - Update food library item by ID
-export async function onRequestPut(context: { request: Request; env: Env }) {
-  const { request, env } = context;
-  const corsResponse = handleCors(request, env);
-  if (corsResponse) return corsResponse;
-  const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
-
-  try {
-    // Allow API key for testing (temporary)
-    const apiKey = request.headers.get('X-API-Key');
-    let auth = { isAuthenticated: false, user: { id: '00000000-0000-0000-0000-000000000000' } };
-    
-    if (apiKey === env.API_KEY) {
-      auth = { isAuthenticated: true, user: { id: '00000000-0000-0000-0000-000000000000' } };
-    } else {
-      auth = await validateAuth(request, env);
-      if (!auth.isAuthenticated) {
-        return createErrorResponse('Authentication required', 401, corsHeaders);
-      }
-    }
-
-    const body = await request.json();
-    const itemId = body.id;
-
-    if (!itemId) {
-      return createErrorResponse('Item ID required in request body', 400, corsHeaders);
-    }
-
-    // Extract updateable fields
-    const {
-      name,
-      description,
-      image_prompt,
-      prep_time_minutes,
-      serving_size,
-      base_price_range,
-      tags
-    } = body;
-
-    // Build update object with only provided fields
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
-
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (image_prompt !== undefined) updateData.image_prompt = image_prompt;
-    if (prep_time_minutes !== undefined) updateData.prep_time_minutes = prep_time_minutes;
-    if (serving_size !== undefined) updateData.serving_size = serving_size;
-    if (base_price_range !== undefined) updateData.base_price_range = base_price_range;
-    if (tags !== undefined) updateData.tags = tags;
-
-    const supabase = getDBClient(env, 'FoodLibrary.PUT');
-
-    const { data, error } = await supabase
-      .from('food_library_items')
-      .update(updateData)
-      .eq('id', itemId)
-      .select()
-      .single();
-
-    if (error) {
-      return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
-    }
-
-    return createSuccessResponse({ 
-      message: 'Item updated successfully', 
-      item: data 
-    }, corsHeaders);
-
-  } catch (error: any) {
-    return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
-  }
-}
 
 // DELETE - Soft delete item by ID
 export async function onRequestDelete(context: { request: Request; env: Env }) {

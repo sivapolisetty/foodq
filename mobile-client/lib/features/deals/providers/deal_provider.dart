@@ -190,6 +190,41 @@ class DealListNotifier extends StateNotifier<DealListState> {
     }
   }
 
+  /// Search deals by query (fuzzy search)
+  Future<List<Deal>> searchDeals(String query) async {
+    try {
+      final currentDeals = state.deals ?? [];
+      
+      if (query.trim().isEmpty) {
+        return [];
+      }
+      
+      final lowerQuery = query.toLowerCase();
+      
+      // Perform fuzzy search on current deals
+      final matches = currentDeals.where((deal) {
+        final titleMatch = deal.title.toLowerCase().contains(lowerQuery);
+        final descriptionMatch = deal.description?.toLowerCase().contains(lowerQuery) ?? false;
+        
+        // Check for word-by-word match
+        final queryWords = lowerQuery.split(' ');
+        final titleWords = deal.title.toLowerCase();
+        final descriptionWords = deal.description?.toLowerCase() ?? '';
+        
+        final wordMatch = queryWords.every((word) => 
+          titleWords.contains(word) || descriptionWords.contains(word)
+        );
+        
+        return titleMatch || descriptionMatch || wordMatch;
+      }).take(5).toList(); // Limit to 5 results
+      
+      return matches;
+    } catch (e) {
+      print('Error searching deals: $e');
+      return [];
+    }
+  }
+
   /// Deactivate a deal
   Future<bool> deactivateDeal(String dealId) async {
     try {

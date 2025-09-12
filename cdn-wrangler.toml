@@ -1,0 +1,10 @@
+name = "foodq-cdn"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# R2 bucket binding
+[[r2_buckets]]
+binding = "FOOD_IMAGES"
+bucket_name = "foodq-images"
+
+# Custom domain will be configured separately in Cloudflare dashboard

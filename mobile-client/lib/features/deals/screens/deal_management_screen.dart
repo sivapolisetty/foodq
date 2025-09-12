@@ -8,7 +8,7 @@ import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../../shared/models/deal.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/widgets/deal_card.dart';
-import '../widgets/create_deal_bottom_sheet.dart';
+import '../widgets/enhanced_create_deal_bottom_sheet.dart';
 import '../providers/deal_provider.dart';
 import '../../home/widgets/custom_bottom_nav.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
@@ -516,7 +516,7 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreateDealBottomSheet(currentUser: currentUser),
+      builder: (context) => EnhancedCreateDealBottomSheet(currentUser: currentUser),
     );
   }
 
@@ -529,7 +529,7 @@ class _DealManagementScreenState extends ConsumerState<DealManagementScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreateDealBottomSheet(deal: deal, currentUser: currentUser),
+      builder: (context) => EnhancedCreateDealBottomSheet(deal: deal, currentUser: currentUser),
     );
   }
 

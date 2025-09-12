@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, Plus, RefreshCw, Download, Trash2, 
+  Search, RefreshCw, Download, Trash2, 
   ChefHat, Clock, Users, DollarSign, Image,
   Loader2, CheckCircle, Edit
 } from 'lucide-react';
@@ -37,6 +37,8 @@ const FoodLibrary: React.FC = () => {
   const [editingItem, setEditingItem] = useState<FoodLibraryItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<FoodLibraryItem>>({});
+  const [searchResults, setSearchResults] = useState<FoodLibraryItem[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Fetch food library items
   const fetchItems = async () => {
@@ -67,6 +69,40 @@ const FoodLibrary: React.FC = () => {
   useEffect(() => {
     fetchItems();
   }, [searchQuery, selectedTags]);
+
+  // Fuzzy search function
+  const fuzzySearch = (query: string) => {
+    if (!query || query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const results = items.filter(item => {
+      const name = item.name.toLowerCase();
+      const description = item.description.toLowerCase();
+      const tags = item.tags.join(' ').toLowerCase();
+      
+      // Check for exact or partial matches
+      return name.includes(lowerQuery) || 
+             description.includes(lowerQuery) || 
+             tags.includes(lowerQuery) ||
+             // Check for word-by-word match
+             lowerQuery.split(' ').every(word => 
+               name.includes(word) || description.includes(word)
+             );
+    }).slice(0, 5); // Limit to top 5 results
+
+    setSearchResults(results);
+    setShowSearchResults(results.length > 0);
+  };
+
+  // Handle generator prompt change
+  const handleGeneratorPromptChange = (value: string) => {
+    setGeneratorPrompt(value);
+    fuzzySearch(value);
+  };
 
   // Generate single food item
   const generateSingleItem = async () => {
@@ -186,13 +222,16 @@ const FoodLibrary: React.FC = () => {
     
     try {
       const response = await fetch(API_ENDPOINTS.FOOD_LIBRARY, {
-        method: 'DELETE',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'X-API-Key': API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: itemId })
+        body: JSON.stringify({ 
+          itemId: itemId,
+          delete: true 
+        })
       });
       
       const data = await response.json();
@@ -225,7 +264,7 @@ const FoodLibrary: React.FC = () => {
     
     try {
       const response = await fetch(API_ENDPOINTS.FOOD_LIBRARY, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'X-API-Key': API_KEY,
@@ -239,7 +278,7 @@ const FoodLibrary: React.FC = () => {
       
       const data = await response.json();
       if (data.success) {
-        setItems(items.map(i => i.id === editingItem.id ? data.item : i));
+        setItems(items.map(i => i.id === editingItem.id ? data.data.item : i));
         setShowEditModal(false);
         setEditingItem(null);
         setEditForm({});
@@ -321,8 +360,8 @@ const FoodLibrary: React.FC = () => {
           onClick={() => setShowGenerator(true)}
           className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-2"
         >
-          <Plus className="h-5 w-5" />
-          Generate Item
+          <Search className="h-5 w-5" />
+          Search / Generate Item
         </button>
         <button
           onClick={() => setBatchMode(true)}
@@ -350,16 +389,78 @@ const FoodLibrary: React.FC = () => {
       {/* Generator Modal */}
       {showGenerator && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Generate Food Item with AI</h2>
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Search or Generate Food Item</h2>
             <input
               type="text"
               placeholder="Enter food name (e.g., 'butter chicken')"
               value={generatorPrompt}
-              onChange={(e) => setGeneratorPrompt(e.target.value)}
+              onChange={(e) => handleGeneratorPromptChange(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg mb-4"
               disabled={generating}
             />
+            
+            {/* Search Results */}
+            {showSearchResults && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                  Existing items found ({searchResults.length}):
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
+                  {searchResults.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                      onClick={() => {
+                        editItem(item);
+                        setShowGenerator(false);
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        {item.cdn_url || item.image_url ? (
+                          <img 
+                            src={item.cdn_url || item.image_url || ''} 
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                            <Image className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm">{item.name}</h4>
+                          <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
+                          <div className="flex gap-2 mt-1">
+                            {item.tags.slice(0, 3).map((tag) => (
+                              <span 
+                                key={tag} 
+                                className={`text-xs px-2 py-0.5 rounded-full ${getTagColor(tag)}`}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Click on an item to edit it, or proceed below to generate a new variant
+                </p>
+              </div>
+            )}
+
+            {/* No results message */}
+            {generatorPrompt.length >= 2 && !showSearchResults && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  No existing items found. You can generate a new item.
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={generateSingleItem}
@@ -374,12 +475,17 @@ const FoodLibrary: React.FC = () => {
                 ) : (
                   <>
                     <CheckCircle className="h-5 w-5" />
-                    Generate
+                    {showSearchResults ? 'Generate New Variant' : 'Generate New Item'}
                   </>
                 )}
               </button>
               <button
-                onClick={() => setShowGenerator(false)}
+                onClick={() => {
+                  setShowGenerator(false);
+                  setGeneratorPrompt('');
+                  setSearchResults([]);
+                  setShowSearchResults(false);
+                }}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
                 Cancel

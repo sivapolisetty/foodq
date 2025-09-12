@@ -11,6 +11,7 @@ import '../../../shared/widgets/overflow_safe_wrapper.dart';
 import '../../../shared/models/deal.dart';
 import '../../../shared/models/deal_result.dart';
 import '../../../shared/models/app_user.dart';
+import '../../../shared/models/food_library_item.dart';
 import '../providers/deal_provider.dart';
 import '../services/deal_service.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
@@ -18,11 +19,13 @@ import '../../auth/widgets/production_auth_wrapper.dart';
 class CreateDealBottomSheet extends ConsumerStatefulWidget {
   final Deal? deal; // If provided, we're editing; otherwise creating
   final AppUser? currentUser; // Pass current user to avoid provider issues
+  final FoodLibraryItem? foodLibraryItem; // If provided, pre-populate from food library
 
   const CreateDealBottomSheet({
     super.key,
     this.deal,
     this.currentUser,
+    this.foodLibraryItem,
   });
 
   @override
@@ -55,7 +58,7 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
     // Set current user from widget parameter
     _currentUser = widget.currentUser;
     
-    // Pre-populate fields if editing
+    // Pre-populate fields if editing existing deal
     if (widget.deal != null) {
       final deal = widget.deal!;
       _titleController.text = deal.title;
@@ -66,6 +69,34 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
       _allergenInfoController.text = deal.allergenInfo ?? '';
       _expiresAt = deal.expiresAt;
       _currentImageUrl = deal.imageUrl;
+    }
+    // Pre-populate fields if creating from food library item
+    else if (widget.foodLibraryItem != null) {
+      final item = widget.foodLibraryItem!;
+      _titleController.text = item.name;
+      _descriptionController.text = item.description;
+      
+      // Use price from food library (business user will adjust)
+      final averagePrice = item.averagePrice ?? 0.0;
+      _originalPriceController.text = averagePrice > 0 ? averagePrice.toString() : '';
+      // Leave discounted price empty for business user to set
+      _discountedPriceController.text = '';
+      
+      // Default quantity
+      _quantityController.text = '10';
+      
+      // Use image from food library
+      _currentImageUrl = item.bestImageUrl;
+      
+      // No allergen info from food library - business user will add if needed
+      _allergenInfoController.text = '';
+      
+      print('📚 Pre-populated from food library:');
+      print('   Name: ${item.name}');
+      print('   Description: ${item.description}');
+      print('   Price Range: ${item.basePriceRange}');
+      print('   Average Price: $averagePrice');
+      print('   Image: ${item.bestImageUrl}');
     }
   }
 
@@ -195,27 +226,66 @@ class _CreateDealBottomSheetState extends ConsumerState<CreateDealBottomSheet> {
             // Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(
-                    isEditing ? Icons.edit : Icons.add,
-                    color: AppColors.primary,
-                    size: 24,
+                  Row(
+                    children: [
+                      Icon(
+                        isEditing ? Icons.edit : Icons.add,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isEditing ? 'Edit Deal' : 'Create New Deal',
+                          style: AppTextStyles.titleLarge.copyWith(
+                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      isEditing ? 'Edit Deal' : 'Create New Deal',
-                      style: AppTextStyles.titleLarge.copyWith(
-                        color: AppColors.onSurface,
-                        fontWeight: FontWeight.w600,
+                  
+                  // Food library indicator
+                  if (widget.foodLibraryItem != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.restaurant_menu,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Pre-filled from "${widget.foodLibraryItem!.name}" - Review and adjust as needed',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.onPrimaryContainer,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
+                  ],
                 ],
               ),
             ),
