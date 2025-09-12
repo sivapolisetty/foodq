@@ -238,7 +238,36 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       return createErrorResponse('Item ID required in request body', 400, corsHeaders);
     }
 
-    // Manual update (no AI)
+    // Handle regular updates when itemId is present (for PUT requests routed to POST)
+    if (itemId && !body.regenerate) {
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      // Only update fields that are provided
+      if (body.name !== undefined) updateData.name = body.name;
+      if (body.description !== undefined) updateData.description = body.description;
+      if (body.image_prompt !== undefined) updateData.image_prompt = body.image_prompt;
+      if (body.prep_time_minutes !== undefined) updateData.prep_time_minutes = body.prep_time_minutes;
+      if (body.serving_size !== undefined) updateData.serving_size = body.serving_size;
+      if (body.base_price_range !== undefined) updateData.base_price_range = body.base_price_range;
+      if (body.tags !== undefined) updateData.tags = body.tags;
+
+      const { data, error } = await supabase
+        .from('food_library_items')
+        .update(updateData)
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (error) {
+        return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
+      }
+
+      return createSuccessResponse({ message: 'Item updated successfully', item: data }, corsHeaders);
+    }
+
+    // Manual update (no AI) - deprecated, kept for backward compatibility
     if (body.manual) {
       const { data, error } = await supabase
         .from('food_library_items')
