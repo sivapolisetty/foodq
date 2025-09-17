@@ -158,7 +158,22 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     }
     
     if (status) {
-      query = query.eq('status', status);
+      const currentTime = new Date().toISOString();
+      console.log(`🕒 STATUS FILTER: status=${status}, currentTime=${currentTime}`);
+      
+      if (status === 'expired') {
+        // For expired deals, filter by expiration time regardless of status field
+        console.log(`🕒 EXPIRED FILTER: Looking for deals where expires_at < ${currentTime}`);
+        query = query.lt('expires_at', currentTime);
+      } else if (status === 'active') {
+        // For active deals, must have active status AND not be expired
+        console.log(`🕒 ACTIVE FILTER: Looking for deals where status=active AND expires_at > ${currentTime}`);
+        query = query.eq('status', 'active').gt('expires_at', currentTime);
+      } else {
+        // For other statuses (e.g., 'draft', 'paused'), use status field
+        console.log(`🕒 OTHER STATUS FILTER: Looking for deals where status=${status}`);
+        query = query.eq('status', status);
+      }
     }
     
     // Add search functionality  

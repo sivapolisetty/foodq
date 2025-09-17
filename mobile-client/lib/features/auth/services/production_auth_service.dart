@@ -36,7 +36,7 @@ class ProductionAuthService {
 
       // Get user profile from API (not direct database)
       final response = await _getWithOptionalAuth<Map<String, dynamic>>(
-        '/api/users/${user.id}',
+        '/users/${user.id}',
       );
 
       print('📡 API Response received:');
@@ -145,7 +145,7 @@ class ProductionAuthService {
 
       // Create profile via API (not direct database)
       final response = await ApiService.post<Map<String, dynamic>>(
-        '/api/users/profile',
+        '/users/profile',
         body: profileData,
       );
 
@@ -181,7 +181,7 @@ class ProductionAuthService {
   Future<Map<String, dynamic>> getOnboardingStatusRaw(String userId) async {
     try {
       final response = await ApiService.get<Map<String, dynamic>>(
-        '/api/users/$userId/onboarding-status',
+        '/users/$userId/onboarding-status',
         fromJson: (data) => data as Map<String, dynamic>,
       );
 
@@ -255,7 +255,7 @@ class ProductionAuthService {
         );
       }
       
-      print('🌐 Checking onboarding status via API: /api/users/${user.id}/onboarding-status');
+      print('🌐 Checking onboarding status via API: /users/${user.id}/onboarding-status');
       AuthLogger.logAuthEvent('Checking onboarding status via API', data: {
         'user_id': user.id,
         'user_type': user.userType,
@@ -263,7 +263,7 @@ class ProductionAuthService {
 
       // Check onboarding status via API
       final response = await _getWithOptionalAuth<Map<String, dynamic>>(
-        '/api/users/${user.id}/onboarding-status',
+        '/users/${user.id}/onboarding-status',
       );
 
       print('📡 Onboarding status API response:');
@@ -369,7 +369,7 @@ class ProductionAuthService {
 
       // Complete onboarding via API
       final response = await _postWithOptionalAuth<Map<String, dynamic>>(
-        '/api/users/$userId/complete-onboarding',
+        '/users/$userId/complete-onboarding',
         body: {
           'onboarding_completed': true,
         },
@@ -422,7 +422,7 @@ class ProductionAuthService {
 
     // Update profile via API
     final response = await _putWithOptionalAuth<Map<String, dynamic>>(
-      '/api/users/${user.id}',
+      '/users/${user.id}',
       body: updates,
     );
 
@@ -451,7 +451,7 @@ class ProductionAuthService {
 
       // Create profile via API
       final response = await _postWithOptionalAuth<Map<String, dynamic>>(
-        '/api/users/profile',
+        '/users/profile',
         body: profileData,
       );
 
@@ -531,7 +531,7 @@ class ProductionAuthService {
       };
 
       final response = await _postWithOptionalAuth<Map<String, dynamic>>(
-        '/api/users/profile',
+        '/users/profile',
         body: profileData,
       );
 

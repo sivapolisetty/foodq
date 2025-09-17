@@ -8,7 +8,7 @@ import 'environment_config.dart';
 
 class ApiConfig {
   // Base URLs for different environments
-  static const String _prodApiUrl = 'https://foodq.pages.dev';
+  static const String _prodApiUrl = 'https://foodq.pages.dev/api';
   static const String _devApiUrl = 'http://localhost:8788';
 
   // Current environment API URL (loaded from .env file)
@@ -16,13 +16,21 @@ class ApiConfig {
 
   // No longer using API keys - authentication is handled by Supabase JWT tokens
 
-  // API Endpoints
-  static const String dealsEndpoint = '/api/deals';
-  static const String businessesEndpoint = '/api/businesses';
-  static const String usersEndpoint = '/api/users';
-  static const String ordersEndpoint = '/api/orders';
-  static const String uploadEndpoint = '/api/upload';
-  static const String restaurantOnboardingEndpoint = '/api/restaurant-onboarding';
+  // API Endpoints (no additional prefix needed, baseUrl includes /api)
+  static const String dealsEndpoint = '/deals';
+  static const String businessesEndpoint = '/businesses';
+  static const String usersEndpoint = '/users';
+  static const String ordersEndpoint = '/orders';
+  static const String uploadEndpoint = '/upload';
+  static const String restaurantOnboardingEndpoint = '/restaurant-onboarding';
+  
+  // User interaction endpoints
+  static const String userInteractionsEndpoint = '/users/me/interactions';
+  static const String userMissedDealsEndpoint = '/users/me/missed-deals';
+  static const String userExpiredDealsEndpoint = '/users/me/expired-deals';
+  static const String nearbyDealsEndpoint = '/deals/nearby';
+  static const String trendingDealsEndpoint = '/deals/trending';
+  static const String endingSoonDealsEndpoint = '/deals/ending-soon';
 
   // Full URLs
   static String get dealsUrl => '$baseUrl$dealsEndpoint';
@@ -31,6 +39,14 @@ class ApiConfig {
   static String get ordersUrl => '$baseUrl$ordersEndpoint';
   static String get uploadUrl => '$baseUrl$uploadEndpoint';
   static String get restaurantOnboardingUrl => '$baseUrl$restaurantOnboardingEndpoint';
+  
+  // User interaction URLs
+  static String get userInteractionsUrl => '$baseUrl$userInteractionsEndpoint';
+  static String get userMissedDealsUrl => '$baseUrl$userMissedDealsEndpoint';
+  static String get userExpiredDealsUrl => '$baseUrl$userExpiredDealsEndpoint';
+  static String get nearbyDealsUrl => '$baseUrl$nearbyDealsEndpoint';
+  static String get trendingDealsUrl => '$baseUrl$trendingDealsEndpoint';
+  static String get endingSoonDealsUrl => '$baseUrl$endingSoonDealsEndpoint';
 
   // Deal-specific endpoints
   static String dealByIdUrl(String dealId) => '$dealsUrl/$dealId';
@@ -47,6 +63,26 @@ class ApiConfig {
   // Restaurant onboarding endpoints
   static String restaurantOnboardingByIdUrl(String requestId) => '$restaurantOnboardingUrl/$requestId';
   static String restaurantOnboardingByUserUrl(String userId) => '$restaurantOnboardingUrl/user/$userId';
+  
+  // Business-specific endpoints
+  static String businessByIdUrl(String businessId) => '$businessesUrl/$businessId';
+  static String businessByOwnerUrl(String ownerId) => '$businessesUrl/owner/$ownerId';
+  
+  // Places API endpoints  
+  static String get placesAutocompleteUrl => '$baseUrl/places/autocomplete';
+  static String get placesDetailsUrl => '$baseUrl/places/details';
+  
+  // Note: User-specific expired deals endpoints don't exist in current API
+  // Use deals endpoint with appropriate filters instead:
+  // - Expired deals: ${baseUrl}/deals?status=expired  
+  // - User deals: ${baseUrl}/deals?user_id={userId}
+  
+  // Restaurant onboarding request endpoints
+  static String get restaurantOnboardingRequestsUrl => '$baseUrl/restaurant-onboarding-requests';
+  static String restaurantOnboardingRequestByIdUrl(String requestId) => '$restaurantOnboardingRequestsUrl/$requestId';
+  static String restaurantOnboardingRequestByUserUrl(String userId) => '$restaurantOnboardingRequestsUrl/user/$userId';
+  static String restaurantOnboardingRequestApproveUrl(String requestId) => '$restaurantOnboardingRequestsUrl/$requestId/approve';
+  static String restaurantOnboardingRequestRejectUrl(String requestId) => '$restaurantOnboardingRequestsUrl/$requestId/reject';
 
   // Request timeouts
   static const Duration defaultTimeout = Duration(seconds: 30);

@@ -145,7 +145,7 @@ class ApiService {
   Future<Map<String, dynamic>> healthCheck() async {
     final response = await _request<Map<String, dynamic>>(
       'GET',
-      '/api/health',
+      '/health',
       dataParser: (data) => data as Map<String, dynamic>,
     );
     
@@ -179,7 +179,7 @@ class ApiService {
 
     final response = await _request<List<DealWithDistance>>(
       'GET',
-      '/api/deals/nearby',
+      '/deals/nearby',
       queryParams: queryParams,
       dataParser: (data) => (data as List)
           .map((item) => DealWithDistance.fromJson(item))
@@ -196,7 +196,7 @@ class ApiService {
   Future<List<Deal>> getFeaturedDeals({int limit = 10}) async {
     final response = await _request<List<Deal>>(
       'GET',
-      '/api/deals/featured',
+      '/deals/featured',
       queryParams: {'limit': limit.toString()},
       dataParser: (data) => (data as List)
           .map((item) => Deal.fromJson(item))
@@ -213,7 +213,7 @@ class ApiService {
   Future<List<Deal>> getDealsExpiringSoon({int days = 3}) async {
     final response = await _request<List<Deal>>(
       'GET',
-      '/api/deals/expiring-soon',
+      '/deals/expiring-soon',
       queryParams: {'days': days.toString()},
       dataParser: (data) => (data as List)
           .map((item) => Deal.fromJson(item))
@@ -251,7 +251,7 @@ class ApiService {
 
     final response = await _request<List<Deal>>(
       'GET',
-      '/api/deals',
+      '/deals',
       queryParams: queryParams,
       dataParser: (data) => (data as List)
           .map((item) => Deal.fromJson(item))
@@ -268,7 +268,7 @@ class ApiService {
   Future<Deal> getDealById(String id) async {
     final response = await _request<Deal>(
       'GET',
-      '/api/deals/$id',
+      '/deals/$id',
       dataParser: (data) => Deal.fromJson(data),
     );
     
@@ -282,7 +282,7 @@ class ApiService {
   Future<Deal> createDeal(Map<String, dynamic> dealData) async {
     final response = await _request<Deal>(
       'POST',
-      '/api/deals',
+      '/deals',
       body: dealData,
       dataParser: (data) => Deal.fromJson(data),
     );
@@ -297,7 +297,7 @@ class ApiService {
   Future<Deal> updateDeal(String id, Map<String, dynamic> updates) async {
     final response = await _request<Deal>(
       'PUT',
-      '/api/deals/$id',
+      '/deals/$id',
       body: updates,
       dataParser: (data) => Deal.fromJson(data),
     );
@@ -312,7 +312,7 @@ class ApiService {
   Future<void> deleteDeal(String id) async {
     final response = await _request<void>(
       'DELETE',
-      '/api/deals/$id',
+      '/deals/$id',
     );
     
     if (!response.success) {
@@ -324,7 +324,7 @@ class ApiService {
   Future<List<Business>> getMyBusinesses() async {
     final response = await _request<List<Business>>(
       'GET',
-      '/api/business/my',
+      '/business/my',
       dataParser: (data) => (data as List)
           .map((item) => Business.fromJson(item))
           .toList(),
@@ -340,7 +340,7 @@ class ApiService {
   Future<Business> getBusinessById(String id) async {
     final response = await _request<Business>(
       'GET',
-      '/api/business/$id',
+      '/business/$id',
       dataParser: (data) => Business.fromJson(data),
     );
     
@@ -365,7 +365,7 @@ class ApiService {
 
     final response = await _request<List<Deal>>(
       'GET',
-      '/api/business/$businessId/deals',
+      '/business/$businessId/deals',
       queryParams: queryParams,
       dataParser: (data) => (data as List)
           .map((item) => Deal.fromJson(item))
@@ -382,7 +382,7 @@ class ApiService {
   Future<Map<String, dynamic>> getBusinessStats(String businessId) async {
     final response = await _request<Map<String, dynamic>>(
       'GET',
-      '/api/business/$businessId/stats',
+      '/business/$businessId/stats',
       dataParser: (data) => data as Map<String, dynamic>,
     );
     
@@ -396,7 +396,7 @@ class ApiService {
   Future<Business> createBusiness(Map<String, dynamic> businessData) async {
     final response = await _request<Business>(
       'POST',
-      '/api/business',
+      '/business',
       body: businessData,
       dataParser: (data) => Business.fromJson(data),
     );
@@ -411,7 +411,7 @@ class ApiService {
   Future<Business> updateBusiness(String id, Map<String, dynamic> updates) async {
     final response = await _request<Business>(
       'PUT',
-      '/api/business/$id',
+      '/business/$id',
       body: updates,
       dataParser: (data) => Business.fromJson(data),
     );

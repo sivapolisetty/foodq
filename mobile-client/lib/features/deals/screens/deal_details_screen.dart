@@ -14,6 +14,7 @@ import '../../../services/business_service.dart';
 import '../services/deal_service.dart';
 import '../../cart/services/cart_validation_service.dart';
 import '../../cart/providers/cart_provider.dart';
+import '../../../shared/services/user_interactions_service.dart';
 
 class DealDetailsScreen extends ConsumerStatefulWidget {
   final Deal? deal;
@@ -37,6 +38,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
   bool isLoadingBusiness = true;
   String? dealError;
   String? businessError;
+  int _viewCount = 0;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
         setState(() {
           isLoadingDeal = false;
         });
+        _trackDealView();
         _loadBusinessDetails();
       } else if (widget.dealId != null) {
         // Check if DealService exists, otherwise create a simple HTTP client approach
@@ -63,6 +66,7 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
             currentDeal = dealData;
             isLoadingDeal = false;
           });
+          _trackDealView();
           _loadBusinessDetails();
         } else {
           setState(() {
@@ -94,6 +98,26 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
         businessError = e.toString();
         isLoadingBusiness = false;
       });
+    }
+  }
+
+  void _trackDealView() {
+    if (currentDeal == null) return;
+    
+    // Simple tracking - let backend handle all the complex logic
+    _viewCount++;
+    UserInteractionsService.trackDealViewed(currentDeal!.id);
+  }
+
+  @override
+  void didUpdateWidget(DealDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Track additional views if user navigates back to same deal
+    if (oldWidget.dealId != widget.dealId || oldWidget.deal != widget.deal) {
+      _viewCount = 0;
+      _loadDealData();
+    } else if (currentDeal != null && !currentDeal!.isExpired) {
+      _trackDealView();
     }
   }
 
@@ -830,6 +854,11 @@ class _DealDetailsScreenState extends ConsumerState<DealDetailsScreen> {
 
   void _handleOrderPlaced(Order order) {
     debugPrint('🚀 HANDLE ORDER PLACED: ID=${order.id}');
+    
+    // Track deal purchase - backend handles removing from missed deals
+    if (currentDeal != null) {
+      UserInteractionsService.trackDealPurchased(currentDeal!.id, order.id);
+    }
     
     // Use a post frame callback to ensure the modal is fully dismissed
     WidgetsBinding.instance.addPostFrameCallback((_) {

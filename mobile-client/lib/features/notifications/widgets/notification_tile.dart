@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/notification.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_colors.dart';
 
 class NotificationTile extends StatelessWidget {
   final AppNotification notification;
@@ -22,7 +23,7 @@ class NotificationTile extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: notification.isHighPriority && !notification.isRead
-            ? Border.all(color: AppTheme.primaryColor, width: 2)
+            ? Border.all(color: AppColors.primary, width: 2)
             : null,
         boxShadow: [
           BoxShadow(
@@ -122,7 +123,7 @@ class NotificationTile extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -194,7 +195,7 @@ class NotificationTile extends StatelessWidget {
       case NotificationPriority.high:
         return Colors.orange;
       case NotificationPriority.normal:
-        return AppTheme.primaryColor;
+        return AppColors.primary;
       case NotificationPriority.low:
         return Colors.grey;
     }

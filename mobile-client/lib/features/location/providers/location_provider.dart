@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../../core/services/location_service.dart';
 
 /// State for location functionality
@@ -37,7 +39,39 @@ class LocationState {
 
 /// Notifier for managing user location
 class LocationNotifier extends StateNotifier<LocationState> {
-  LocationNotifier() : super(const LocationState());
+  LocationNotifier() : super(const LocationState()) {
+    _initializeFromStoredPreferences();
+  }
+
+  /// Initialize location from stored preferences if available
+  Future<void> _initializeFromStoredPreferences() async {
+    try {
+      // Import location preferences here to avoid circular dependencies
+      final prefs = await SharedPreferences.getInstance();
+      final prefsJson = prefs.getString('location_preferences');
+      
+      if (prefsJson != null) {
+        final prefsMap = json.decode(prefsJson) as Map<String, dynamic>;
+        final lastKnownAddress = prefsMap['lastKnownAddress'] as String?;
+        final lastKnownLatitude = prefsMap['lastKnownLatitude'] as double?;
+        final lastKnownLongitude = prefsMap['lastKnownLongitude'] as double?;
+        
+        if (lastKnownAddress != null && 
+            lastKnownAddress.isNotEmpty &&
+            lastKnownLatitude != null && 
+            lastKnownLongitude != null) {
+          
+          print('📍 LocationProvider: Initializing with stored preferences');
+          print('📍 Address: $lastKnownAddress');
+          print('📍 Coordinates: $lastKnownLatitude, $lastKnownLongitude');
+          
+          setManualAddress(lastKnownAddress, lastKnownLatitude, lastKnownLongitude);
+        }
+      }
+    } catch (e) {
+      print('❌ LocationProvider: Error loading stored preferences: $e');
+    }
+  }
 
   /// Get user's current location
   Future<void> getCurrentLocation() async {

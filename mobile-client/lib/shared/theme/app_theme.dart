@@ -4,8 +4,7 @@ import 'app_colors.dart';
 import 'app_text_styles.dart';
 
 class AppTheme {
-  // Theme colors and constants
-  static const Color primaryColor = Color(0xFF4CAF50);
+  // Theme colors and constants (using AppColors for consistency)
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color textPrimary = Color(0xFF212121);
   
@@ -287,7 +286,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: lightTheme.bottomNavigationBarTheme.copyWith(
         backgroundColor: AppColors.darkSurface,
-        selectedItemColor: AppColors.primaryDark,
+        selectedItemColor: AppColors.primaryLight, // Use green primary for dark theme
         unselectedItemColor: AppColors.darkOnSurfaceVariant,
       ),
     );

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { supabase } from '../lib/supabase';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://foodq.pages.dev') + '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://foodq.pages.dev/api';
 
 console.log('Admin API Configuration:');
 console.log('- API Base URL:', API_BASE_URL);

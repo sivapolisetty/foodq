@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/notification.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_colors.dart';
 
 class NotificationFilterChips extends StatelessWidget {
   final NotificationType? selectedFilter;
@@ -51,12 +52,12 @@ class NotificationFilterChips extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected 
-              ? (color ?? AppTheme.primaryColor)
+              ? (color ?? AppColors.primary)
               : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
-                ? (color ?? AppTheme.primaryColor)
+                ? (color ?? AppColors.primary)
                 : Colors.grey[300]!,
             width: 1,
           ),

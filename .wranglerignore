@@ -1,15 +1,40 @@
+# Ignore large mobile client files
 mobile-client/
-admin-client/
-landing-client/
-.git/
+admin-client/node_modules/
+landing-page/
+temp-deploy/
+scripts/node_modules/
 node_modules/
-*.log
-.DS_Store
-.env
-.env.local
-.env.*.local
-dist/
-build/
+
+# Ignore build artifacts
 *.cache
 *.dill
-*.track
+build/
+dist/
+.dart_tool/
+
+# Ignore test files
+test/
+*.test.*
+
+# Ignore documentation
+*.md
+README.md
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore logs
+*.log
+logs/

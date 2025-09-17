@@ -4,14 +4,18 @@ import 'dart:convert';
 part 'order.freezed.dart';
 part 'order.g.dart';
 
-/// Simplified Order status enum - Only two states for streamlined flow
+/// Order status enum - Complete workflow with restaurant confirmation
 enum OrderStatus {
+  @JsonValue('pending')
+  pending,      // Order placed, payment pending
+  @JsonValue('paid')
+  paid,         // Payment confirmed, waiting for restaurant confirmation
   @JsonValue('confirmed')
-  confirmed,
+  confirmed,    // Restaurant confirmed order, preparing
   @JsonValue('completed')
-  completed,
+  completed,    // Order completed/picked up
   @JsonValue('cancelled')
-  cancelled,
+  cancelled,    // Order cancelled
 }
 
 /// Payment status enum
@@ -40,6 +44,10 @@ enum PaymentMethod {
 extension OrderStatusExtension on OrderStatus {
   String get displayText {
     switch (this) {
+      case OrderStatus.pending:
+        return 'Pending';
+      case OrderStatus.paid:
+        return 'Paid';
       case OrderStatus.confirmed:
         return 'Confirmed';
       case OrderStatus.completed:
@@ -52,8 +60,12 @@ extension OrderStatusExtension on OrderStatus {
   /// Get status description for customers
   String get customerDescription {
     switch (this) {
+      case OrderStatus.pending:
+        return 'Order placed. Please complete payment to proceed.';
+      case OrderStatus.paid:
+        return 'Payment confirmed! Waiting for restaurant to confirm your order.';
       case OrderStatus.confirmed:
-        return 'Your order is confirmed! Show the QR code or 6-digit code to the restaurant for pickup.';
+        return 'Restaurant confirmed your order! Show the QR code or 6-digit code for pickup.';
       case OrderStatus.completed:
         return 'Order completed. Thank you for your business!';
       case OrderStatus.cancelled:
@@ -61,16 +73,56 @@ extension OrderStatusExtension on OrderStatus {
     }
   }
   
+  /// Get status description for restaurants
+  String get restaurantDescription {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'Customer order pending payment.';
+      case OrderStatus.paid:
+        return 'Payment received. Please review and confirm this order.';
+      case OrderStatus.confirmed:
+        return 'Order confirmed. Prepare for customer pickup.';
+      case OrderStatus.completed:
+        return 'Order completed successfully.';
+      case OrderStatus.cancelled:
+        return 'Order was cancelled.';
+    }
+  }
+  
   /// Get status color for UI
   String get statusColor {
     switch (this) {
+      case OrderStatus.pending:
+        return '#FFC107'; // Yellow - waiting
+      case OrderStatus.paid:
+        return '#2196F3'; // Blue - action needed (restaurant)
       case OrderStatus.confirmed:
-        return '#FF9800'; // Orange - action needed
+        return '#FF9800'; // Orange - preparing
       case OrderStatus.completed:
         return '#4CAF50'; // Green - success
       case OrderStatus.cancelled:
         return '#F44336'; // Red - error
     }
+  }
+  
+  /// Check if restaurant can confirm this order
+  bool get canBeConfirmedByRestaurant {
+    return this == OrderStatus.paid;
+  }
+  
+  /// Check if order can be cancelled
+  bool get canBeCancelled {
+    return this == OrderStatus.pending || this == OrderStatus.paid || this == OrderStatus.confirmed;
+  }
+  
+  /// Check if order is awaiting customer action
+  bool get awaitingCustomerAction {
+    return this == OrderStatus.pending;
+  }
+  
+  /// Check if order is awaiting restaurant action
+  bool get awaitingRestaurantAction {
+    return this == OrderStatus.paid;
   }
 }
 
@@ -198,7 +250,7 @@ class Order with _$Order {
 
   const Order._();
 
-  /// Create a new pick-up order (immediately confirmed in simplified flow)
+  /// Create a new pick-up order (starts in pending state)
   factory Order.createPickupOrder({
     required String userId,
     required String businessId,
@@ -212,21 +264,24 @@ class Order with _$Order {
       userId: userId,
       businessId: businessId,
       totalAmount: totalAmount,
-      status: OrderStatus.confirmed, // Immediately confirmed in simplified flow
+      status: OrderStatus.pending, // Start in pending state
       pickupTime: pickupTime,
       deliveryInstructions: deliveryInstructions,
       paymentStatus: PaymentStatus.pending,
       paymentMethod: paymentMethod,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      confirmedAt: DateTime.now(), // Set confirmation time
       orderItems: [],
     );
   }
 
-  /// Get order status display text for simplified flow
+  /// Get order status display text
   String get statusDisplay {
     switch (status) {
+      case OrderStatus.pending:
+        return 'Pending Payment';
+      case OrderStatus.paid:
+        return 'Awaiting Confirmation';
       case OrderStatus.confirmed:
         return 'Confirmed';
       case OrderStatus.completed:
@@ -262,14 +317,24 @@ class Order with _$Order {
     }
   }
 
-  /// Check if order can be cancelled (only confirmed orders can be cancelled in simplified flow)
+  /// Check if order can be cancelled
   bool get canBeCancelled {
-    return status == OrderStatus.confirmed;
+    return status.canBeCancelled;
   }
 
   /// Check if order is active (not completed or cancelled)
   bool get isActive {
     return status != OrderStatus.completed && status != OrderStatus.cancelled;
+  }
+  
+  /// Check if order needs customer action
+  bool get needsCustomerAction {
+    return status.awaitingCustomerAction;
+  }
+  
+  /// Check if order needs restaurant action
+  bool get needsRestaurantAction {
+    return status.awaitingRestaurantAction;
   }
 
   /// Get formatted total amount
@@ -330,11 +395,15 @@ class Order with _$Order {
     }
   }
 
-  /// Get order progress percentage for simplified flow
+  /// Get order progress percentage
   double get progressPercentage {
     switch (status) {
+      case OrderStatus.pending:
+        return 0.2; // 20% - Order placed, payment pending
+      case OrderStatus.paid:
+        return 0.4; // 40% - Payment confirmed, waiting for restaurant
       case OrderStatus.confirmed:
-        return 0.5; // 50% - Order confirmed, waiting for pickup
+        return 0.7; // 70% - Restaurant confirmed, preparing
       case OrderStatus.completed:
         return 1.0; // 100% - Order completed
       case OrderStatus.cancelled:
@@ -371,7 +440,7 @@ class Order with _$Order {
     }
   }
   
-  /// Check if order is ready for verification (has confirmation code)
+  /// Check if order is ready for verification (has confirmation code and restaurant confirmed)
   bool get isReadyForVerification {
     return status == OrderStatus.confirmed && hasVerificationCode;
   }

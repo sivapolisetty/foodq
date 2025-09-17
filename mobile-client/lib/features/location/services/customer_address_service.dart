@@ -137,7 +137,7 @@ class CustomerAddressResponse {
 }
 
 class CustomerAddressService {
-  static const String _baseEndpoint = '/api/users';
+  static const String _baseEndpoint = '/users';
 
   /// Get all saved addresses for a user
   static Future<CustomerAddressResponse?> getUserAddresses(String userId) async {

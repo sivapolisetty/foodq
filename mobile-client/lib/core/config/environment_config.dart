@@ -48,7 +48,7 @@ class EnvironmentConfig {
 
   /// API Configuration (Cloudflare Pages)
   static String get apiBaseUrl => 
-      dotenv.env['API_BASE_URL'] ?? 'http://localhost:8788';
+      dotenv.env['API_BASE_URL'] ?? 'https://foodq.pages.dev/api';
   
   static int get apiTimeout => 
       int.tryParse(dotenv.env['API_TIMEOUT'] ?? '') ?? 30000;

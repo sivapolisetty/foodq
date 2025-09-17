@@ -7,11 +7,13 @@ import '../../../shared/widgets/deal_card.dart';
 class EnhancedDealCard extends StatelessWidget {
   final DealWithDistance dealWithDistance;
   final VoidCallback? onTap;
+  final bool isExpired;
 
   const EnhancedDealCard({
     Key? key,
     required this.dealWithDistance,
     this.onTap,
+    this.isExpired = false,
   }) : super(key: key);
 
   @override
@@ -22,9 +24,10 @@ class EnhancedDealCard extends StatelessWidget {
       child: DealCard(
         deal: dealWithDistance.deal,
         onTap: onTap ?? () {},
-        showDistance: true,
+        showDistance: !isExpired, // Don't show distance for expired deals
         distance: dealWithDistance.distanceInMiles,
-        showCartControls: true,
+        showCartControls: !isExpired, // Don't show cart controls for expired deals
+        isExpired: isExpired,
       ),
     );
   }

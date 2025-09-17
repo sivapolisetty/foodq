@@ -38,7 +38,7 @@ class BusinessService {
       print('🏢 Creating restaurant onboarding request via Workers API: ${json.encode(requestData)}');
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/restaurant-onboarding-requests'),
+        Uri.parse(ApiConfig.restaurantOnboardingRequestsUrl),
         headers: ApiConfig.headers,
         body: json.encode(requestData),
       );
@@ -83,7 +83,7 @@ class BusinessService {
       print('🔍 Getting business by owner ID via Workers API: $ownerId');
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/businesses/owner/$ownerId'),
+        Uri.parse(ApiConfig.businessByOwnerUrl(ownerId)),
         headers: ApiConfig.headers,
       );
 
@@ -114,7 +114,7 @@ class BusinessService {
       print('🔄 Updating business via Workers API: $businessId');
 
       final response = await http.put(
-        Uri.parse('$_baseUrl/api/businesses/$businessId'),
+        Uri.parse(ApiConfig.businessByIdUrl(businessId)),
         headers: ApiConfig.headers,
         body: json.encode(updates),
       );

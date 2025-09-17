@@ -588,6 +588,10 @@ class RecentOrdersSection extends ConsumerWidget {
 
   String _getEstimatedReadyText(Order order) {
     switch (order.status) {
+      case OrderStatus.pending:
+        return 'Pending'; // Awaiting payment
+      case OrderStatus.paid:
+        return 'Awaiting'; // Awaiting confirmation
       case OrderStatus.confirmed:
         return '15 min'; // Estimated prep time
       case OrderStatus.completed:

@@ -77,7 +77,7 @@ void main() {
       
       // Verify API is running
       try {
-        final response = await ApiClient.get('/api/deals');
+        final response = await ApiClient.get('/deals');
         expect(response.statusCode, equals(200));
         print('✅ API is running and accessible');
       } catch (e) {
@@ -95,7 +95,7 @@ void main() {
           'phone': '+1-555-TEST-001',
         };
 
-        final response = await ApiClient.post('/api/users', userData);
+        final response = await ApiClient.post('/users', userData);
         
         expect(response.statusCode, equals(201));
         
@@ -116,7 +116,7 @@ void main() {
           'phone': '+1-555-TEST-002',
         };
 
-        final response = await ApiClient.post('/api/users', userData);
+        final response = await ApiClient.post('/users', userData);
         
         expect(response.statusCode, equals(201));
         
@@ -130,7 +130,7 @@ void main() {
       });
 
       test('should get all users', () async {
-        final response = await ApiClient.get('/api/users');
+        final response = await ApiClient.get('/users');
         
         expect(response.statusCode, equals(200));
         
@@ -183,7 +183,7 @@ void main() {
           // Missing required fields: email, user_type
         };
 
-        final response = await ApiClient.post('/api/users', invalidUserData);
+        final response = await ApiClient.post('/users', invalidUserData);
         
         expect(response.statusCode, equals(400));
         
@@ -202,11 +202,11 @@ void main() {
         };
 
         // Create first user
-        final response1 = await ApiClient.post('/api/users', userData);
+        final response1 = await ApiClient.post('/users', userData);
         expect(response1.statusCode, equals(201));
 
         // Try to create duplicate
-        final response2 = await ApiClient.post('/api/users', userData);
+        final response2 = await ApiClient.post('/users', userData);
         expect(response2.statusCode, equals(409));
         
         final responseData = jsonDecode(response2.body);
@@ -230,7 +230,7 @@ void main() {
           'allergen_info': 'Contains gluten',
         };
 
-        final response = await ApiClient.post('/api/deals', dealData);
+        final response = await ApiClient.post('/deals', dealData);
         
         expect(response.statusCode, equals(201));
         
@@ -245,7 +245,7 @@ void main() {
       });
 
       test('should get all deals', () async {
-        final response = await ApiClient.get('/api/deals');
+        final response = await ApiClient.get('/deals');
         
         expect(response.statusCode, equals(200));
         
@@ -299,7 +299,7 @@ void main() {
           // Missing required fields: business_id, prices, etc.
         };
 
-        final response = await ApiClient.post('/api/deals', invalidDealData);
+        final response = await ApiClient.post('/deals', invalidDealData);
         
         expect(response.statusCode, equals(400));
         
@@ -320,7 +320,7 @@ void main() {
           'expires_at': DateTime.now().subtract(Duration(hours: 1)).toIso8601String(), // Past date
         };
 
-        final response = await ApiClient.post('/api/deals', expiredDealData);
+        final response = await ApiClient.post('/deals', expiredDealData);
         
         expect(response.statusCode, equals(400));
         
@@ -345,7 +345,7 @@ void main() {
 
     group('Business API Tests', () {
       test('should get all businesses', () async {
-        final response = await ApiClient.get('/api/businesses');
+        final response = await ApiClient.get('/businesses');
         
         expect(response.statusCode, equals(200));
         
@@ -358,7 +358,7 @@ void main() {
       });
 
       test('should get business by ID', () async {
-        final response = await ApiClient.get('/api/businesses/$testBusinessId');
+        final response = await ApiClient.get('/businesses/$testBusinessId');
         
         expect(response.statusCode, equals(200));
         

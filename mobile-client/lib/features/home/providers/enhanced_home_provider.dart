@@ -2,14 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../search/services/search_service.dart';
 import '../../location/providers/location_provider.dart';
 import '../../location/providers/location_preferences_provider.dart';
+import '../../../shared/services/expired_deals_api_service.dart';
+import '../../../shared/models/api_models.dart' hide DealWithDistance;
 
 /// State for enhanced home with location-based content
 class EnhancedHomeState {
   final List<DealWithDistance> nearbyDeals;
   final List<BusinessWithDistance> nearbyBusinesses;
+  final List<ExpiredDeal> expiredDeals;
   final EnhancedSearchResult? searchResults;
   final bool isLoadingDeals;
   final bool isLoadingBusinesses;
+  final bool isLoadingExpiredDeals;
   final bool isSearching;
   final String? error;
   final String? searchQuery;
@@ -17,9 +21,11 @@ class EnhancedHomeState {
   const EnhancedHomeState({
     this.nearbyDeals = const [],
     this.nearbyBusinesses = const [],
+    this.expiredDeals = const [],
     this.searchResults,
     this.isLoadingDeals = false,
     this.isLoadingBusinesses = false,
+    this.isLoadingExpiredDeals = false,
     this.isSearching = false,
     this.error,
     this.searchQuery,
@@ -28,9 +34,11 @@ class EnhancedHomeState {
   EnhancedHomeState copyWith({
     List<DealWithDistance>? nearbyDeals,
     List<BusinessWithDistance>? nearbyBusinesses,
+    List<ExpiredDeal>? expiredDeals,
     EnhancedSearchResult? searchResults,
     bool? isLoadingDeals,
     bool? isLoadingBusinesses,
+    bool? isLoadingExpiredDeals,
     bool? isSearching,
     String? error,
     String? searchQuery,
@@ -38,9 +46,11 @@ class EnhancedHomeState {
     return EnhancedHomeState(
       nearbyDeals: nearbyDeals ?? this.nearbyDeals,
       nearbyBusinesses: nearbyBusinesses ?? this.nearbyBusinesses,
+      expiredDeals: expiredDeals ?? this.expiredDeals,
       searchResults: searchResults ?? this.searchResults,
       isLoadingDeals: isLoadingDeals ?? this.isLoadingDeals,
       isLoadingBusinesses: isLoadingBusinesses ?? this.isLoadingBusinesses,
+      isLoadingExpiredDeals: isLoadingExpiredDeals ?? this.isLoadingExpiredDeals,
       isSearching: isSearching ?? this.isSearching,
       error: error ?? this.error,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -60,15 +70,40 @@ class EnhancedHomeNotifier extends StateNotifier<EnhancedHomeState> {
   /// Load nearby content based on user location
   Future<void> loadNearbyContent() async {
     var coordinates = _locationNotifier.coordinates;
+    
+    // If no current location, check for stored preferences first
     if (coordinates == null) {
-      print('📍 No location available, requesting location...');
-      await _locationNotifier.getCurrentLocation();
-      coordinates = _locationNotifier.coordinates;
+      print('📍 No current location, checking stored preferences...');
       
-      // If still no location after requesting, use fallback
-      if (coordinates == null) {
-        print('📍 Still no location available, using default location');
-        coordinates = (40.7128, -74.0060); // Default NYC coordinates
+      // Give the preferences provider a moment to load if needed
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      final locationPrefs = _ref.read(locationPreferencesProvider);
+      
+      if (locationPrefs.lastKnownLatitude != null && 
+          locationPrefs.lastKnownLongitude != null &&
+          locationPrefs.lastKnownAddress.isNotEmpty) {
+        print('📍 Using stored location: ${locationPrefs.lastKnownAddress}');
+        print('📍 Coordinates: ${locationPrefs.lastKnownLatitude}, ${locationPrefs.lastKnownLongitude}');
+        coordinates = (locationPrefs.lastKnownLatitude!, locationPrefs.lastKnownLongitude!);
+        
+        // Update location provider with stored preferences
+        _locationNotifier.setManualAddress(
+          locationPrefs.lastKnownAddress, 
+          locationPrefs.lastKnownLatitude, 
+          locationPrefs.lastKnownLongitude
+        );
+      } else {
+        print('📍 No stored location found, requesting current location...');
+        print('📍 Address: "${locationPrefs.lastKnownAddress}", Lat: ${locationPrefs.lastKnownLatitude}, Lng: ${locationPrefs.lastKnownLongitude}');
+        await _locationNotifier.getCurrentLocation();
+        coordinates = _locationNotifier.coordinates;
+        
+        // If still no location after requesting, use fallback
+        if (coordinates == null) {
+          print('📍 Still no location available, using default location');
+          coordinates = (40.7128, -74.0060); // Default NYC coordinates
+        }
       }
     }
 
@@ -83,11 +118,12 @@ class EnhancedHomeNotifier extends StateNotifier<EnhancedHomeState> {
     state = state.copyWith(
       isLoadingDeals: true,
       isLoadingBusinesses: true,
+      isLoadingExpiredDeals: true,
       error: null,
     );
 
     try {
-      // Load nearby deals and businesses in parallel using user's preferred radius
+      // Load nearby deals, businesses, and expired deals in parallel
       final results = await Future.wait([
         _searchService.getNearbyDealsWithDistance(
           userLatitude: latitude,
@@ -101,26 +137,31 @@ class EnhancedHomeNotifier extends StateNotifier<EnhancedHomeState> {
           radiusMiles: searchRadius,
           limit: 10,
         ),
+        ExpiredDealsApiService.getExpiredDeals(),
       ]);
 
       final nearbyDeals = results[0] as List<DealWithDistance>;
       final nearbyBusinesses = results[1] as List<BusinessWithDistance>;
+      final expiredDeals = results[2] as List<ExpiredDeal>;
 
       state = state.copyWith(
         nearbyDeals: nearbyDeals,
         nearbyBusinesses: nearbyBusinesses,
+        expiredDeals: expiredDeals.take(10).toList(), // Limit to 10 for horizontal scroll
         isLoadingDeals: false,
         isLoadingBusinesses: false,
+        isLoadingExpiredDeals: false,
         error: null,
       );
 
-      print('✅ Loaded ${nearbyDeals.length} nearby deals and ${nearbyBusinesses.length} businesses within ${searchRadius} miles');
+      print('✅ Loaded ${nearbyDeals.length} nearby deals, ${nearbyBusinesses.length} businesses, and ${expiredDeals.length} expired deals');
 
     } catch (e) {
       print('❌ Error loading nearby content: $e');
       state = state.copyWith(
         isLoadingDeals: false,
         isLoadingBusinesses: false,
+        isLoadingExpiredDeals: false,
         error: 'Failed to load nearby content: $e',
       );
     }

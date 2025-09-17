@@ -740,6 +740,10 @@ class EnhancedOrderCard extends ConsumerWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
+      case OrderStatus.pending:
+        return Colors.amber; // Amber - pending
+      case OrderStatus.paid:
+        return Colors.blue; // Blue - paid
       case OrderStatus.confirmed:
         return AppColors.primary; // Orange - action needed
       case OrderStatus.completed:

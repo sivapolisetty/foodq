@@ -13,7 +13,7 @@ final onboardingStatusProvider = FutureProvider.autoDispose<OnboardingStatus>((r
   }
 
   final response = await ApiService.get<OnboardingStatus>(
-    '/api/users/${currentUser.id}/onboarding-status',
+    '/users/${currentUser.id}/onboarding-status',
     fromJson: (data) => OnboardingStatus.fromJson(data),
   );
 

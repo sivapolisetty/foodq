@@ -1,0 +1,30 @@
+# Cloudflare Pages Redirects Configuration
+
+# Redirect www to non-www
+https://www.foodqapp.com/* https://foodqapp.com/:splat 301!
+
+# Redirect common paths
+/app/* https://apps.apple.com/app/foodq 302
+/android/* https://play.google.com/store/apps/details?id=com.foodq 302
+/ios/* https://apps.apple.com/app/foodq 302
+
+# Admin portal redirect
+/admin/* https://admin.foodqapp.com/:splat 302
+
+# API redirects to subdomain
+/api/* https://api.foodqapp.com/:splat 302
+
+# Business portal redirects
+/business/* /business 200
+/partner/* /business 302
+/partners/* /business 302
+
+# Support redirects
+/help/* /contact 302
+/support/* /contact 302
+
+# Legacy URL redirects (if migrating from another domain)
+# /old-path/* /new-path/:splat 301
+
+# Fallback for SPA-like behavior (if needed)
+/* /index.html 200

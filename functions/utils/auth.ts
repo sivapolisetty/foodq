@@ -183,17 +183,24 @@ export function getCorsHeaders(origin?: string) {
     'http://localhost:8788',
     'https://foodq.pages.dev',
     'https://foodq-admin.pages.dev',
-    'https://foodq-api.pages.dev',
-    'https://foodq.app'
+    'https://foodq-landing.pages.dev',
+    'https://foodqapp.com',
+    'https://api.foodqapp.com',
+    'https://admin.foodqapp.com',
+    'capacitor://localhost',  // For mobile app
+    'http://localhost',       // For mobile app
+    'https://localhost'       // For mobile app
   ];
   
-  const corsOrigin = origin && allowedOrigins.includes(origin) ? origin : '*';
+  // For mobile apps and non-web requests, always allow '*'
+  // This fixes CORS issues with mobile apps that don't send Origin header properly
+  const corsOrigin = '*';
   
   return {
     'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
-    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Credentials': 'false',  // Must be false when using '*'
     'Access-Control-Max-Age': '86400',
   };
 }

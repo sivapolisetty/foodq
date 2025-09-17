@@ -13,7 +13,7 @@ class RestaurantOnboardingService {
     try {
       // Use the specific user endpoint to get user's applications
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/restaurant-onboarding-requests/user/$userId'),
+        Uri.parse(ApiConfig.restaurantOnboardingRequestByUserUrl(userId)),
         headers: ApiConfig.headersWithOptionalAuth,
       );
 
@@ -62,7 +62,7 @@ class RestaurantOnboardingService {
       print('Submitting application: ${json.encode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/restaurant-onboarding-requests'),
+        Uri.parse(ApiConfig.restaurantOnboardingRequestsUrl),
         headers: ApiConfig.headersWithOptionalAuth,
         body: json.encode(requestBody),
       );
@@ -88,7 +88,7 @@ class RestaurantOnboardingService {
   Future<RestaurantOnboardingRequest?> getApplicationById(String applicationId) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/restaurant-onboarding-requests/$applicationId'),
+        Uri.parse(ApiConfig.restaurantOnboardingRequestByIdUrl(applicationId)),
         headers: ApiConfig.headers,
       );
 
@@ -112,7 +112,7 @@ class RestaurantOnboardingService {
   Future<List<RestaurantOnboardingRequest>> getAllApplications() async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/restaurant-onboarding-requests'),
+        Uri.parse(ApiConfig.restaurantOnboardingRequestsUrl),
         headers: ApiConfig.headers,
       );
 
@@ -159,9 +159,9 @@ class RestaurantOnboardingService {
 
       String endpoint;
       if (status == 'approved') {
-        endpoint = '$_baseUrl/api/restaurant-onboarding-requests/$applicationId/approve';
+        endpoint = ApiConfig.restaurantOnboardingRequestApproveUrl(applicationId);
       } else if (status == 'rejected') {
-        endpoint = '$_baseUrl/api/restaurant-onboarding-requests/$applicationId/reject';
+        endpoint = ApiConfig.restaurantOnboardingRequestRejectUrl(applicationId);
       } else {
         throw Exception('Invalid status: $status');
       }

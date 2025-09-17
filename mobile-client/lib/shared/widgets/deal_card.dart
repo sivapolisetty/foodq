@@ -11,6 +11,7 @@ class DealCard extends ConsumerWidget {
   final bool showDistance;
   final double? distance;
   final bool showCartControls;
+  final bool isExpired;
 
   const DealCard({
     super.key,
@@ -19,6 +20,7 @@ class DealCard extends ConsumerWidget {
     this.showDistance = false,
     this.distance,
     this.showCartControls = true,
+    this.isExpired = false,
   });
 
   @override
@@ -35,30 +37,72 @@ class DealCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Deal Image
-            Container(
-              height: 160,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
+                // Deal Image
+                Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    color: Colors.grey[200],
+                  ),
+                  child: Stack(
+                    children: [
+                      deal.imageUrl != null
+                          ? ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                              child: ColorFiltered(
+                                colorFilter: isExpired
+                                    ? const ColorFilter.matrix([
+                                        0.2126, 0.7152, 0.0722, 0, 0,
+                                        0.2126, 0.7152, 0.0722, 0, 0,
+                                        0.2126, 0.7152, 0.0722, 0, 0,
+                                        0, 0, 0, 1, 0,
+                                      ])
+                                    : const ColorFilter.matrix([
+                                        1, 0, 0, 0, 0,
+                                        0, 1, 0, 0, 0,
+                                        0, 0, 1, 0, 0,
+                                        0, 0, 0, 1, 0,
+                                      ]),
+                                child: Image.network(
+                                  deal.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _buildPlaceholderImage(),
+                                ),
+                              ),
+                            )
+                          : _buildPlaceholderImage(),
+                      // Expired overlay
+                      if (isExpired)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.4),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'EXPIRED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                color: Colors.grey[200],
-              ),
-              child: deal.imageUrl != null
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                      child: Image.network(
-                        deal.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildPlaceholderImage(),
-                      ),
-                    )
-                  : _buildPlaceholderImage(),
-            ),
 
             // Deal Content
             Padding(

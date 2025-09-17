@@ -4,7 +4,7 @@ import '../models/food_library_item.dart';
 import '../../core/config/api_config.dart';
 
 class FoodLibraryService {
-  static String get _apiEndpoint => '${ApiConfig.baseUrl}/api/admin/food-library';
+  static String get _apiEndpoint => '${ApiConfig.baseUrl}/admin/food-library';
 
   /// Search food library items
   Future<List<FoodLibraryItem>> searchFoodLibraryItems({

@@ -66,7 +66,7 @@ class AuthService {
 
       // Create profile via API instead of direct database call
       final response = await ApiService.post<Map<String, dynamic>>(
-        '/api/users',
+        '/users',
         body: profileData,
       );
       
@@ -99,7 +99,7 @@ class AuthService {
 
       // Update role via API
       final response = await ApiService.put<Map<String, dynamic>>(
-        '/api/users/${currentUser.id}',
+        '/users/${currentUser.id}',
         body: {
           'role': newRole.value,
         },
@@ -173,7 +173,7 @@ class AuthService {
   Future<AppUser?> _getUserProfile(String userId) async {
     try {
       final response = await ApiService.get<Map<String, dynamic>>(
-        '/api/users/$userId',
+        '/users/$userId',
       );
 
       if (!response.success || response.data == null) {
@@ -213,7 +213,7 @@ class AuthService {
 
       // Update profile via API
       final response = await ApiService.put<Map<String, dynamic>>(
-        '/api/users/${currentUser.id}',
+        '/users/${currentUser.id}',
         body: updates,
       );
       

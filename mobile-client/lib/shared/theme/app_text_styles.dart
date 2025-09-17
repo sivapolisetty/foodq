@@ -111,7 +111,60 @@ class AppTextStyles {
     height: 1.33,
   );
 
-  // GraBeat Specific Styles
+  // Food-Specific Emotional Typography
+  
+  // Appetite & Hunger Styles
+  static const TextStyle hungryCTA = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+    height: 1.2,
+    // Slightly condensed for urgency
+  );
+
+  static const TextStyle comfortingBody = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.3,
+    height: 1.6,
+    // Relaxed reading for descriptions
+  );
+
+  static const TextStyle savingsPrice = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.0,
+    height: 1.0,
+    // Impact pricing display
+  );
+  
+  // FOMO & Urgency Typography
+  static const TextStyle urgentAction = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.5,
+    height: 1.25,
+    // Spaced for emphasis
+  );
+  
+  static const TextStyle timeLeft = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 1.0,
+    height: 1.2,
+    // Tracking for tension
+  );
+  
+  static const TextStyle missedOpportunity = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.2,
+    height: 1.4,
+    fontStyle: FontStyle.italic,
+    // Regretful styling
+  );
+
+  // Legacy GraBeat Styles (kept for compatibility)
   static const TextStyle priceOriginal = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,

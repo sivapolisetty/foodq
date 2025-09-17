@@ -786,6 +786,10 @@ class OrderDetailsScreen extends ConsumerWidget {
 
   Color _getStatusColor() {
     switch (order.status) {
+      case OrderStatus.pending:
+        return Colors.amber; // Amber - pending
+      case OrderStatus.paid:
+        return Colors.blue; // Blue - paid
       case OrderStatus.confirmed:
         return Colors.orange; // Orange - action needed
       case OrderStatus.completed:
@@ -797,6 +801,10 @@ class OrderDetailsScreen extends ConsumerWidget {
 
   IconData _getStatusIcon() {
     switch (order.status) {
+      case OrderStatus.pending:
+        return Icons.hourglass_empty; // Hourglass for pending
+      case OrderStatus.paid:
+        return Icons.payment; // Payment icon for paid
       case OrderStatus.confirmed:
         return Icons.qr_code; // QR code icon for verification
       case OrderStatus.completed:

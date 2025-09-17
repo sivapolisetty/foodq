@@ -75,7 +75,7 @@ class AddressService {
       print('🔍 PLACES: Fetching address suggestions for: $input');
       print('🌐 PLACES: API Base URL: ${ApiConfig.baseUrl}');
       
-      final url = Uri.parse('${ApiConfig.baseUrl}/api/places/autocomplete');
+      final url = Uri.parse(ApiConfig.placesAutocompleteUrl);
       final queryParams = {
         'input': input,
         'language': 'en',
@@ -144,7 +144,7 @@ class AddressService {
     try {
       print('🔍 [SERVICE] Fetching place details for: $placeId');
       
-      final url = Uri.parse('${ApiConfig.baseUrl}/api/places/details');
+      final url = Uri.parse(ApiConfig.placesDetailsUrl);
       final queryParams = {
         'place_id': placeId,
       };

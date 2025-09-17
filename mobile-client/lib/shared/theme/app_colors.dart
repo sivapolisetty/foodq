@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors (Vibrant Green Theme for GraBeat)
-  static const Color primary = Color(0xFF2E7D32); // Deep green
-  static const Color primaryLight = Color(0xFF4CAF50); // Lighter green
-  static const Color primaryDark = Color(0xFF1B5E20); // Darker green
+  // Primary Colors (Fresh Green)
+  static const Color primary = Color(0xFF4CAF50); // Fresh, natural green
+  static const Color primaryLight = Color(0xFF66BB6A); // Lighter fresh green
+  static const Color primaryDark = Color(0xFF388E3C); // Deeper green
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color primaryContainer = Color(0xFFE8F5E8);
   static const Color onPrimaryContainer = Color(0xFF1B5E20);
 
-  // Secondary Colors (Complementary orange/amber)
-  static const Color secondary = Color(0xFFFF8F00); // Vibrant orange
-  static const Color secondaryLight = Color(0xFFFFC107); // Amber
-  static const Color secondaryDark = Color(0xFFE65100); // Dark orange
+  // Secondary Colors (Warm Orange for accent)
+  static const Color secondary = Color(0xFFFF6B35); // Warm, appetizing orange
+  static const Color secondaryLight = Color(0xFFFF8A50); // Lighter orange
+  static const Color secondaryDark = Color(0xFFE55100); // Deeper orange
   static const Color onSecondary = Color(0xFFFFFFFF);
   static const Color secondaryContainer = Color(0xFFFFF3E0);
-  static const Color onSecondaryContainer = Color(0xFFE65100);
+  static const Color onSecondaryContainer = Color(0xFFBF360C);
 
   // Background Colors
   static const Color background = Color(0xFFFAFAFA); // Very light gray
@@ -57,7 +57,7 @@ class AppColors {
   // Inverse Colors
   static const Color inverseSurface = Color(0xFF313033);
   static const Color inverseOnSurface = Color(0xFFF4EFF4);
-  static const Color inversePrimary = Color(0xFF81C784);
+  static const Color inversePrimary = Color(0xFF66BB6A); // Light green for inverse
 
   // Shadow and Elevation
   static const Color shadow = Color(0xFF000000);
@@ -71,12 +71,25 @@ class AppColors {
   static const Color darkSurfaceVariant = Color(0xFF2D2D2D);
   static const Color darkOnSurfaceVariant = Color(0xFFCAC4D0);
 
-  // GraBeat Specific Colors
-  static const Color discountRed = Color(0xFFE53935);
-  static const Color discountGreen = Color(0xFF43A047);
-  static const Color savingsGold = Color(0xFFFFC107);
-  static const Color foodOrange = Color(0xFFFF7043);
-  static const Color freshGreen = Color(0xFF66BB6A);
+  // Food Psychology Colors
+  static const Color appetiteOrange = Color(0xFFFF6B35);     // Warm, appetizing
+  static const Color freshGreen = Color(0xFF4CAF50);         // Fresh ingredients  
+  static const Color richBrown = Color(0xFF8D6E63);          // Earthy, organic
+  static const Color creamyWhite = Color(0xFFFFF8E1);        // Creamy, soft
+  static const Color savoryRed = Color(0xFFE57373);          // Savings, urgency
+  static const Color goldenYellow = Color(0xFFFFB74D);       // Premium, deals
+  
+  // Semantic Food Colors
+  static const Color hungerRed = Color(0xFFFF5722);          // Urgent hunger
+  static const Color satisfiedGreen = Color(0xFF66BB6A);     // Satisfied, healthy
+  static const Color premiumGold = Color(0xFFFFD54F);        // Premium items
+  static const Color discountPurple = Color(0xFF9C27B0);     // Special discounts
+  
+  // FOMO & Urgency Colors
+  static const Color urgentPulse = Color(0xFFFF1744);        // Critical urgency
+  static const Color missedGray = Color(0xFF9E9E9E);         // Missed opportunities
+  static const Color almostGone = Color(0xFFFF9800);         // Almost sold out
+  static const Color limitedTime = Color(0xFFE91E63);        // Limited time offers
 
   // Gradient Colors
   static const LinearGradient primaryGradient = LinearGradient(

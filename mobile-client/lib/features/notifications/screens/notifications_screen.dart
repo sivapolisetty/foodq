@@ -6,6 +6,7 @@ import '../models/notification.dart';
 import '../widgets/notification_tile.dart';
 import '../widgets/notification_filter_chips.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/theme/app_colors.dart';
 import '../../../shared/models/app_user.dart';
 import '../../home/widgets/custom_bottom_nav.dart';
 import '../../auth/widgets/production_auth_wrapper.dart';
@@ -55,7 +56,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +127,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     if (state.isLoading && state.notifications.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
         ),
       );
     }
@@ -162,7 +163,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             ElevatedButton(
               onPressed: () => ref.read(notificationProvider(userId).notifier).refreshNotifications(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Retry'),
@@ -200,7 +201,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             child: Padding(
               padding: EdgeInsets.all(16),
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ),
           );
@@ -245,13 +246,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               size: 64,
-              color: AppTheme.primaryColor.withOpacity(0.6),
+              color: AppColors.primary.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 24),

@@ -1,69 +1,111 @@
-# React + TypeScript + Vite
+# FoodQ Admin Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Admin portal for FoodQ app management, hosted at `admin.foodqapp.com`.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This is a React + TypeScript + Vite application that provides administrative functionality for the FoodQ platform, including:
 
-## Expanding the ESLint configuration
+- Restaurant business onboarding management
+- Food library content management
+- Dashboard analytics and insights
+- User management and oversight
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Technology Stack
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Authentication**: Supabase Auth
+- **Backend**: Supabase + Cloudflare Workers
+- **Deployment**: Cloudflare Pages
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The app uses Supabase for authentication and data management. Environment variables are configured in `wrangler.toml`:
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- `VITE_SUPABASE_URL`: Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key
+
+## Features
+
+### Authentication
+- Google OAuth integration
+- Protected routes with role-based access
+- Automatic session management
+
+### Business Management
+- Restaurant onboarding workflow
+- Business verification and approval
+- Business profile management
+
+### Food Library
+- Menu item management
+- Image upload and optimization
+- Content categorization
+
+### Dashboard
+- Analytics and metrics
+- User activity monitoring
+- Performance insights
+
+## Deployment
+
+The admin portal is deployed to Cloudflare Pages and accessible at `admin.foodqapp.com`.
+
+```bash
+# Deploy to Cloudflare Pages
+npm run build
+wrangler pages deploy dist
 ```
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── components/     # Reusable UI components
+├── pages/         # Route components
+├── hooks/         # Custom React hooks
+├── services/      # API service layer
+├── config/        # Configuration files
+└── lib/           # Utility libraries
+```
+
+### Code Style
+
+- ESLint configuration for React + TypeScript
+- Consistent code formatting
+- Component-based architecture
+- Custom hooks for state management
+
+## Contributing
+
+1. Follow the existing code style and patterns
+2. Add appropriate tests for new features
+3. Update documentation as needed
+4. Ensure all builds pass before submitting PRs

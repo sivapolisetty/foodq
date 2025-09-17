@@ -6,11 +6,11 @@ import '../../auth/providers/auth_provider.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../../auth/widgets/restaurant_owner_cta_card.dart';
 import '../providers/enhanced_home_provider.dart';
-import '../../location/providers/location_provider.dart';
 import '../../location/widgets/location_header.dart';
 import '../widgets/business_card_widget.dart';
 import '../widgets/enhanced_deal_card.dart';
 import '../../cart/widgets/floating_cart_bar.dart';
+import '../../search/services/search_service.dart';
 
 
 class CustomerHomeScreen extends ConsumerStatefulWidget {
@@ -40,8 +40,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     super.dispose();
   }
 
-  void _loadInitialData() {
+  void _loadInitialData() async {
     print('🔄 Loading initial location-based data...');
+    
+    // Give a small delay to ensure location preferences are loaded
+    await Future.delayed(const Duration(milliseconds: 100));
+    
     ref.read(enhancedHomeProvider.notifier).loadNearbyContent();
   }
 
@@ -129,6 +133,11 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                   
                   // Location-based sections
                   _buildLocationBasedSections(enhancedHomeState),
+                  
+                  // Comprehensive deals overview (includes expired deals)
+                  _buildMissedDealsSection(),
+                  
+                  const SizedBox(height: 32),
                   
                   // Loading indicator
                   if (enhancedHomeState.isLoadingDeals || enhancedHomeState.isLoadingBusinesses)
@@ -899,6 +908,52 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   void _handleDealTap(String dealId) {
     // Navigate to deal details page
     context.go('/deal-details/$dealId');
+  }
+  
+  Widget _buildMissedDealsSection() {
+    print('🏗️ MISSED_DEALS: Building missed deals section');
+    final enhancedHomeState = ref.watch(enhancedHomeProvider);
+    
+    if (enhancedHomeState.expiredDeals.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Missed Deals',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF212121),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 380,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 20),
+            itemCount: enhancedHomeState.expiredDeals.length,
+            itemBuilder: (context, index) {
+              final expiredDeal = enhancedHomeState.expiredDeals[index];
+              return EnhancedDealCard(
+                dealWithDistance: DealWithDistance(
+                  deal: expiredDeal.deal,
+                  distanceInMiles: null, // No distance for expired deals
+                ),
+                onTap: () => _handleDealTap(expiredDeal.deal.id),
+                isExpired: true,
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildNoUserState() {

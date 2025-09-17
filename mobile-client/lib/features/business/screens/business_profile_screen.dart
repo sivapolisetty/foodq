@@ -172,7 +172,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
   Future<Business?> _getBusinessById(String businessId) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/businesses/$businessId'),
+        Uri.parse(ApiConfig.businessByIdUrl(businessId)),
         headers: ApiConfig.headers,
       );
 

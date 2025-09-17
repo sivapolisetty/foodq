@@ -39,6 +39,11 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Build outputs
+/build/
+build/
+*/build/
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
@@ -64,6 +69,9 @@ ios/Flutter/flutter_assets/
 ios/Flutter/flutter_export_environment.sh
 ios/ServiceDefinitions.json
 ios/Runner/GeneratedPluginRegistrant.*
+ios/build/
+ios/*.ipa
+*.ipa
 
 # Android
 android/.gradle/
@@ -74,6 +82,38 @@ android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 # Coverage
 coverage/
 *.lcov
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.config.dart
+
+# Firebase
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+firebase_options.dart
+
+# Supabase
+/supabase/.env
+
+# API keys and secrets (add your specific files)
+android/key.properties
+ios/Runner/Info.plist.backup
+
+# Test coverage
+test/coverage_helper_test.dart
+
+# Temporary files
+*.tmp
+*.temp
+
+# Fastlane
+ios/fastlane/report.xml
+android/fastlane/report.xml
+
+# FVM
+.fvm/
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages

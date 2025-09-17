@@ -6,7 +6,7 @@ class BusinessService {
   Future<Business?> getBusinessById(String businessId) async {
     try {
       final response = await ApiService.get<dynamic>(
-        '/api/businesses/$businessId',
+        '/businesses/$businessId',
       );
 
       if (response.success && response.data != null) {
@@ -34,7 +34,7 @@ class BusinessService {
   Future<Business?> updateBusiness(Business business) async {
     try {
       final response = await ApiService.put<dynamic>(
-        '/api/businesses/${business.id}',
+        '/businesses/${business.id}',
         body: business.toJson(),
       );
 
@@ -80,7 +80,7 @@ class BusinessService {
   Future<String?> uploadBusinessBanner(String filePath) async {
     try {
       final response = await ApiService.uploadFile<dynamic>(
-        '/api/upload',
+        '/upload',
         filePath,
         'file',
         fromJson: (data) => data,
@@ -100,7 +100,7 @@ class BusinessService {
   Future<Business?> updateBusinessBanner(String businessId, String bannerUrl) async {
     try {
       final response = await ApiService.put<dynamic>(
-        '/api/businesses/$businessId',
+        '/businesses/$businessId',
         body: {'cover_image_url': bannerUrl},
       );
 

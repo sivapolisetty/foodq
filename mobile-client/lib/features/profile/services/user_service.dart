@@ -5,7 +5,7 @@ import '../../../shared/models/app_user.dart';
 /// Service for managing users (both mock and authenticated)
 /// Handles CRUD operations for the unified user system
 class UserService {
-  static const String _endpoint = '/api/users'; // Worker handles app_users table internally
+  static const String _endpoint = '/users'; // Worker handles app_users table internally
 
   /// Get all users
   Future<List<AppUser>> getAllUsers() async {
@@ -95,7 +95,7 @@ class UserService {
 
       // Get onboarding status to find business ID
       final onboardingResponse = await ApiService.get<dynamic>(
-        '/api/users/$userId/onboarding-status',
+        '/users/$userId/onboarding-status',
         fromJson: (data) => data,
       );
 
@@ -112,7 +112,7 @@ class UserService {
             if (businessName != null) {
               // Get business ID by querying businesses owned by the user
               final businessResponse = await ApiService.get<dynamic>(
-                '/api/businesses',
+                '/businesses',
                 queryParameters: {
                   'owner_id': user.id, // Query by owner_id to find businesses owned by this user
                   'limit': '1'

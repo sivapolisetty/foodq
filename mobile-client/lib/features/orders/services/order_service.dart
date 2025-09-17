@@ -4,7 +4,7 @@ import '../../../shared/models/order.dart';
 
 /// Service for managing orders (pick-up only)
 class OrderService {
-  static const String _endpoint = '/api/orders';
+  static const String _endpoint = '/orders';
 
   /// Create a new order
   Future<Order> createOrder(Map<String, dynamic> orderData) async {
@@ -134,6 +134,52 @@ class OrderService {
       debugPrint('🛒 OrderService: Exception - $e');
       debugPrint('🛒 OrderService: Stack trace - $stackTrace');
       throw Exception('Failed to load orders: $e');
+    }
+  }
+
+  /// Get orders pending confirmation for a business (paid status)
+  Future<List<Order>> getOrdersPendingConfirmation(String businessId) async {
+    try {
+      debugPrint('🔍 OrderService: Getting pending confirmation orders for business: $businessId');
+      
+      final response = await ApiService.get<dynamic>(
+        '$_endpoint?business_id=$businessId&status=paid',
+        fromJson: (data) => data,
+      );
+      
+      if (response.success && response.data != null) {
+        List<dynamic> orders = [];
+        
+        if (response.data is List) {
+          orders = response.data as List<dynamic>;
+        } else if (response.data is Map<String, dynamic>) {
+          final responseMap = response.data as Map<String, dynamic>;
+          if (responseMap.containsKey('data')) {
+            var dataValue = responseMap['data'];
+            if (dataValue is List) {
+              orders = dataValue;
+            }
+          }
+        }
+        
+        final parsedOrders = <Order>[];
+        for (final orderData in orders) {
+          if (orderData is Map<String, dynamic>) {
+            final sanitizedData = _sanitizeOrderData(orderData);
+            final order = Order.fromJson(sanitizedData);
+            parsedOrders.add(order);
+          }
+        }
+        
+        debugPrint('🔍 OrderService: Found ${parsedOrders.length} orders pending confirmation');
+        return parsedOrders;
+      }
+      
+      debugPrint('🔍 OrderService: Failed to get pending orders: ${response.error}');
+      throw Exception('Failed to load pending orders: ${response.error}');
+    } catch (e, stackTrace) {
+      debugPrint('🔍 OrderService: Exception getting pending orders: $e');
+      throw Exception('Failed to load pending orders: $e');
     }
   }
 
@@ -296,9 +342,78 @@ class OrderService {
     return updateOrderStatus(orderId, OrderStatus.cancelled);
   }
 
-  /// Confirm an order (business side)
+  /// Mark payment as completed (moves order from pending -> paid)
+  Future<Order> markPaymentCompleted(String orderId) async {
+    try {
+      debugPrint('💳 OrderService: Marking payment completed for order: $orderId');
+      
+      final response = await ApiService.put<dynamic>(
+        '$_endpoint/$orderId',
+        body: {
+          'status': OrderStatus.paid.name,
+          'payment_status': PaymentStatus.paid.name,
+        },
+        fromJson: (data) => data,
+      );
+
+      if (response.success && response.data != null) {
+        Map<String, dynamic> orderData;
+        
+        if (response.data is Map<String, dynamic>) {
+          final responseMap = response.data as Map<String, dynamic>;
+          orderData = responseMap.containsKey('data') 
+              ? responseMap['data'] as Map<String, dynamic>
+              : responseMap;
+        } else {
+          throw Exception('Invalid response format');
+        }
+        
+        final sanitizedData = _sanitizeOrderData(orderData);
+        return Order.fromJson(sanitizedData);
+      }
+      throw Exception('Failed to mark payment completed: ${response.error}');
+    } catch (e, stackTrace) {
+      debugPrint('💳 OrderService: Mark payment completed error: $e');
+      debugPrint('💳 OrderService: Stack trace: $stackTrace');
+      throw Exception('Failed to mark payment completed: $e');
+    }
+  }
+
+  /// Confirm an order (restaurant side - moves order from paid -> confirmed)
   Future<Order> confirmOrder(String orderId) async {
-    return updateOrderStatus(orderId, OrderStatus.confirmed);
+    try {
+      debugPrint('✅ OrderService: Restaurant confirming order: $orderId');
+      
+      final response = await ApiService.put<dynamic>(
+        '$_endpoint/$orderId',
+        body: {
+          'status': OrderStatus.confirmed.name,
+          'confirmed_at': DateTime.now().toIso8601String(),
+        },
+        fromJson: (data) => data,
+      );
+
+      if (response.success && response.data != null) {
+        Map<String, dynamic> orderData;
+        
+        if (response.data is Map<String, dynamic>) {
+          final responseMap = response.data as Map<String, dynamic>;
+          orderData = responseMap.containsKey('data') 
+              ? responseMap['data'] as Map<String, dynamic>
+              : responseMap;
+        } else {
+          throw Exception('Invalid response format');
+        }
+        
+        final sanitizedData = _sanitizeOrderData(orderData);
+        return Order.fromJson(sanitizedData);
+      }
+      throw Exception('Failed to confirm order: ${response.error}');
+    } catch (e, stackTrace) {
+      debugPrint('✅ OrderService: Confirm order error: $e');
+      debugPrint('✅ OrderService: Stack trace: $stackTrace');
+      throw Exception('Failed to confirm order: $e');
+    }
   }
 
   /// Mark order as ready for pickup
@@ -425,7 +540,7 @@ class OrderService {
     
     // Ensure string fields are not null for required fields
     if (sanitized['status'] == null) {
-      sanitized['status'] = 'confirmed'; // Default to confirmed in simplified flow
+      sanitized['status'] = 'pending'; // Default to pending in new flow
     }
     
     if (sanitized['payment_method'] == null) {
@@ -433,7 +548,7 @@ class OrderService {
     }
     
     if (sanitized['payment_status'] == null) {
-      sanitized['payment_status'] = 'paid'; // Default to paid for simplified flow
+      sanitized['payment_status'] = 'pending'; // Default to pending
     }
     
     // Convert numeric fields that might be strings
@@ -541,7 +656,7 @@ class OrderService {
       }
       
       final response = await ApiService.post<Map<String, dynamic>>(
-        '/api/orders/verify',
+        '/orders/verify',
         body: requestBody,
         fromJson: (data) => data as Map<String, dynamic>,
       );
