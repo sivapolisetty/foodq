@@ -301,6 +301,21 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return errorResponse('Missing pricing: provide either original_price/discounted_price or price', 400, request, env);
     }
     
+    // Validate and set expires_at - required for future_expiration constraint
+    let expiresAt = dealData.expires_at;
+    if (!expiresAt) {
+      // Default to 24 hours from now if not provided
+      const defaultExpiry = new Date();
+      defaultExpiry.setHours(defaultExpiry.getHours() + 24);
+      expiresAt = defaultExpiry.toISOString();
+    } else {
+      // Validate that provided expiry is in the future
+      const expiryDate = new Date(expiresAt);
+      if (expiryDate <= new Date()) {
+        return errorResponse('expires_at must be in the future', 400, request, env);
+      }
+    }
+    
     // Verify business exists and user has access (simplified for API key auth)
     const { data: business, error: businessError } = await supabase
       .from('businesses')
@@ -317,6 +332,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       ...dealData,
       image_url: uploadedImageUrl || dealData.image_url || null,
       status: dealData.status || 'active',
+      expires_at: expiresAt,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

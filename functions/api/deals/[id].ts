@@ -80,6 +80,14 @@ export async function onRequestPut(context: {
     const updates = await request.json();
     updates.updated_at = new Date().toISOString();
     
+    // Validate expires_at if being updated
+    if (updates.expires_at) {
+      const expiryDate = new Date(updates.expires_at);
+      if (expiryDate <= new Date()) {
+        return createErrorResponse('expires_at must be in the future', 400, corsHeaders);
+      }
+    }
+    
     // Check if user owns the business that owns this deal (unless using API key)
     if (!auth.isApiKeyAuth) {
       const { data: deal, error: checkError } = await supabase
@@ -128,6 +136,10 @@ export async function onRequestDelete(context: {
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
   const dealId = params.id;
   
+  // Handle CORS preflight
+  const corsResponse = handleCors(request, env);
+  if (corsResponse) return corsResponse;
+  
   try {
     const auth = await validateAuth(request, env);
     
@@ -155,6 +167,7 @@ export async function onRequestDelete(context: {
       }
     }
 
+    // Delete: Permanently remove the deal
     const { error } = await supabase
       .from('deals')
       .delete()

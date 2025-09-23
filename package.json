@@ -22,7 +22,7 @@
     "build": "npm run build:functions",
     "build:functions": "mkdir -p dist/_functions && cp -r functions/* dist/_functions/",
     "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop", 
+    "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "supabase:check": "supabase status || supabase start",
     "supabase:reset": "supabase db reset",
@@ -36,6 +36,8 @@
     "wrangler": "^3.78.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4"
+    "@supabase/supabase-js": "^2.57.4",
+    "openai": "^5.23.0",
+    "uuid": "^13.0.0"
   }
 }

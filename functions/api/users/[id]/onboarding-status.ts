@@ -93,17 +93,6 @@ export async function onRequestGet(context: {
     const isApproved = restaurantRequest && restaurantRequest.status === 'approved';
     const hasActiveBusiness = Boolean(businessData || isApproved); // Either has business record OR is approved
     
-    console.log('Debug onboarding logic:', {
-      userId,
-      userType: userData?.user_type,
-      hasRestaurantRequest: !!restaurantRequest,
-      restaurantStatus: restaurantRequest?.status,
-      hasPendingRequest,
-      isApproved,
-      businessData: !!businessData,
-      hasActiveBusiness
-    });
-    
     // Determine if needs onboarding
     let needsOnboarding = true; // Default to true
     if (userData.user_type === 'customer') {
@@ -117,6 +106,26 @@ export async function onRequestGet(context: {
     } else if (userData.user_type === 'business_pending') {
       needsOnboarding = !restaurantRequest;
     }
+    
+    console.log('🔍 Debug onboarding logic:', {
+      userId,
+      userType: userData?.user_type,
+      userBusinessId: userData?.business_id,
+      hasRestaurantRequest: !!restaurantRequest,
+      restaurantStatus: restaurantRequest?.status,
+      restaurantId: restaurantRequest?.restaurant_id,
+      hasPendingRequest,
+      isApproved,
+      businessData: !!businessData,
+      businessDataDetails: businessData ? {
+        id: businessData.id,
+        name: businessData.name,
+        is_approved: businessData.is_approved,
+        onboarding_completed: businessData.onboarding_completed
+      } : null,
+      hasActiveBusiness,
+      finalNeedsOnboarding: needsOnboarding
+    });
 
     const status = {
       needs_onboarding: needsOnboarding,
@@ -134,7 +143,14 @@ export async function onRequestGet(context: {
         is_approved: businessData.is_approved || false,
         onboarding_completed: businessData.onboarding_completed || false,
         created_at: businessData.created_at
-      } : null
+      } : (isApproved && restaurantRequest ? {
+        // If no business record but has approved request, create a virtual business status
+        id: restaurantRequest.restaurant_id || 'pending',
+        name: restaurantRequest.restaurant_name,
+        is_approved: true,
+        onboarding_completed: true,
+        created_at: restaurantRequest.updated_at
+      } : null)
     };
 
 

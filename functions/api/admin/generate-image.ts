@@ -79,7 +79,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       });
       
       // Use custom domain for CDN
-      const cdnUrl = `https://cdn.foodqapp.com/${r2Key}`;
+      const cdnUrl = `https://foodq-cdn.sivapolisetty813.workers.dev/${r2Key}`;
       
       return { r2Key, cdnUrl };
     };

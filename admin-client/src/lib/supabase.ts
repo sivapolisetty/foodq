@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 // Environment-based configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://zobhorsszzthyljriiim.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYmhvcnNzenp0aHlsanJpaWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5ODIzNzYsImV4cCI6MjA2OTU1ODM3Nn0.91GlHZxmJGg5E-T2iR5rzgLrQJzNPNW-SzS2VhqlymA';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://grabeat-api.pages.dev';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://foodq.pages.dev';
 const environment = import.meta.env.VITE_ENVIRONMENT || 'production';
 
 console.log('Admin Client Environment Configuration:');
@@ -32,7 +32,7 @@ const checkAdminStatus = async (email: string) => {
   console.log(`Checking admin status for email: ${email}`);
   
   // Call the API endpoint (environment-aware)
-  const apiUrl = `${apiBaseUrl}/api/admin/check`;
+  const apiUrl = `${apiBaseUrl}/admin/check`;
   
   const response = await fetch(apiUrl, {
     method: 'POST',

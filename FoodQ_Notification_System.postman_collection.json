@@ -1,0 +1,1216 @@
+{
+  "info": {
+    "name": "FoodQ Notification System",
+    "description": "Complete testing suite for the event-driven notification system with FCM and location-based features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{supabase_service_role_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-project.supabase.co/rest/v1",
+      "type": "string"
+    },
+    {
+      "key": "webhook_url",
+      "value": "https://api.foodq.com/api/notifications/process",
+      "type": "string"
+    },
+    {
+      "key": "supabase_url",
+      "value": "https://your-project.supabase.co",
+      "type": "string"
+    },
+    {
+      "key": "supabase_anon_key",
+      "value": "your_anon_key_here",
+      "type": "string"
+    },
+    {
+      "key": "supabase_service_role_key",
+      "value": "your_service_role_key_here",
+      "type": "string"
+    },
+    {
+      "key": "webhook_secret",
+      "value": "your_webhook_secret_here",
+      "type": "string"
+    },
+    {
+      "key": "test_user_id",
+      "value": "test_user_123",
+      "type": "string"
+    },
+    {
+      "key": "test_business_id",
+      "value": "test_business_456",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🗂️ Setup & Authentication",
+      "item": [
+        {
+          "name": "Health Check - Supabase",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_anon_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check - Webhook",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{webhook_url}}",
+              "host": ["{{webhook_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📍 Location Management",
+      "item": [
+        {
+          "name": "Create/Update User Home Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"location_type\": \"home\",\n  \"latitude\": 37.7749,\n  \"longitude\": -122.4194,\n  \"address\": \"123 Market St, San Francisco, CA 94105\",\n  \"notification_radius_km\": 5,\n  \"active\": true,\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"country\": \"US\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/user_locations",
+              "host": ["{{base_url}}"],
+              "path": ["user_locations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Location created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has location data\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('user_id');",
+                  "    pm.expect(jsonData).to.have.property('latitude');",
+                  "    pm.expect(jsonData).to.have.property('longitude');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Work Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"location_type\": \"work\",\n  \"latitude\": 37.7849,\n  \"longitude\": -122.4094,\n  \"address\": \"456 Mission St, San Francisco, CA 94105\",\n  \"notification_radius_km\": 3,\n  \"active\": true,\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"country\": \"US\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/user_locations",
+              "host": ["{{base_url}}"],
+              "path": ["user_locations"]
+            }
+          }
+        },
+        {
+          "name": "Find Users Near Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_latitude\": 37.7749,\n  \"p_longitude\": -122.4194,\n  \"p_radius_km\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rpc/find_users_near_location",
+              "host": ["{{base_url}}"],
+              "path": ["rpc", "find_users_near_location"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Function executed successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns nearby users\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+                  "    ",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0]).to.have.property('user_id');",
+                  "        pm.expect(jsonData[0]).to.have.property('distance_km');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔔 FCM Token Management",
+      "item": [
+        {
+          "name": "Register FCM Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{test_user_id}}\",\n  \"fcm_token\": \"{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}{{$randomAlphaNumeric}}\",\n  \"platform\": \"android\",\n  \"device_id\": \"device_{{$guid}}\",\n  \"device_model\": \"Pixel 7\",\n  \"device_name\": \"Test Device\",\n  \"app_version\": \"1.0.0\",\n  \"os_version\": \"Android 13\",\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/push_tokens",
+              "host": ["{{base_url}}"],
+              "path": ["push_tokens"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"FCM token registered\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.fcm_token) {",
+                  "    pm.environment.set('test_fcm_token', jsonData.fcm_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User Active Tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_user_id\": \"{{test_user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rpc/get_user_active_tokens",
+              "host": ["{{base_url}}"],
+              "path": ["rpc", "get_user_active_tokens"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Event Queue Tests",
+      "item": [
+        {
+          "name": "Create Order Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"ORDER_CREATED\",\n  \"event_name\": \"Test Order Created\",\n  \"payload\": {\n    \"orderId\": \"order_{{$guid}}\",\n    \"orderNumber\": \"{{$randomInt}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"Test Restaurant\",\n    \"businessOwnerId\": \"{{test_user_id}}\",\n    \"customerId\": \"customer_{{$guid}}\",\n    \"customerName\": \"Test Customer\",\n    \"customerEmail\": \"test@example.com\",\n    \"amount\": 25.99,\n    \"items\": [\n      {\n        \"name\": \"Test Burger\",\n        \"quantity\": 1,\n        \"price\": 15.99\n      },\n      {\n        \"name\": \"Test Fries\",\n        \"quantity\": 1,\n        \"price\": 5.99\n      },\n      {\n        \"name\": \"Test Drink\",\n        \"quantity\": 1,\n        \"price\": 4.01\n      }\n    ],\n    \"status\": \"pending\",\n    \"paymentMethod\": \"card\",\n    \"location\": {\n      \"latitude\": 37.7749,\n      \"longitude\": -122.4194,\n      \"address\": \"123 Test St, San Francisco, CA\"\n    }\n  },\n  \"metadata\": {\n    \"source\": \"postman_test\",\n    \"version\": \"1.0\",\n    \"timestamp\": \"{{$isoTimestamp}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/event_queue",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Event created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Event has ID and triggers webhook\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.environment.set('last_event_id', jsonData.id);",
+                  "});",
+                  "",
+                  "// Wait for webhook processing",
+                  "setTimeout(() => {}, 2000);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Order Confirmed Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"ORDER_CONFIRMED\",\n  \"event_name\": \"Test Order Confirmed\",\n  \"payload\": {\n    \"orderId\": \"order_{{$guid}}\",\n    \"orderNumber\": \"{{$randomInt}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"Test Restaurant\",\n    \"businessOwnerId\": \"business_owner_123\",\n    \"customerId\": \"{{test_user_id}}\",\n    \"customerName\": \"Test Customer\",\n    \"verificationCode\": \"{{$randomInt}}\",\n    \"qrCode\": \"QR_{{$guid}}\",\n    \"pickupTime\": \"{{$isoTimestamp}}\",\n    \"amount\": 25.99,\n    \"businessLogo\": \"https://example.com/logo.png\"\n  },\n  \"metadata\": {\n    \"source\": \"postman_test\",\n    \"version\": \"1.0\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/event_queue",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"]
+            }
+          }
+        },
+        {
+          "name": "Create Deal Event with Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"DEAL_CREATED\",\n  \"event_name\": \"Location Deal Test\",\n  \"payload\": {\n    \"dealId\": \"deal_{{$guid}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"Test Restaurant\",\n    \"businessOwnerId\": \"business_owner_123\",\n    \"title\": \"🍕 50% OFF Pizza Special!\",\n    \"description\": \"Limited time offer - get your favorite pizza at half price!\",\n    \"category\": \"pizza\",\n    \"originalPrice\": 20.00,\n    \"discountedPrice\": 10.00,\n    \"discount\": 50,\n    \"imageUrl\": \"https://example.com/pizza.jpg\",\n    \"quantityAvailable\": 50,\n    \"quantityTotal\": 50,\n    \"expiresAt\": \"{{$isoTimestamp}}\",\n    \"isActive\": true,\n    \"location\": {\n      \"latitude\": 37.7749,\n      \"longitude\": -122.4194,\n      \"address\": \"123 Pizza St, San Francisco, CA\",\n      \"city\": \"San Francisco\",\n      \"state\": \"CA\"\n    },\n    \"businessContact\": {\n      \"phone\": \"+1-555-123-4567\",\n      \"email\": \"orders@testrestaurant.com\"\n    }\n  },\n  \"metadata\": {\n    \"source\": \"postman_test\",\n    \"version\": \"1.0\",\n    \"notificationRadius\": 5\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/event_queue",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"]
+            }
+          }
+        },
+        {
+          "name": "Create Location-Based Deal Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"LOCATION_BASED_DEAL\",\n  \"event_name\": \"Daily deal digest test\",\n  \"payload\": {\n    \"userId\": \"{{test_user_id}}\",\n    \"userName\": \"Test User\",\n    \"userEmail\": \"test@example.com\",\n    \"userLocation\": {\n      \"latitude\": 37.7749,\n      \"longitude\": -122.4194,\n      \"address\": \"123 Market St, San Francisco, CA\",\n      \"city\": \"San Francisco\",\n      \"radiusKm\": 5\n    },\n    \"deals\": [\n      {\n        \"dealId\": \"deal_001\",\n        \"title\": \"Pizza Special\",\n        \"businessName\": \"Mario's Pizza\",\n        \"businessAddress\": \"456 Pizza Ave\",\n        \"discountPercent\": 30,\n        \"distance\": 0.8,\n        \"originalPrice\": 18.99,\n        \"discountedPrice\": 13.29,\n        \"imageUrl\": \"https://example.com/pizza.jpg\",\n        \"expiresAt\": \"{{$isoTimestamp}}\"\n      },\n      {\n        \"dealId\": \"deal_002\",\n        \"title\": \"Sushi Combo\",\n        \"businessName\": \"Tokyo Sushi\",\n        \"businessAddress\": \"789 Sushi St\",\n        \"discountPercent\": 25,\n        \"distance\": 1.2,\n        \"originalPrice\": 24.99,\n        \"discountedPrice\": 18.74,\n        \"imageUrl\": \"https://example.com/sushi.jpg\",\n        \"expiresAt\": \"{{$isoTimestamp}}\"\n      }\n    ],\n    \"dealCount\": 2\n  },\n  \"metadata\": {\n    \"source\": \"postman_test\",\n    \"version\": \"1.0\",\n    \"schedule\": \"manual_test\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/event_queue",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"]
+            }
+          }
+        },
+        {
+          "name": "Verify Event Processing",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/event_queue?id=eq.{{last_event_id}}&select=*",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "eq.{{last_event_id}}"
+                },
+                {
+                  "key": "select",
+                  "value": "*"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Event should be processed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);",
+                  "    pm.expect(jsonData[0].status).to.be.oneOf(['processing', 'processed']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🌐 Direct Webhook Tests",
+      "item": [
+        {
+          "name": "Test Webhook - Order Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Webhook-Secret",
+                "value": "{{webhook_secret}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Event-Type",
+                "value": "ORDER_CREATED"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{$guid}}\",\n  \"eventType\": \"ORDER_CREATED\",\n  \"eventName\": \"Test Order Created Direct\",\n  \"eventVersion\": \"1.0\",\n  \"payload\": {\n    \"orderId\": \"direct_order_{{$guid}}\",\n    \"orderNumber\": \"{{$randomInt}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"Direct Test Restaurant\",\n    \"businessOwnerId\": \"{{test_user_id}}\",\n    \"customerId\": \"customer_direct_123\",\n    \"customerName\": \"Direct Test Customer\",\n    \"customerEmail\": \"direct@example.com\",\n    \"amount\": 35.50,\n    \"items\": [\n      {\n        \"name\": \"Direct Burger\",\n        \"quantity\": 1,\n        \"price\": 18.99\n      },\n      {\n        \"name\": \"Direct Fries\",\n        \"quantity\": 1,\n        \"price\": 7.99\n      },\n      {\n        \"name\": \"Direct Shake\",\n        \"quantity\": 1,\n        \"price\": 8.52\n      }\n    ],\n    \"status\": \"pending\",\n    \"paymentMethod\": \"card\",\n    \"location\": {\n      \"latitude\": 37.7749,\n      \"longitude\": -122.4194,\n      \"address\": \"Direct Test Address\"\n    }\n  },\n  \"metadata\": {\n    \"source\": \"postman_direct\",\n    \"version\": \"1.0\"\n  },\n  \"timestamp\": \"{{$isoTimestamp}}\",\n  \"status\": \"pending\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webhook_url}}",
+              "host": ["{{webhook_url}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Webhook processed successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains success info\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData).to.have.property('eventType', 'ORDER_CREATED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Test Webhook - Order Confirmed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Webhook-Secret",
+                "value": "{{webhook_secret}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{$guid}}\",\n  \"eventType\": \"ORDER_CONFIRMED\",\n  \"eventName\": \"Order Confirmed Direct Test\",\n  \"payload\": {\n    \"orderId\": \"confirmed_order_{{$guid}}\",\n    \"customerId\": \"{{test_user_id}}\",\n    \"businessName\": \"Test Restaurant\",\n    \"verificationCode\": \"{{$randomInt}}\",\n    \"qrCode\": \"QR_{{$guid}}\",\n    \"pickupTime\": \"2024-12-25T12:30:00Z\",\n    \"businessLogo\": \"https://example.com/logo.png\"\n  },\n  \"metadata\": {\n    \"source\": \"postman_direct\"\n  },\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webhook_url}}",
+              "host": ["{{webhook_url}}"]
+            }
+          }
+        },
+        {
+          "name": "Test Webhook - Deal Created",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Webhook-Secret",
+                "value": "{{webhook_secret}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{$guid}}\",\n  \"eventType\": \"DEAL_CREATED\",\n  \"eventName\": \"Deal Created Direct Test\",\n  \"payload\": {\n    \"dealId\": \"direct_deal_{{$guid}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"Direct Deal Restaurant\",\n    \"title\": \"🎉 Direct 40% OFF Special!\",\n    \"description\": \"Amazing deal created directly via webhook!\",\n    \"discount\": 40,\n    \"originalPrice\": 25.00,\n    \"discountedPrice\": 15.00,\n    \"imageUrl\": \"https://example.com/direct-deal.jpg\",\n    \"quantityAvailable\": 100,\n    \"expiresAt\": \"2024-12-31T23:59:59Z\",\n    \"location\": {\n      \"latitude\": 37.7749,\n      \"longitude\": -122.4194,\n      \"address\": \"Direct Deal Address, SF\",\n      \"city\": \"San Francisco\",\n      \"state\": \"CA\"\n    }\n  },\n  \"metadata\": {\n    \"source\": \"postman_direct\",\n    \"notificationRadius\": 5\n  },\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{webhook_url}}",
+              "host": ["{{webhook_url}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Notification Queries",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?select=*&order=created_at.desc&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "*"
+                },
+                {
+                  "key": "order",
+                  "value": "created_at.desc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?recipient_id=eq.{{test_user_id}}&select=*&order=created_at.desc",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "recipient_id",
+                  "value": "eq.{{test_user_id}}"
+                },
+                {
+                  "key": "select",
+                  "value": "*"
+                },
+                {
+                  "key": "order",
+                  "value": "created_at.desc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{test_user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rpc/get_unread_notification_count",
+              "host": ["{{base_url}}"],
+              "path": ["rpc", "get_unread_notification_count"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_id\": \"{{notification_id_to_mark}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rpc/mark_notification_read",
+              "host": ["{{base_url}}"],
+              "path": ["rpc", "mark_notification_read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{test_user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rpc/mark_all_notifications_read",
+              "host": ["{{base_url}}"],
+              "path": ["rpc", "mark_all_notifications_read"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📈 Analytics & Monitoring",
+      "item": [
+        {
+          "name": "Get Delivery Statistics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_start_date\": \"2024-01-01T00:00:00Z\",\n  \"p_end_date\": \"{{$isoTimestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rpc/get_delivery_stats",
+              "host": ["{{base_url}}"],
+              "path": ["rpc", "get_delivery_stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Location Notification Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/location_notification_stats?select=*&order=notification_date.desc&limit=7",
+              "host": ["{{base_url}}"],
+              "path": ["location_notification_stats"],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "*"
+                },
+                {
+                  "key": "order",
+                  "value": "notification_date.desc"
+                },
+                {
+                  "key": "limit",
+                  "value": "7"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event Queue Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/event_queue?select=event_type,status,created_at&order=created_at.desc&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "event_type,status,created_at"
+                },
+                {
+                  "key": "order",
+                  "value": "created_at.desc"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Delivery Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/delivery_log?select=*&order=attempted_at.desc&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["delivery_log"],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "*"
+                },
+                {
+                  "key": "order",
+                  "value": "attempted_at.desc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 End-to-End Tests",
+      "item": [
+        {
+          "name": "Complete Order Flow Test",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set up test data",
+                  "pm.environment.set('test_order_id', 'e2e_order_' + pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.environment.set('test_customer_id', pm.variables.get('test_user_id'));",
+                  "pm.environment.set('test_business_owner_id', 'business_owner_' + pm.variables.replaceIn('{{$guid}}'));",
+                  "",
+                  "console.log('Starting complete order flow test...');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"ORDER_CREATED\",\n  \"event_name\": \"E2E Test - Order Created\",\n  \"payload\": {\n    \"orderId\": \"{{test_order_id}}\",\n    \"orderNumber\": \"{{$randomInt}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"E2E Test Restaurant\",\n    \"businessOwnerId\": \"{{test_business_owner_id}}\",\n    \"customerId\": \"{{test_customer_id}}\",\n    \"customerName\": \"E2E Test Customer\",\n    \"customerEmail\": \"e2e@example.com\",\n    \"amount\": 45.99,\n    \"items\": [\n      {\n        \"name\": \"E2E Burger\",\n        \"quantity\": 2,\n        \"price\": 15.99\n      },\n      {\n        \"name\": \"E2E Fries\",\n        \"quantity\": 2,\n        \"price\": 7.99\n      }\n    ],\n    \"status\": \"pending\",\n    \"paymentMethod\": \"card\",\n    \"location\": {\n      \"latitude\": 37.7749,\n      \"longitude\": -122.4194,\n      \"address\": \"E2E Test Address\"\n    }\n  },\n  \"metadata\": {\n    \"source\": \"e2e_test\",\n    \"version\": \"1.0\",\n    \"test_flow\": \"complete_order\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/event_queue",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Order created event successful\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Wait for webhook processing and then create order confirmed event",
+                  "setTimeout(() => {",
+                  "    const confirmEvent = {",
+                  "        url: pm.variables.get('base_url') + '/event_queue',",
+                  "        method: 'POST',",
+                  "        header: {",
+                  "            'apikey': pm.variables.get('supabase_service_role_key'),",
+                  "            'Content-Type': 'application/json'",
+                  "        },",
+                  "        body: {",
+                  "            mode: 'raw',",
+                  "            raw: JSON.stringify({",
+                  "                event_type: 'ORDER_CONFIRMED',",
+                  "                event_name: 'E2E Test - Order Confirmed',",
+                  "                payload: {",
+                  "                    orderId: pm.environment.get('test_order_id'),",
+                  "                    customerId: pm.environment.get('test_customer_id'),",
+                  "                    businessName: 'E2E Test Restaurant',",
+                  "                    verificationCode: '123456',",
+                  "                    qrCode: 'QR_E2E_TEST',",
+                  "                    pickupTime: new Date(Date.now() + 30*60*1000).toISOString(),",
+                  "                    amount: 45.99",
+                  "                },",
+                  "                metadata: {",
+                  "                    source: 'e2e_test',",
+                  "                    test_flow: 'complete_order'",
+                  "                }",
+                  "            })",
+                  "        }",
+                  "    };",
+                  "    ",
+                  "    pm.sendRequest(confirmEvent, function(err, response) {",
+                  "        console.log('Order confirmed event created');",
+                  "    });",
+                  "}, 3000);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Location-Based Deal Flow Test",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// First create user location, then create deal",
+                  "const locationRequest = {",
+                  "    url: pm.variables.get('base_url') + '/user_locations',",
+                  "    method: 'POST',",
+                  "    header: {",
+                  "        'apikey': pm.variables.get('supabase_service_role_key'),",
+                  "        'Content-Type': 'application/json'",
+                  "    },",
+                  "    body: {",
+                  "        mode: 'raw',",
+                  "        raw: JSON.stringify({",
+                  "            user_id: pm.variables.get('test_user_id'),",
+                  "            location_type: 'home',",
+                  "            latitude: 37.7749,",
+                  "            longitude: -122.4194,",
+                  "            address: 'E2E Test Home Address',",
+                  "            notification_radius_km: 5,",
+                  "            active: true",
+                  "        })",
+                  "    }",
+                  "};",
+                  "",
+                  "pm.sendRequest(locationRequest, function(err, response) {",
+                  "    console.log('User location set for E2E test');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"DEAL_CREATED\",\n  \"event_name\": \"E2E Location Deal Test\",\n  \"payload\": {\n    \"dealId\": \"e2e_deal_{{$guid}}\",\n    \"businessId\": \"{{test_business_id}}\",\n    \"businessName\": \"E2E Deal Restaurant\",\n    \"title\": \"🌟 E2E Test Deal - 60% OFF!\",\n    \"description\": \"End-to-end test deal with location targeting\",\n    \"discount\": 60,\n    \"originalPrice\": 30.00,\n    \"discountedPrice\": 12.00,\n    \"imageUrl\": \"https://example.com/e2e-deal.jpg\",\n    \"quantityAvailable\": 10,\n    \"expiresAt\": \"{{$isoTimestamp}}\",\n    \"location\": {\n      \"latitude\": 37.7759,\n      \"longitude\": -122.4184,\n      \"address\": \"E2E Deal Location (0.1km from user)\",\n      \"city\": \"San Francisco\",\n      \"state\": \"CA\"\n    }\n  },\n  \"metadata\": {\n    \"source\": \"e2e_test\",\n    \"notificationRadius\": 5,\n    \"test_flow\": \"location_based_deal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/event_queue",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Location-based deal created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "console.log('Location-based deal E2E test completed');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🧹 Cleanup & Utilities",
+      "item": [
+        {
+          "name": "Cleanup Test Events",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/event_queue?metadata->>source=eq.postman_test",
+              "host": ["{{base_url}}"],
+              "path": ["event_queue"],
+              "query": [
+                {
+                  "key": "metadata->>source",
+                  "value": "eq.postman_test"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cleanup Test Notifications",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?recipient_id=eq.{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "recipient_id",
+                  "value": "eq.{{test_user_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cleanup Test Locations",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user_locations?user_id=eq.{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user_locations"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "eq.{{test_user_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cleanup Test FCM Tokens",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_service_role_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/push_tokens?user_id=eq.{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["push_tokens"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "eq.{{test_user_id}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "console.log('Running FoodQ Notification Test: ' + pm.info.requestName);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+          "});",
+          "",
+          "pm.test('No server errors', function () {",
+          "    pm.response.to.not.have.status(500);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

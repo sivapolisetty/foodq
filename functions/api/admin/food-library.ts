@@ -12,6 +12,15 @@ import {
 } from '../../services/openai-food-generator.js';
 import { indianCuisineList } from '../../data/indian-cuisine-list.js';
 
+// Helper function to transform food library items with working CDN URLs
+function transformFoodItemWithCDNUrl(item: any) {
+  if (item && item.r2_image_key) {
+    // Reconstruct CDN URL from r2_image_key using working Worker CDN
+    item.cdn_url = `https://foodq-cdn.sivapolisetty813.workers.dev/${item.r2_image_key}`;
+  }
+  return item;
+}
+
 export async function onRequestOptions(context: { request: Request; env: Env }) {
   return handleCors(context.request, context.env);
 }
@@ -70,7 +79,10 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
     }
 
-    return createSuccessResponse(data || [], corsHeaders);
+    // Transform data to use working CDN URLs from r2_image_key
+    const transformedData = (data || []).map(transformFoodItemWithCDNUrl);
+
+    return createSuccessResponse(transformedData, corsHeaders);
   } catch (error: any) {
     return createErrorResponse(`Failed to fetch food library: ${error.message}`, 500, corsHeaders);
   }
@@ -118,7 +130,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
           return createErrorResponse(`Delete failed: ${error.message}`, 500, corsHeaders);
         }
 
-        return createSuccessResponse({ message: 'Item deleted successfully', item: data }, corsHeaders);
+        return createSuccessResponse({ message: 'Item deleted successfully', item: transformFoodItemWithCDNUrl(data) }, corsHeaders);
       }
       
       // Handle regular updates
@@ -146,7 +158,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse({ message: 'Item updated successfully', item: data }, corsHeaders);
+      return createSuccessResponse({ message: 'Item updated successfully', item: transformFoodItemWithCDNUrl(data) }, corsHeaders);
     }
     
     // Get OpenAI API key from environment
@@ -175,7 +187,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       });
       
       // Use custom domain for CDN
-      const cdnUrl = `https://cdn.foodqapp.com/${r2Key}`;
+      const cdnUrl = `https://foodq-cdn.sivapolisetty813.workers.dev/${r2Key}`;
       
       return { r2Key, cdnUrl };
     };
@@ -208,7 +220,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         return createErrorResponse(`Failed to save food item: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse(data, corsHeaders);
+      return createSuccessResponse(transformFoodItemWithCDNUrl(data), corsHeaders);
     }
 
     // Batch generation
@@ -300,7 +312,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         return createErrorResponse(`Delete failed: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse({ message: 'Item deleted successfully', item: data }, corsHeaders);
+      return createSuccessResponse({ message: 'Item deleted successfully', item: transformFoodItemWithCDNUrl(data) }, corsHeaders);
     }
 
     // Handle regular updates when itemId is present (for PUT requests routed to POST)
@@ -329,7 +341,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse({ message: 'Item updated successfully', item: data }, corsHeaders);
+      return createSuccessResponse({ message: 'Item updated successfully', item: transformFoodItemWithCDNUrl(data) }, corsHeaders);
     }
 
     // Manual update (no AI) - deprecated, kept for backward compatibility
@@ -353,7 +365,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         return createErrorResponse(`Update failed: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse(data, corsHeaders);
+      return createSuccessResponse(transformFoodItemWithCDNUrl(data), corsHeaders);
     }
 
     // Regenerate with AI
@@ -400,7 +412,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
           });
           
           // Generate CDN URL using custom domain
-          const cdnUrl = `https://cdn.foodqapp.com/${r2Key}`;
+          const cdnUrl = `https://foodq-cdn.sivapolisetty813.workers.dev/${r2Key}`;
           
           return { r2Key, cdnUrl };
         };
@@ -423,7 +435,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         return createErrorResponse(`Regeneration failed: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse(data, corsHeaders);
+      return createSuccessResponse(transformFoodItemWithCDNUrl(data), corsHeaders);
     }
 
     return createErrorResponse('Invalid update request', 400, corsHeaders);
