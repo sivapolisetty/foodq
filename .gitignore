@@ -4,13 +4,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Flutter
-mobile-client/build/
-mobile-client/.dart_tool/
-mobile-client/.packages
-mobile-client/.pub-cache/
-mobile-client/.pub/
-mobile-client/pubspec.lock
+# Flutter / Mobile Client (separate repository)
+mobile-client/
 
 # Environment variables
 .env
@@ -56,5 +51,3 @@ coverage/
 *.ipa
 *.aab
 *.app
-# iOS build files
-mobile-client/ios/build/
