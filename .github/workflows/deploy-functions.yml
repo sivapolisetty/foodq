@@ -34,7 +34,7 @@ jobs:
       run: |
         npx wrangler pages deploy functions \
           --project-name=foodq \
-          --compatibility-date=2023-05-18
+          --compatibility-date 2023-05-18
           
     - name: Deploy CDN Worker
       env:
@@ -43,7 +43,7 @@ jobs:
       run: |
         npx wrangler deploy cdn-worker.js \
           --name foodq-cdn \
-          --compatibility-date=2023-05-18
+          --compatibility-date 2023-05-18
           
     - name: Verify Deployment
       run: |
