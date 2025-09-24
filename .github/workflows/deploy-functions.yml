@@ -50,6 +50,15 @@ jobs:
         echo "Testing API endpoint..."
         curl -s https://foodq.pages.dev/api/health || echo "Health check failed"
         
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: deployment-logs
+        path: |
+          wrangler-output.log
+        retention-days: 7
+        
     - name: Send Deployment Notification
       if: success()
       run: |
