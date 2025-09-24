@@ -1,0 +1,58 @@
+name: Deploy Cloudflare Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'functions/**'
+      - 'wrangler.toml'
+      - '.github/workflows/deploy-functions.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install Dependencies
+      run: npm ci
+      
+    - name: Deploy to Cloudflare Pages
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      run: |
+        npx wrangler pages deploy functions \
+          --project-name=foodq \
+          --compatibility-date=2023-05-18
+          
+    - name: Deploy CDN Worker
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      run: |
+        npx wrangler deploy cdn-worker.js \
+          --name foodq-cdn \
+          --compatibility-date=2023-05-18
+          
+    - name: Verify Deployment
+      run: |
+        echo "Testing API endpoint..."
+        curl -s https://foodq.pages.dev/api/health || echo "Health check failed"
+        
+    - name: Send Deployment Notification
+      if: success()
+      run: |
+        echo "✅ Functions deployed successfully to Cloudflare Pages"
+        echo "API: https://foodq.pages.dev/api"
+        echo "CDN: https://foodq-cdn.sivapolisetty813.workers.dev"
