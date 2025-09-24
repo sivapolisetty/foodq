@@ -51,3 +51,6 @@ coverage/
 *.ipa
 *.aab
 *.app
+
+# MCP configuration (may contain sensitive tokens)
+.mcp.json
