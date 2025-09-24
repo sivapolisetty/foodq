@@ -1,6 +1,7 @@
 import { getAuthFromRequest, verifyToken, handleCors, jsonResponse, errorResponse } from '../../utils/auth.js';
 import { getDBClient } from '../../utils/db-client.js';
 import { Env } from '../../utils/supabase.js';
+import { createE2ELogger } from '../../utils/e2e-logger.js';
 
 export async function onRequestOptions(context: { request: Request; env: Env }) {
   return handleCors(context.request, context.env);
@@ -8,12 +9,14 @@ export async function onRequestOptions(context: { request: Request; env: Env }) 
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { request, env } = context;
+  const logger = createE2ELogger(request, env);
   
   // Handle CORS preflight
   const corsResponse = handleCors(request, env);
   if (corsResponse) return corsResponse;
 
   const supabase = getDBClient(env, 'Deals.GET');
+  logger.logRequestStart(request.method, '/api/deals');
   
   try {
     const url = new URL(request.url);
@@ -30,7 +33,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     
     // Check if this is a location-based query using PostgreSQL geospatial functions
     if (filter === 'nearby' && lat && lng) {
-      console.log(`🌍 Location-based deals query: lat=${lat}, lng=${lng}, radius=${radius || 10}km`);
+      logger.logBusinessLogic('geospatial_query', { lat, lng, radius: radius || 10 });
       
       const userLat = parseFloat(lat);
       const userLng = parseFloat(lng);
@@ -39,6 +42,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       
       // Validate coordinates
       if (isNaN(userLat) || isNaN(userLng) || userLat < -90 || userLat > 90 || userLng < -180 || userLng > 180) {
+        logger.logValidationError('coordinates', { lat: userLat, lng: userLng }, 'Invalid coordinate range');
+        logger.logRequestEnd(request.method, '/api/deals', 400, { error: 'Invalid coordinates' });
         return errorResponse('Invalid coordinates provided', 400, request, env);
       }
       
@@ -102,7 +107,13 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       `;
       queryParams.push(resultLimit);
       
-      console.log(`🔍 Executing geospatial query with ${queryParams.length} parameters`);
+      logger.logDatabaseQuery('RPC', 'get_nearby_deals', { 
+        paramCount: queryParams.length, 
+        userLat, 
+        userLng, 
+        radiusMeters,
+        businessId: businessId || null 
+      });
       
       try {
         // Create a stored procedure call for geospatial query
@@ -117,19 +128,26 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
           });
           
         if (sqlError) {
-          console.error('PostgreSQL geospatial query error:', sqlError);
-          console.error('SQL Error details:', sqlError);
+          logger.logError('geospatial_query', sqlError, { userLat, userLng, radiusMeters });
+          logger.logRequestEnd(request.method, '/api/deals', 500, { error: sqlError.message });
           return errorResponse(`Geospatial query failed: ${sqlError.message}. Please ensure PostgreSQL geospatial function is properly configured.`, 500, request, env);
         }
         
         // PostgreSQL function returns JSONB array, so we just return it directly
         const deals = rawResults || [];
         
-        console.log(`📍 PostgreSQL geospatial query found ${deals.length} deals within ${radiusKm}km`);
+        logger.logBusinessLogic('geospatial_query_success', { 
+          dealCount: deals.length, 
+          radiusKm,
+          lat: userLat,
+          lng: userLng 
+        });
+        logger.logRequestEnd(request.method, '/api/deals', 200, { dealCount: deals.length });
         return jsonResponse(deals, 200, request, env);
         
       } catch (error: any) {
-        console.error('Geospatial query execution error:', error);
+        logger.logError('geospatial_query_execution', error, { userLat, userLng, radiusMeters });
+        logger.logRequestEnd(request.method, '/api/deals', 500, { error: error.message });
         return errorResponse(`Geospatial query failed: ${error.message}`, 500, request, env);
       }
     }
@@ -159,19 +177,19 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     
     if (status) {
       const currentTime = new Date().toISOString();
-      console.log(`🕒 STATUS FILTER: status=${status}, currentTime=${currentTime}`);
+      logger.logBusinessLogic('status_filter', { status, currentTime });
       
       if (status === 'expired') {
         // For expired deals, filter by expiration time regardless of status field
-        console.log(`🕒 EXPIRED FILTER: Looking for deals where expires_at < ${currentTime}`);
+        logger.logBusinessLogic('expired_filter', { currentTime });
         query = query.lt('expires_at', currentTime);
       } else if (status === 'active') {
         // For active deals, must have active status AND not be expired
-        console.log(`🕒 ACTIVE FILTER: Looking for deals where status=active AND expires_at > ${currentTime}`);
+        logger.logBusinessLogic('active_filter', { currentTime });
         query = query.eq('status', 'active').gt('expires_at', currentTime);
       } else {
         // For other statuses (e.g., 'draft', 'paused'), use status field
-        console.log(`🕒 OTHER STATUS FILTER: Looking for deals where status=${status}`);
+        logger.logBusinessLogic('other_status_filter', { status });
         query = query.eq('status', status);
       }
     }
@@ -186,14 +204,20 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       query = query.limit(parseInt(limit));
     }
     
+    logger.logDatabaseQuery('SELECT', 'deals', { businessId, status, search, limit });
     const { data, error } = await query;
     
     if (error) {
+      logger.logError('deals_query', error, { businessId, status, search, limit });
+      logger.logRequestEnd(request.method, '/api/deals', 500, { error: error.message });
       return errorResponse(`Database error: ${error.message}`, 500, request, env);
     }
 
+    logger.logRequestEnd(request.method, '/api/deals', 200, { dealCount: data?.length || 0 });
     return jsonResponse(data, 200, request, env);
   } catch (error: any) {
+    logger.logError('deals_get', error);
+    logger.logRequestEnd(request.method, '/api/deals', 500, { error: error.message });
     return errorResponse(`Failed to fetch deals: ${error.message}`, 500, request, env);
   }
 }
@@ -205,21 +229,29 @@ function toRadians(degrees: number): number {
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
+  const logger = createE2ELogger(request, env);
   
   // Handle CORS preflight
   const corsResponse = handleCors(request, env);
   if (corsResponse) return corsResponse;
 
   const supabase = getDBClient(env, 'Deals.POST');
+  logger.logRequestStart(request.method, '/api/deals');
 
   // Get authentication token
   const token = getAuthFromRequest(request);
   if (!token) {
+    logger.logAuthOperation('missing_token');
+    logger.logRequestEnd(request.method, '/api/deals', 401, { error: 'No token provided' });
     return errorResponse('No token provided', 401, request, env);
   }
 
   const authResult = await verifyToken(token, supabase, env);
+  logger.logAuthOperation('verify_token', authResult?.userId);
+  
   if (!authResult) {
+    logger.logError('deals_post_auth', new Error('Invalid token'));
+    logger.logRequestEnd(request.method, '/api/deals', 401, { error: 'Invalid token' });
     return errorResponse('Invalid token', 401, request, env);
   }
 
@@ -293,11 +325,15 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     
     // Validate required fields
     if (!dealData.title || !dealData.description || !dealData.business_id) {
+      logger.logValidationError('required_fields', dealData, 'Missing title, description, or business_id');
+      logger.logRequestEnd(request.method, '/api/deals', 400, { error: 'Missing required fields' });
       return errorResponse('Missing required fields: title, description, business_id', 400, request, env);
     }
     
     // Validate pricing fields
     if (!dealData.original_price && !dealData.discounted_price && !dealData.price) {
+      logger.logValidationError('pricing_fields', dealData, 'Missing pricing information');
+      logger.logRequestEnd(request.method, '/api/deals', 400, { error: 'Missing pricing' });
       return errorResponse('Missing pricing: provide either original_price/discounted_price or price', 400, request, env);
     }
     
@@ -312,11 +348,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       // Validate that provided expiry is in the future
       const expiryDate = new Date(expiresAt);
       if (expiryDate <= new Date()) {
+        logger.logValidationError('expires_at', expiresAt, 'Expiry date must be in the future');
+        logger.logRequestEnd(request.method, '/api/deals', 400, { error: 'Invalid expiry date' });
         return errorResponse('expires_at must be in the future', 400, request, env);
       }
     }
     
     // Verify business exists and user has access (simplified for API key auth)
+    logger.logDatabaseQuery('SELECT', 'businesses', { businessId: dealData.business_id });
     const { data: business, error: businessError } = await supabase
       .from('businesses')
       .select('owner_id')
@@ -324,6 +363,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       .single();
       
     if (businessError) {
+      logger.logError('business_verification', businessError, { businessId: dealData.business_id });
+      logger.logRequestEnd(request.method, '/api/deals', 404, { error: 'Business not found' });
       return errorResponse('Business not found', 404, request, env);
     }
 
@@ -337,6 +378,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       updated_at: new Date().toISOString()
     };
 
+    logger.logBusinessLogic('creating_deal', { 
+      businessId: dealData.business_id,
+      title: dealData.title,
+      status: dealRecord.status,
+      hasImage: !!uploadedImageUrl 
+    });
+    logger.logDatabaseQuery('INSERT', 'deals', { businessId: dealData.business_id, userId });
+    
     const { data, error } = await supabase
       .from('deals')
       .insert([dealRecord])
@@ -344,11 +393,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       .single();
     
     if (error) {
+      logger.logError('deal_creation', error, { dealRecord: { ...dealRecord, image_url: '[REDACTED]' } });
+      logger.logRequestEnd(request.method, '/api/deals', 500, { error: error.message });
       return errorResponse(`Database error: ${error.message}`, 500, request, env);
     }
 
+    logger.logBusinessLogic('deal_created_successfully', { dealId: data.id, businessId: data.business_id });
+    logger.logRequestEnd(request.method, '/api/deals', 201, { dealId: data.id });
     return jsonResponse(data, 200, request, env);
   } catch (error: any) {
+    logger.logError('deals_post', error);
+    logger.logRequestEnd(request.method, '/api/deals', 500, { error: error.message });
     return errorResponse(`Failed to create deal: ${error.message}`, 500, request, env);
   }
 }

@@ -181,12 +181,24 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
+      - name: Setup Node.js for Firebase CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Setup Android signing
         env:
           GOOGLE_PLAY_JSON_KEY_CONTENT: ${{ secrets.GOOGLE_PLAY_JSON_KEY_CONTENT }}
         run: |
-          echo '${{ secrets.GOOGLE_PLAY_JSON_KEY_CONTENT }}' > android/google-play-key.json
-          echo "GOOGLE_PLAY_JSON_KEY_PATH=$PWD/android/google-play-key.json" >> $GITHUB_ENV
+          if [ -n "${{ secrets.GOOGLE_PLAY_JSON_KEY_CONTENT }}" ]; then
+            echo '${{ secrets.GOOGLE_PLAY_JSON_KEY_CONTENT }}' > android/google-play-key.json
+            echo "GOOGLE_PLAY_JSON_KEY_PATH=$PWD/android/google-play-key.json" >> $GITHUB_ENV
+          else
+            echo "GOOGLE_PLAY_JSON_KEY_CONTENT secret not set, skipping Play Store signing setup"
+          fi
 
       - name: Setup Firebase
         env:

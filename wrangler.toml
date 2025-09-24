@@ -23,8 +23,13 @@ LOCAL_SUPABASE_URL = "http://127.0.0.1:58321"
 LOCAL_SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
 DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:58322/postgres"
 API_KEY = "test-api-key-2024"
+# WEBHOOK_SECRET set as Cloudflare secret for production, local value for dev
+WEBHOOK_SECRET = "test-webhook-secret-2024"
 # Google Places API key - Replace with your actual API key
 GOOGLE_PLACES_API_KEY ="AIzaSyDWZXwJ2DaQMkWlVuBjk6WzAFh6Dqqa8cY"
+# Grafana Faro Configuration for backend logging
+GRAFANA_FARO_API_KEY = "6a74f7d083b7f363c1fe9da4cff191f9"
+GRAFANA_FARO_COLLECTOR_URL = "https://faro-collector-prod-us-east-2.grafana.net/collect/6a74f7d083b7f363c1fe9da4cff191f9"
 
 # Production environment
 [env.production]
@@ -40,5 +45,9 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYmhvcnNzenp0aHlsanJpaWltIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mzk4MjM3NiwiZXhwIjoyMDY5NTU4Mzc2fQ.bH-ROAAkSODqVzjoofUmEfV3WrYQqJcsg68Ad4fbvRU"
 GOOGLE_PLACES_API_KEY ="AIzaSyDWZXwJ2DaQMkWlVuBjk6WzAFh6Dqqa8cY"
 API_KEY = "test-api-key-2024"
+# WEBHOOK_SECRET for production is set as Cloudflare secret
+# Grafana Faro Configuration for backend logging
+GRAFANA_FARO_API_KEY = "6a74f7d083b7f363c1fe9da4cff191f9"
+GRAFANA_FARO_COLLECTOR_URL = "https://faro-collector-prod-us-east-2.grafana.net/collect/6a74f7d083b7f363c1fe9da4cff191f9"
 # OPENAI_API_KEY should be set as a Cloudflare secret, not in this file
 # Run: npx wrangler secret put OPENAI_API_KEY

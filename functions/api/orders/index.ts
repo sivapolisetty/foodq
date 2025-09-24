@@ -1,6 +1,7 @@
 import { validateAuth, handleCors, getCorsHeaders } from '../../utils/auth.js';
 import { getDBClient } from '../../utils/db-client.js';
 import { Env, createSuccessResponse, createErrorResponse } from '../../utils/supabase.js';
+import { createE2ELogger } from '../../utils/e2e-logger.js';
 
 // Fixed authentication issues - updated 2025-08-28 - v2
 
@@ -10,22 +11,27 @@ export async function onRequestOptions(context: { request: Request; env: Env }) 
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { request, env } = context;
+  const logger = createE2ELogger(request, env);
   
   // Handle CORS preflight
   const corsResponse = handleCors(request, env);
   if (corsResponse) return corsResponse;
 
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  logger.logRequestStart(request.method, '/api/orders');
 
   try {
     const auth = await validateAuth(request, env);
+    logger.logAuthOperation('validate_token', auth.user?.id);
     
     if (!auth.isAuthenticated) {
+      logger.logRequestEnd(request.method, '/api/orders', 401, { error: 'Authentication required' });
       return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
     const supabase = getDBClient(env, 'Orders.GET');
-    const userId = auth.user.id;
+    // For API key auth (testing), use a test customer user ID
+    const userId = auth.isApiKeyAuth ? '87654321-4321-4321-4321-210987654321' : auth.user.id;
 
     const url = new URL(request.url);
     const customerId = url.searchParams.get('customer_id');
@@ -64,9 +70,12 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       query = query.eq('user_id', userId);
     }
     
+    logger.logDatabaseQuery('SELECT', 'orders', { userId, customerId: customerId || undefined, businessId: businessId || undefined });
     const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) {
+      logger.logError('orders_query', error, { userId, customerId: customerId || undefined, businessId: businessId || undefined });
+      logger.logRequestEnd(request.method, '/api/orders', 500, { error: error.message });
       return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
     }
 
@@ -91,38 +100,46 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       }
     }
 
+    logger.logRequestEnd(request.method, '/api/orders', 200, { orderCount: ordersWithUsers?.length || 0 });
     return createSuccessResponse(ordersWithUsers || [], corsHeaders);
   } catch (error: any) {
+    logger.logError('orders_get', error);
+    logger.logRequestEnd(request.method, '/api/orders', 500, { error: error.message });
     return createErrorResponse(`Failed to fetch orders: ${error.message}`, 500, corsHeaders);
   }
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
+  const logger = createE2ELogger(request, env);
   
   // Handle CORS preflight
   const corsResponse = handleCors(request, env);
   if (corsResponse) return corsResponse;
 
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  logger.logRequestStart(request.method, '/api/orders');
 
   try {
-    console.log('Orders POST v2 - starting authentication');
+    logger.logBusinessLogic('starting_order_creation');
     const auth = await validateAuth(request, env);
+    logger.logAuthOperation('validate_token', auth.user?.id);
     
     if (!auth.isAuthenticated) {
-      console.log('Orders POST v2 - authentication failed');
+      logger.logError('orders_post_auth', new Error('Authentication failed'));
+      logger.logRequestEnd(request.method, '/api/orders', 401, { error: 'Authentication required' });
       return createErrorResponse('Authentication required', 401, corsHeaders);
     }
-    console.log('Orders POST v2 - authentication successful, user:', auth.user.id);
+    // For API key auth (testing), use a test customer user ID
+    const userId = auth.isApiKeyAuth ? '87654321-4321-4321-4321-210987654321' : auth.user.id;
+    logger.logBusinessLogic('authentication_successful', { userId, isApiKeyAuth: auth.isApiKeyAuth });
 
     const supabase = getDBClient(env, 'Orders.POST');
-    const userId = auth.user.id;
     
     const orderData = await request.json();
     
     // Support both formats: flat structure (single deal) and items array (multiple items)
-    let items = [];
+    let items: any[] = [];
     let businessId = orderData.business_id;
     let totalAmount = orderData.total_amount;
     
@@ -160,7 +177,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return createErrorResponse('Invalid order format: must include either deal_id or items array', 400, corsHeaders);
     }
     
+    // Set e2e_request_id as session variable for database triggers
+    await supabase.rpc('set_config', {
+      setting_name: 'app.e2e_request_id',
+      setting_value: logger.getRequestId(),
+      is_local: true
+    }).catch(() => {
+      // Fallback: If set_config RPC doesn't exist, continue without it
+      console.log('set_config RPC not available, e2e_request_id will not be tracked in events');
+    });
+
     // Create the order with immediate confirmed status (simplified flow)
+    logger.logBusinessLogic('creating_order', { businessId, totalAmount, itemCount: items.length });
+    logger.logDatabaseQuery('INSERT', 'orders', { userId, businessId, totalAmount });
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
@@ -172,6 +201,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         delivery_instructions: orderData.delivery_instructions || orderData.pickup_instructions,
         payment_method: orderData.payment_method || 'cash',
         pickup_time: orderData.pickup_time || null,
+        // e2e_request_id is now stored in event_queue table instead of orders
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
         // Note: confirmed_at will be set automatically by the database trigger once migration is applied
@@ -180,6 +210,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       .single();
     
     if (orderError) {
+      logger.logError('order_creation', orderError, { userId, businessId, totalAmount });
+      logger.logRequestEnd(request.method, '/api/orders', 500, { error: orderError.message });
       return createErrorResponse(`Failed to create order: ${orderError.message}`, 500, corsHeaders);
     }
 
@@ -193,13 +225,16 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       created_at: new Date().toISOString()
     }));
 
+    logger.logDatabaseQuery('INSERT', 'order_items', { orderId: order.id, itemCount: orderItems.length });
     const { error: itemsError } = await supabase
       .from('order_items')
       .insert(orderItems);
     
     if (itemsError) {
+      logger.logError('order_items_creation', itemsError, { orderId: order.id, itemCount: orderItems.length });
       // Rollback order if items creation fails
       await supabase.from('orders').delete().eq('id', order.id);
+      logger.logRequestEnd(request.method, '/api/orders', 500, { error: itemsError.message });
       return createErrorResponse(`Failed to create order items: ${itemsError.message}`, 500, corsHeaders);
     }
 
@@ -243,25 +278,33 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       app_users: userData || null
     };
 
+    logger.logBusinessLogic('order_created_successfully', { orderId: completeOrder.id, totalAmount });
+    logger.logRequestEnd(request.method, '/api/orders', 201, { orderId: completeOrder.id });
     return createSuccessResponse(orderWithUser, corsHeaders);
   } catch (error: any) {
+    logger.logError('orders_post', error);
+    logger.logRequestEnd(request.method, '/api/orders', 500, { error: error.message });
     return createErrorResponse(`Failed to create order: ${error.message}`, 500, corsHeaders);
   }
 }
 
 export async function onRequestPut(context: { request: Request; env: Env }) {
   const { request, env } = context;
+  const logger = createE2ELogger(request, env);
   
   // Handle CORS preflight
   const corsResponse = handleCors(request, env);
   if (corsResponse) return corsResponse;
 
   const corsHeaders = getCorsHeaders(request.headers.get('Origin') || '*');
+  logger.logRequestStart(request.method, '/api/orders');
 
   try {
     const auth = await validateAuth(request, env);
+    logger.logAuthOperation('validate_token', auth.user?.id);
     
     if (!auth.isAuthenticated) {
+      logger.logRequestEnd(request.method, '/api/orders', 401, { error: 'Authentication required' });
       return createErrorResponse('Authentication required', 401, corsHeaders);
     }
 
@@ -290,7 +333,7 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
     }
 
     // Fetch user's business_id from the database
-    const { data: userData, error: userError } = await supabase
+    const { data: userData } = await supabase
       .from('app_users')
       .select('business_id')
       .eq('id', userId)
@@ -376,8 +419,12 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       app_users: updateUserData || null
     };
 
+    logger.logBusinessLogic('order_updated_successfully', { orderId, status: updatedOrder.status });
+    logger.logRequestEnd(request.method, '/api/orders', 200, { orderId });
     return createSuccessResponse(orderWithUser, corsHeaders);
   } catch (error: any) {
+    logger.logError('orders_put', error);
+    logger.logRequestEnd(request.method, '/api/orders', 500, { error: error.message });
     return createErrorResponse(`Failed to update order: ${error.message}`, 500, corsHeaders);
   }
 }

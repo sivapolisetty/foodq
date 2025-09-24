@@ -4,12 +4,16 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { createE2ELogger } from '../../utils/e2e-logger.js';
 
 /**
  * Get user notifications with filtering
  */
 export async function onRequestGet(context: any) {
   const { env, request } = context;
+  const logger = createE2ELogger(request, env);
+  
+  logger.logRequestStart(request.method, '/api/notifications');
   
   try {
     // Get user from JWT token

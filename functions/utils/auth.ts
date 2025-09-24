@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createE2ELogger } from './e2e-logger.js';
 
 export interface AuthContext {
   user: any | null;
@@ -199,20 +200,32 @@ export function getCorsHeaders(origin?: string) {
   return {
     'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, X-E2E-Request-ID, X-App-Version, X-Platform',
+    'Access-Control-Expose-Headers': 'X-E2E-Request-ID, X-API-Version, X-Timestamp',
     'Access-Control-Allow-Credentials': 'false',  // Must be false when using '*'
     'Access-Control-Max-Age': '86400',
   };
 }
 
-// Response utilities (NoenCircles style)
+// Response utilities (NoenCircles style) with E2E tracking
 export const jsonResponse = (data: any, status: number = 200, request?: Request, env?: any) => {
+  let headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...getCorsHeaders(request?.headers.get('Origin') || '*')
+  };
+
+  // Add E2E tracking headers if request is provided
+  if (request) {
+    const logger = createE2ELogger(request);
+    headers = {
+      ...headers,
+      ...logger.getResponseHeaders(headers)
+    };
+  }
+
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...getCorsHeaders(request?.headers.get('Origin') || '*')
-    },
+    headers
   });
 };
 

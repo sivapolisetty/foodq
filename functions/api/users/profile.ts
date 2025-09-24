@@ -54,12 +54,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     if (existingUser) {
       // User exists, update their profile
+      const updateData = {
+        ...mappedData,
+        updated_at: new Date().toISOString()
+      };
+      
+      // If phone is provided and onboarding wasn't completed, mark it as complete
+      if (mappedData.phone && !existingUser.onboarding_completed) {
+        updateData.onboarding_completed = true;
+      }
+      
       const { data, error } = await supabase
         .from('app_users')
-        .update({
-          ...mappedData,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', mappedData.id)
         .select()
         .single();
@@ -68,13 +75,21 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse(data, corsHeaders);
+      const responseData = {
+        ...data,
+        message: updateData.onboarding_completed === true && !existingUser.onboarding_completed 
+          ? 'User profile updated and onboarding completed successfully'
+          : 'User profile updated successfully'
+      };
+
+      return createSuccessResponse(responseData, corsHeaders);
     } else {
       // User doesn't exist, create new profile
       const { data, error } = await supabase
         .from('app_users')
         .insert([{
           ...mappedData,
+          onboarding_completed: true, // Mark as completed when profile is created with phone
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
@@ -88,7 +103,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
       }
 
-      return createSuccessResponse(data, corsHeaders);
+      return createSuccessResponse({
+        ...data,
+        message: 'User profile created and onboarding completed successfully'
+      }, corsHeaders);
     }
   } catch (error: any) {
     return createErrorResponse(`Failed to create/update user profile: ${error.message}`, 500, corsHeaders);
