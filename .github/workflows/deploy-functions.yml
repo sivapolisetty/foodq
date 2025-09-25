@@ -43,8 +43,7 @@ jobs:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       run: |
-        npx wrangler deploy cdn-worker.js \
-          --name foodq-cdn
+        npx wrangler deploy --config cdn-worker.toml
           
     - name: Verify Deployment
       run: |

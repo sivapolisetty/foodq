@@ -1,0 +1,17 @@
+# CDN Worker configuration for FoodQ
+name = "foodq-cdn"
+main = "cdn-worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# R2 Storage for Food Images
+[[r2_buckets]]
+binding = "FOOD_IMAGES"
+bucket_name = "foodq-images"
+
+# Worker type configuration
+usage_model = "standard"
+
+# Environment variables
+[vars]
+NODE_ENV = "production"
