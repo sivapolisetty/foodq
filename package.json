@@ -33,7 +33,7 @@
     "@types/node": "^20.8.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.2.2",
-    "wrangler": "^3.78.0"
+    "wrangler": "^4.40.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
