@@ -36,9 +36,7 @@ jobs:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       run: |
         npx wrangler pages deploy dist \
-          --project-name=foodq \
-          --compatibility-date=2024-01-01 \
-          --compatibility-flags=nodejs_compat
+          --project-name=foodq
           
     - name: Deploy CDN Worker
       env:
