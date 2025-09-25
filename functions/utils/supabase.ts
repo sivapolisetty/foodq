@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createE2ELogger } from './e2e-logger.js';
 
 export interface Env {
   SUPABASE_URL: string;
@@ -37,31 +38,53 @@ export interface ApiResponse<T = any> {
   code?: string;
 }
 
-export function createSuccessResponse<T>(data: T, headers: any = {}): Response {
+export function createSuccessResponse<T>(data: T, headers: any = {}, request?: Request): Response {
   const response: ApiResponse<T> = {
     success: true,
     data
   };
   
+  // Add E2E tracking headers if request is provided
+  let responseHeaders = {
+    ...headers,
+    'Content-Type': 'application/json'
+  };
+  
+  if (request) {
+    const logger = createE2ELogger(request);
+    responseHeaders = {
+      ...responseHeaders,
+      ...logger.getResponseHeaders(responseHeaders)
+    };
+  }
+  
   return new Response(JSON.stringify(response), {
-    headers: { 
-      ...headers, 
-      'Content-Type': 'application/json' 
-    }
+    headers: responseHeaders
   });
 }
 
-export function createErrorResponse(error: string, status = 500, headers: any = {}): Response {
+export function createErrorResponse(error: string, status = 500, headers: any = {}, request?: Request): Response {
   const response: ApiResponse = {
     success: false,
     error
   };
   
+  // Add E2E tracking headers if request is provided
+  let responseHeaders = {
+    ...headers,
+    'Content-Type': 'application/json'
+  };
+  
+  if (request) {
+    const logger = createE2ELogger(request);
+    responseHeaders = {
+      ...responseHeaders,
+      ...logger.getResponseHeaders(responseHeaders)
+    };
+  }
+  
   return new Response(JSON.stringify(response), {
     status,
-    headers: { 
-      ...headers, 
-      'Content-Type': 'application/json' 
-    }
+    headers: responseHeaders
   });
 }

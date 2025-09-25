@@ -1,0 +1,649 @@
+{
+  "info": {
+    "name": "FoodQ Business API Collection",
+    "description": "API collection for FoodQ business operations, focusing on order management and business workflows.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://foodq.pages.dev/api",
+      "type": "string"
+    },
+    {
+      "key": "test_api_key",
+      "value": "test-api-key-12345",
+      "type": "string"
+    },
+    {
+      "key": "business_id",
+      "value": "4aef106d-9c91-40a1-a738-f29a21195ab9",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1faed0f3-fbdd-4758-b653-81f0c9614b97",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-KEY",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{test_api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Order Management",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test for successful order creation",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Order created with pending status\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        pm.expect(jsonData.data.status).to.equal('pending');",
+                  "        // Store order ID for other requests",
+                  "        pm.collectionVariables.set('order_id', jsonData.data.id);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Order has correct business and user IDs\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        pm.expect(jsonData.data.business_id).to.equal(pm.collectionVariables.get('business_id'));",
+                  "        pm.expect(jsonData.data.user_id).to.equal(pm.collectionVariables.get('user_id'));",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_id\": \"{{business_id}}\",\n  \"deal_id\": \"test-deal-123\",\n  \"quantity\": 2,\n  \"unit_price\": 50.00,\n  \"total_amount\": 100.00,\n  \"payment_method\": \"cash\",\n  \"pickup_time\": \"{{$isoTimestamp}}\",\n  \"delivery_instructions\": \"Please call when ready\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "Creates a new order for a customer. Order starts with 'pending' status."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Business Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains orders array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success) {",
+                  "        pm.expect(jsonData.data).to.be.an('array');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Orders contain required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data.length > 0) {",
+                  "        var order = jsonData.data[0];",
+                  "        pm.expect(order).to.have.property('id');",
+                  "        pm.expect(order).to.have.property('status');",
+                  "        pm.expect(order).to.have.property('business_id');",
+                  "        pm.expect(order).to.have.property('user_id');",
+                  "        pm.expect(order).to.have.property('total_amount');",
+                  "        pm.expect(order).to.have.property('created_at');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Orders belong to correct business\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(function(order) {",
+                  "            pm.expect(order.business_id).to.equal(pm.collectionVariables.get('business_id'));",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders?business_id={{business_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "business_id",
+                  "value": "{{business_id}}"
+                }
+              ]
+            },
+            "description": "Fetches all orders for a specific business. Includes order details, customer info, and order items."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Orders Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All returned orders are pending\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(function(order) {",
+                  "            pm.expect(order.status).to.equal('pending');",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders?business_id={{business_id}}&status=pending",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "business_id",
+                  "value": "{{business_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Fetches only pending orders for a business that need confirmation."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Confirmed Orders Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All returned orders are confirmed\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(function(order) {",
+                  "            pm.expect(order.status).to.equal('confirmed');",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders?business_id={{business_id}}&status=confirmed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "business_id",
+                  "value": "{{business_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "confirmed"
+                }
+              ]
+            },
+            "description": "Fetches confirmed orders ready for pickup/completion."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Order Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order details include nested data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        var order = jsonData.data;",
+                  "        pm.expect(order).to.have.property('businesses');",
+                  "        pm.expect(order).to.have.property('order_items');",
+                  "        pm.expect(order).to.have.property('app_users');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Gets detailed information for a specific order including business, customer, and order items data."
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Order (Business)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status updated to confirmed\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        pm.expect(jsonData.data.status).to.equal('confirmed');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Business confirms a pending order, changing status from 'pending' to 'confirmed'."
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Order (Manual)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status updated to completed\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        pm.expect(jsonData.data.status).to.equal('completed');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Manually completes an order (normally done via QR code scanning)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status updated to cancelled\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data) {",
+                  "        pm.expect(jsonData.data.status).to.equal('cancelled');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Cancels an order (can be done by business or customer)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Core order management operations for businesses including fetching, confirming, and completing orders."
+    },
+    {
+      "name": "QR Code Operations",
+      "item": [
+        {
+          "name": "QR Code Scan (Complete Order)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"QR scan completed order\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.order) {",
+                  "        pm.expect(jsonData.order.status).to.equal('completed');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qr_code\": \"ORDER_12345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/scan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "scan"
+              ]
+            },
+            "description": "Simulates QR code scanning to complete an order. Used when customer shows QR code for pickup."
+          },
+          "response": []
+        }
+      ],
+      "description": "QR code related operations for order completion."
+    },
+    {
+      "name": "Customer Operations",
+      "item": [
+        {
+          "name": "Get Customer Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Orders belong to authenticated user\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(function(order) {",
+                  "            pm.expect(order.user_id).to.equal(pm.collectionVariables.get('user_id'));",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "Gets orders for the authenticated customer (no query params needed - uses auth context)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Customer-facing order operations."
+    },
+    {
+      "name": "API Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"API is healthy\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is acceptable\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/check",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "check"
+              ]
+            },
+            "description": "Basic health check endpoint to verify API connectivity."
+          },
+          "response": []
+        }
+      ],
+      "description": "API health and status checks."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set dynamic timestamp for pickup_time if needed",
+          "const now = new Date();",
+          "const futureTime = new Date(now.getTime() + (30 * 60000)); // 30 minutes from now",
+          "pm.globals.set('future_timestamp', futureTime.toISOString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test to log response for debugging",
+          "if (pm.response.code >= 400) {",
+          "    console.log('Request failed with status:', pm.response.code);",
+          "    console.log('Response body:', pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ]
+}

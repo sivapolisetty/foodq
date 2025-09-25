@@ -79,17 +79,19 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       return createErrorResponse(`Database error: ${error.message}`, 500, corsHeaders);
     }
 
-    // Manually fetch user data for each order
+    // Manually fetch user data for each order - handle gracefully
     const ordersWithUsers = [];
     if (data) {
       for (const order of data) {
-        const { data: userData, error: userError } = await supabase
-          .from('app_users')
-          .select('id, email, name')
-          .eq('id', order.user_id)
-          .single();
-        
-        if (userError) {
+        let userData = null;
+        try {
+          const { data } = await supabase
+            .from('app_users')
+            .select('id, email, name')
+            .eq('id', order.user_id)
+            .single();
+          userData = data;
+        } catch (userError) {
           console.log(`User not found for order ${order.id}, user_id: ${order.user_id}`);
         }
         
@@ -101,11 +103,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     }
 
     logger.logRequestEnd(request.method, '/api/orders', 200, { orderCount: ordersWithUsers?.length || 0 });
-    return createSuccessResponse(ordersWithUsers || [], corsHeaders);
+    return createSuccessResponse(ordersWithUsers || [], corsHeaders, request);
   } catch (error: any) {
     logger.logError('orders_get', error);
     logger.logRequestEnd(request.method, '/api/orders', 500, { error: error.message });
-    return createErrorResponse(`Failed to fetch orders: ${error.message}`, 500, corsHeaders);
+    return createErrorResponse(`Failed to fetch orders: ${error.message}`, 500, corsHeaders, request);
   }
 }
 
@@ -177,17 +179,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return createErrorResponse('Invalid order format: must include either deal_id or items array', 400, corsHeaders);
     }
     
-    // Set e2e_request_id as session variable for database triggers
-    await supabase.rpc('set_config', {
-      setting_name: 'app.e2e_request_id',
-      setting_value: logger.getRequestId(),
-      is_local: true
-    }).catch(() => {
-      // Fallback: If set_config RPC doesn't exist, continue without it
-      console.log('set_config RPC not available, e2e_request_id will not be tracked in events');
-    });
+    // Skip e2e_request_id config for now to avoid permission issues
+    // TODO: Set e2e_request_id as session variable for database triggers
+    logger.logBusinessLogic('skipping_e2e_config', { reason: 'production_permissions' });
 
-    // Create the order with immediate confirmed status (simplified flow)
+    // Create the order with pending status (business needs to confirm)
     logger.logBusinessLogic('creating_order', { businessId, totalAmount, itemCount: items.length });
     logger.logDatabaseQuery('INSERT', 'orders', { userId, businessId, totalAmount });
     const { data: order, error: orderError } = await supabase
@@ -195,7 +191,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       .insert([{
         user_id: userId,
         business_id: businessId,
-        status: 'confirmed', // Immediate confirmation in simplified flow
+        status: 'pending', // Order starts pending, business must confirm
         total_amount: totalAmount,
         delivery_address: orderData.delivery_address,
         delivery_instructions: orderData.delivery_instructions || orderData.pickup_instructions,
@@ -266,12 +262,18 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return createErrorResponse('Failed to fetch complete order data', 500, corsHeaders);
     }
 
-    // Manually fetch user data
-    const { data: userData } = await supabase
-      .from('app_users')
-      .select('id, email, name')
-      .eq('id', completeOrder.user_id)
-      .single();
+    // Manually fetch user data - handle gracefully if permission denied
+    let userData = null;
+    try {
+      const { data } = await supabase
+        .from('app_users')
+        .select('id, email, name')
+        .eq('id', completeOrder.user_id)
+        .single();
+      userData = data;
+    } catch (error) {
+      console.log('Could not fetch user data:', error);
+    }
 
     const orderWithUser = {
       ...completeOrder,
@@ -332,12 +334,18 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       return createErrorResponse('Order not found', 404, corsHeaders);
     }
 
-    // Fetch user's business_id from the database
-    const { data: userData } = await supabase
-      .from('app_users')
-      .select('business_id')
-      .eq('id', userId)
-      .single();
+    // Fetch user's business_id from the database - handle gracefully
+    let userData = null;
+    try {
+      const { data } = await supabase
+        .from('app_users')
+        .select('business_id')
+        .eq('id', userId)
+        .single();
+      userData = data;
+    } catch (error) {
+      console.log('Could not fetch user business_id:', error);
+    }
 
     // Check if user has permission to update this order
     // Business users can update orders for their business
@@ -361,8 +369,6 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         const validStatuses = ['confirmed', 'completed', 'cancelled'];
         if (validStatuses.includes(updateData.status)) {
           allowedUpdates.status = updateData.status;
-          
-          // Note: completed_at will be set automatically by the database trigger once migration is applied
         }
       }
       if (updateData.pickup_time) {
@@ -372,8 +378,8 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
         allowedUpdates.delivery_instructions = updateData.delivery_instructions;
       }
     } else if (isCustomer) {
-      // Customer can only cancel their own order if it's still confirmed (not completed)
-      if (updateData.status === 'cancelled' && existingOrder.status === 'confirmed') {
+      // Customer can only cancel their own order if it's still pending or confirmed (not completed)
+      if (updateData.status === 'cancelled' && ['pending', 'confirmed'].includes(existingOrder.status)) {
         allowedUpdates.status = 'cancelled';
       }
     }
@@ -407,12 +413,18 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
       return createErrorResponse(`Failed to update order: ${updateError.message}`, 500, corsHeaders);
     }
 
-    // Manually fetch user data for update
-    const { data: updateUserData } = await supabase
-      .from('app_users')
-      .select('id, email, name')
-      .eq('id', updatedOrder.user_id)
-      .single();
+    // Manually fetch user data for update - handle gracefully
+    let updateUserData = null;
+    try {
+      const { data } = await supabase
+        .from('app_users')
+        .select('id, email, name')
+        .eq('id', updatedOrder.user_id)
+        .single();
+      updateUserData = data;
+    } catch (error) {
+      console.log('Could not fetch user data for update:', error);
+    }
 
     const orderWithUser = {
       ...updatedOrder,

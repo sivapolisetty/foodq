@@ -82,6 +82,12 @@ export async function onRequestPost(context: any) {
   try {
     // Verify webhook secret
     const webhookSecret = request.headers.get('X-Webhook-Secret');
+    logger.logBusinessLogic('webhook_secret_debug', { 
+      hasRequestSecret: !!webhookSecret, 
+      hasEnvSecret: !!env.WEBHOOK_SECRET,
+      secretsMatch: webhookSecret === env.WEBHOOK_SECRET 
+    });
+    
     if (!validateWebhookSecret(webhookSecret, env.WEBHOOK_SECRET)) {
       logger.logError('webhook_auth', new Error('Invalid webhook secret'));
       logger.logRequestEnd('WEBHOOK', '/api/notifications/process', 401);
