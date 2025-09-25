@@ -4,8 +4,7 @@
  */
 
 import { EventProcessor } from './services/event-processor';
-import { EventPayload } from './types';
-import { validateWebhookSecret, validateEventPayload } from './utils/validation';
+import { validateWebhookSecret } from './utils/validation';
 import { createE2ELogger } from '../../utils/e2e-logger.js';
 import { createClient } from '@supabase/supabase-js';
 
@@ -99,103 +98,51 @@ export async function onRequestPost(context: any) {
     // Parse request body
     const body = await request.json();
     
-    // Check if it's a simple eventId request or full event payload
-    if (body.eventId && typeof body.eventId === 'string' && Object.keys(body).length === 1) {
-      // Simple eventId-only request - fetch event from database
-      logger.logBusinessLogic('processing_event_by_id', { eventId: body.eventId });
-      
-      // Try to find original E2E Request ID from related order/deal
-      const originalE2EId = await findOriginalE2ERequestId(body.eventId, env);
-      if (originalE2EId) {
-        logger.logBusinessLogic('found_original_e2e_id', { 
-          originalE2EId, 
-          notificationE2EId: notificationE2EId 
-        });
-      }
-      
-      const processor = new EventProcessor(env);
-      const result = await processor.processEventById(body.eventId);
-      
-      logger.logBusinessLogic('event_processed', { 
-        eventId: body.eventId, 
-        success: result?.success,
-        notificationsSent: result?.notificationCount || 0
-      });
-      
-      logger.logRequestEnd('WEBHOOK', '/api/notifications/process', 200, {
-        eventId: body.eventId,
-        notificationsSent: result?.notificationCount || 0
-      });
-      
-      return new Response(JSON.stringify({
-        success: true,
-        eventId: body.eventId,
-        result,
-        processedAt: new Date().toISOString(),
-        e2eRequestId: notificationE2EId
-      }), {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-E2E-Request-ID': notificationE2EId
-        },
-      });
-    } else {
-      // Full event payload - validate and process
-      const event: EventPayload = body;
-      logger.logBusinessLogic('processing_full_event', { 
-        eventType: event.type,
-        targetUserId: event.user_id,
-        hasCustomData: !!event.custom_data 
-      });
-      
-      // Validate event structure
-      if (!validateEventPayload(event)) {
-        logger.logValidationError('event_payload', event, 'Invalid event structure');
-        logger.logRequestEnd('WEBHOOK', '/api/notifications/process', 400);
-        return new Response('Invalid event data', { status: 400 });
-      }
-      
-      // Process event
-      const processor = new EventProcessor(env);
-      const result = await processor.process(event);
-      
-      logger.logBusinessLogic('full_event_processed', { 
-        eventType: event.type,
-        success: result?.success,
-        notificationsSent: result?.notificationCount || 0
-      });
-      
-      logger.logRequestEnd('WEBHOOK', '/api/notifications/process', 200, {
-        eventType: event.type,
-        notificationsSent: result?.notificationCount || 0
-      });
-      
-      return new Response(JSON.stringify({
-        success: true,
-        eventId: event.eventId,
-        eventType: event.eventType,
-        result,
-        processedAt: new Date().toISOString(),
-        e2eRequestId: notificationE2EId
-      }), {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-E2E-Request-ID': notificationE2EId
-        },
+    // Only accept eventId format - simplified API
+    if (!body.eventId || typeof body.eventId !== 'string') {
+      logger.logValidationError('request_body', body, 'Missing or invalid eventId');
+      logger.logRequestEnd('WEBHOOK', '/api/notifications/process', 400);
+      return new Response('Invalid request: eventId is required', { status: 400 });
+    }
+    
+    // Process event by ID only
+    logger.logBusinessLogic('processing_event_by_id', { eventId: body.eventId });
+    
+    // Try to find original E2E Request ID from related order/deal
+    const originalE2EId = await findOriginalE2ERequestId(body.eventId, env);
+    if (originalE2EId) {
+      logger.logBusinessLogic('found_original_e2e_id', { 
+        originalE2EId, 
+        notificationE2EId: notificationE2EId 
       });
     }
     
+    const processor = new EventProcessor(env);
+    const result = await processor.processEventById(body.eventId);
+    
+    logger.logBusinessLogic('event_processed', { 
+      eventId: body.eventId, 
+      success: result?.success,
+      notificationsSent: result?.notificationCount || 0
+    });
+    
+    logger.logRequestEnd('WEBHOOK', '/api/notifications/process', 200, {
+      eventId: body.eventId,
+      notificationsSent: result?.notificationCount || 0
+    });
+    
     return new Response(JSON.stringify({
       success: true,
-      eventId: event.eventId,
-      eventType: event.eventType,
+      eventId: body.eventId,
       result,
       processedAt: new Date().toISOString(),
+      e2eRequestId: notificationE2EId
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-E2E-Request-ID': notificationE2EId
+      },
     });
     
   } catch (error) {
