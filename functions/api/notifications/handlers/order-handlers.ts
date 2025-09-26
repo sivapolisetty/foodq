@@ -61,13 +61,16 @@ export class OrderHandlers {
       pickupTime, qrCode 
     } = event.payload;
     
+    // Generate pickup code if not provided
+    const pickupCode = verificationCode || orderId?.substring(0, 8).toUpperCase() || 'PICKUP';
+    
     const message: NotificationMessage = {
       title: '✅ Order Confirmed!',
-      body: `${businessName} confirmed your order. Pickup code: ${verificationCode}`,
+      body: `${businessName} confirmed your order. Pickup code: ${pickupCode}`,
       data: {
         type: 'order_confirmed',
         orderId,
-        verificationCode,
+        verificationCode: pickupCode,
         qrCode: qrCode || '',
         pickupTime: pickupTime || '',
         businessName,
@@ -102,13 +105,16 @@ export class OrderHandlers {
   async handleOrderReady(event: EventPayload): Promise<ProcessingResult> {
     const { orderId, customerId, verificationCode, businessName } = event.payload;
     
+    // Generate pickup code if not provided
+    const pickupCode = verificationCode || orderId?.substring(0, 8).toUpperCase() || 'READY';
+    
     const message: NotificationMessage = {
       title: '🍽️ Order Ready for Pickup!',
-      body: `Your order from ${businessName} is ready! Show code: ${verificationCode}`,
+      body: `Your order from ${businessName} is ready! Show code: ${pickupCode}`,
       data: {
         type: 'order_ready',
         orderId,
-        verificationCode,
+        verificationCode: pickupCode,
         businessName,
       },
       actionUrl: `/orders/${orderId}`,

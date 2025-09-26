@@ -14,7 +14,14 @@ export async function onRequestGet(context: any) {
     // Get user from JWT token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Bearer token required'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -28,7 +35,14 @@ export async function onRequestGet(context: any) {
     // Verify JWT and get user
     const { data: user, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user.user) {
-      return new Response('Invalid token', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid token',
+        message: authError?.message || 'Token verification failed'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Get unread count using RPC function
@@ -38,7 +52,14 @@ export async function onRequestGet(context: any) {
 
     if (error) {
       console.error('Error getting unread count:', error);
-      return new Response('Failed to get unread count', { status: 500 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to get unread count',
+        message: error.message || 'Database error occurred'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({

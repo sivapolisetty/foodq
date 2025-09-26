@@ -14,14 +14,28 @@ export async function onRequestPatch(context: any) {
     // Get user from JWT token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Bearer token required'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
     const notificationId = params.id;
     
     if (!notificationId) {
-      return new Response('Missing notification ID', { status: 400 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing notification ID',
+        message: 'Notification ID is required'
+      }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Initialize Supabase client
@@ -33,7 +47,14 @@ export async function onRequestPatch(context: any) {
     // Verify JWT and get user
     const { data: user, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user.user) {
-      return new Response('Invalid token', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid token',
+        message: authError?.message || 'Token verification failed'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Mark notification as read
@@ -52,9 +73,23 @@ export async function onRequestPatch(context: any) {
     if (error) {
       console.error('Error marking notification as read:', error);
       if (error.code === 'PGRST116') {
-        return new Response('Notification not found', { status: 404 });
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Notification not found',
+          message: 'The specified notification was not found or you do not have access to it'
+        }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
-      return new Response('Failed to mark notification as read', { status: 500 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to mark notification as read',
+        message: error.message || 'Database error occurred'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({

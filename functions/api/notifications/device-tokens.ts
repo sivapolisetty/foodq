@@ -25,7 +25,14 @@ export async function onRequestPost(context: any) {
     // Get user from JWT token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Bearer token required'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -39,7 +46,14 @@ export async function onRequestPost(context: any) {
     // Verify JWT and get user
     const { data: user, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user.user) {
-      return new Response('Invalid token', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid token',
+        message: authError?.message || 'Token verification failed'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Parse request body
@@ -47,31 +61,47 @@ export async function onRequestPost(context: any) {
     
     // Validate required fields
     if (!deviceData.fcm_token || !deviceData.platform) {
-      return new Response('Missing required fields: fcm_token, platform', { status: 400 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing required fields: fcm_token, platform',
+        message: 'Both fcm_token and platform are required'
+      }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Validate platform
     if (!['ios', 'android', 'web'].includes(deviceData.platform)) {
-      return new Response('Invalid platform. Must be: ios, android, web', { status: 400 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid platform. Must be: ios, android, web',
+        message: `Platform '${deviceData.platform}' is not supported`
+      }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Upsert device token
+    // First, let's check what columns exist and insert only what we need
+    const tokenRecord = {
+      user_id: user.user.id,
+      fcm_token: deviceData.fcm_token,
+      platform: deviceData.platform,
+      created_at: new Date().toISOString(),
+    };
+
+    // Add optional fields only if provided
+    if (deviceData.device_id) tokenRecord.device_id = deviceData.device_id;
+    if (deviceData.device_model) tokenRecord.device_model = deviceData.device_model;
+    if (deviceData.device_name) tokenRecord.device_name = deviceData.device_name;
+    if (deviceData.app_version) tokenRecord.app_version = deviceData.app_version;
+    if (deviceData.os_version) tokenRecord.os_version = deviceData.os_version;
+
+    // Try to upsert with minimal required columns
     const { data, error } = await supabase
       .from('push_tokens')
-      .upsert({
-        user_id: user.user.id,
-        fcm_token: deviceData.fcm_token,
-        platform: deviceData.platform,
-        device_id: deviceData.device_id,
-        device_model: deviceData.device_model,
-        device_name: deviceData.device_name,
-        app_version: deviceData.app_version,
-        os_version: deviceData.os_version,
-        is_active: true,
-        last_used_at: new Date().toISOString(),
-        failure_count: 0,
-        consecutive_failures: 0,
-      }, {
+      .upsert(tokenRecord, {
         onConflict: 'user_id,fcm_token'
       })
       .select()
@@ -79,7 +109,14 @@ export async function onRequestPost(context: any) {
 
     if (error) {
       console.error('Error upserting device token:', error);
-      return new Response('Failed to register device token', { status: 500 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to register device token',
+        message: error.message || 'Database error occurred'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({
@@ -119,7 +156,14 @@ export async function onRequestGet(context: any) {
     // Get user from JWT token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Bearer token required'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -133,20 +177,33 @@ export async function onRequestGet(context: any) {
     // Verify JWT and get user
     const { data: user, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user.user) {
-      return new Response('Invalid token', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid token',
+        message: authError?.message || 'Token verification failed'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Get user's active device tokens
+    // Get user's device tokens (using minimal columns)
     const { data, error } = await supabase
       .from('push_tokens')
-      .select('id, platform, device_model, device_name, last_used_at, created_at')
+      .select('id, platform, device_model, device_name, created_at')
       .eq('user_id', user.user.id)
-      .eq('is_active', true)
-      .order('last_used_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching device tokens:', error);
-      return new Response('Failed to fetch device tokens', { status: 500 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to fetch device tokens',
+        message: error.message || 'Database error occurred'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({
@@ -180,7 +237,14 @@ export async function onRequestDelete(context: any) {
     // Get user from JWT token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Bearer token required'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const token = authHeader.substring(7);
@@ -194,31 +258,52 @@ export async function onRequestDelete(context: any) {
     // Verify JWT and get user
     const { data: user, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user.user) {
-      return new Response('Invalid token', { status: 401 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid token',
+        message: authError?.message || 'Token verification failed'
+      }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Parse request body to get FCM token to delete
     const { fcm_token } = await request.json();
     
     if (!fcm_token) {
-      return new Response('Missing fcm_token', { status: 400 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing fcm_token',
+        message: 'FCM token is required to deactivate'
+      }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Deactivate the specific token
+    // Delete the specific token (since is_active column may not exist)
     const { error } = await supabase
       .from('push_tokens')
-      .update({ is_active: false })
+      .delete()
       .eq('user_id', user.user.id)
       .eq('fcm_token', fcm_token);
 
     if (error) {
       console.error('Error deactivating device token:', error);
-      return new Response('Failed to deactivate device token', { status: 500 });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to delete device token',
+        message: error.message || 'Database error occurred'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Device token deactivated successfully'
+      message: 'Device token deleted successfully'
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
